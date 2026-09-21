@@ -11,7 +11,21 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        $middleware->alias([
+            'role' => \App\Http\Middleware\EnsureUserHasRole::class,
+        ]);
+
+        $middleware->web(append: [
+            \App\Http\Middleware\RefreshExpiredJwtCookie::class,
+        ]);
+
+        // Laravel's middleware-priority sort otherwise runs 'auth' (and its
+        // redirect-to-login) BEFORE an unlisted appended middleware gets a
+        // chance to silently refresh an expired access token from the cookie.
+        $middleware->prependToPriorityList(
+            before: \Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests::class,
+            prepend: \App\Http\Middleware\RefreshExpiredJwtCookie::class,
+        );
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
