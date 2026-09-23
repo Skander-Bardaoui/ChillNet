@@ -1,26 +1,39 @@
 {{-- Navbar ChillNet — liens contextuels : vitrine si invité, espace citoyen si connecté --}}
 @php
     $isManager = auth()->check() && (auth()->user()->isAdmin() || auth()->user()->isGestionnaire());
+    $isAdmin = auth()->check() && auth()->user()->isAdmin();
     // Invité : navigation 100% landing (ancres internes, aucun renvoi ailleurs).
-    // Connecté : navigation 100% pages dédiées, sans aucun lien vers l'accueil.
+    // Habitant : espace citoyen (dashboard front + modules front).
+    // Manager (admin/gestionnaire) : UNIQUEMENT l'espace gestion — aucune page
+    // habitant visible (ni Mon espace, ni Alertes/Coupures/Refuges...). La
+    // sidebar du layout back contient déjà toute la navigation gestion.
+    $habitantLinks = [
+        ['href' => route('dashboard'), 'label' => 'Mon espace', 'active' => request()->routeIs('dashboard')],
+        ['href' => route('alertes.index'), 'label' => 'Alertes', 'active' => request()->routeIs('alertes.*')],
+        ['href' => route('coupures.index'), 'label' => 'Coupures', 'active' => request()->routeIs('coupures.*')],
+        ['href' => route('refuges.index'), 'label' => 'Refuges', 'active' => request()->routeIs('refuges.*', 'points.*')],
+        ['href' => route('conseils'), 'label' => 'Conseils', 'active' => request()->routeIs('conseils')],
+        ['href' => route('signalements.index'), 'label' => 'Signalements', 'active' => request()->routeIs('signalements.*')],
+        ['href' => route('equipements.index'), 'label' => 'Équipements', 'active' => request()->routeIs('equipements.*')],
+    ];
+    $managerLinks = array_filter([
+        ['href' => route('back.dashboard'), 'label' => 'Gestion', 'active' => request()->routeIs('back.dashboard')],
+        $isAdmin ? ['href' => route('back.quartiers.index'), 'label' => 'Quartiers', 'active' => request()->routeIs('back.quartiers.*')] : null,
+        ['href' => route('back.residences.index'), 'label' => $isAdmin ? 'Résidences' : 'Ma résidence', 'active' => request()->routeIs('back.residences.*')],
+    ]);
     $navLinks = auth()->check()
-        ? array_filter([
-            ['href' => route('dashboard'), 'label' => 'Mon espace', 'active' => request()->routeIs('dashboard')],
-            ['href' => route('alertes.index'), 'label' => 'Alertes', 'active' => request()->routeIs('alertes.*')],
-            ['href' => route('coupures.index'), 'label' => 'Coupures', 'active' => request()->routeIs('coupures.*')],
-            ['href' => route('refuges.index'), 'label' => 'Refuges', 'active' => request()->routeIs('refuges.*', 'points.*')],
-            ['href' => route('conseils'), 'label' => 'Conseils', 'active' => request()->routeIs('conseils')],
-            ['href' => route('signalements.index'), 'label' => 'Signalements', 'active' => request()->routeIs('signalements.*')],
-            $isManager ? ['href' => route('back.dashboard'), 'label' => 'Gestion', 'active' => request()->routeIs('back.*')] : null,
-        ])
+        ? ($isManager ? $managerLinks : $habitantLinks)
         : [
             ['href' => route('home').'#accueil', 'label' => 'Accueil', 'active' => request()->routeIs('home')],
             ['href' => route('home').'#refuges', 'label' => 'Refuges', 'active' => false],
             ['href' => route('home').'#quartiers', 'label' => 'Quartiers', 'active' => false],
             ['href' => route('home').'#conseils', 'label' => 'Conseils', 'active' => false],
         ];
-    // Le logo renvoie vers l'espace du visiteur : dashboard si connecté, landing sinon.
-    $logoHref = auth()->check() ? route('dashboard') : route('home');
+    // Le logo renvoie vers l'espace du visiteur : back-office si manager
+    // (lien direct, sans redirection), dashboard front si habitant, landing sinon.
+    $logoHref = auth()->check()
+        ? ($isManager ? route('back.dashboard') : route('dashboard'))
+        : route('home');
 @endphp
 <header class="fixed top-0 left-0 right-0 z-50 bg-surface-container-lowest/80 backdrop-blur-2xl shadow-[0_4px_24px_rgba(0,0,0,0.4)]">
 <div class="h-16 w-full max-w-[1440px] mx-auto px-margin md:px-margin-lg flex items-center justify-between gap-space-md">
@@ -66,7 +79,6 @@
 @endforeach
 <div class="h-px bg-outline-variant/20 my-1"></div>
 @auth
-<a href="{{ route('equipements.index') }}" class="px-3 py-2 rounded-lg font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface">Mes équipements</a>
 <a href="{{ route('profile.edit') }}" class="px-3 py-2 rounded-lg font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface">Mon profil</a>
 <form method="POST" action="{{ route('logout') }}">@csrf<button type="submit" class="w-full text-left px-3 py-2 rounded-lg font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface">Déconnexion</button></form>
 @else

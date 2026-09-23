@@ -1,6 +1,12 @@
 <x-guest-layout title="Configuration du Foyer Résilient" subtitle="Paramétrez votre profil territorial pour coordonner la veille thermique et protéger vos proches.">
     @php
+        $roleParDefaut = old('role', 'habitant');
         $modeParDefaut = old('residence_mode', ($residencesDisponibles ?? 0) > 0 ? 'existante' : 'nouvelle');
+        // Un gestionnaire ne peut pas s'inscrire « plus tard » : il doit être
+        // rattaché d'emblée à la résidence qu'il gère.
+        if ($roleParDefaut === 'gestionnaire' && $modeParDefaut === 'aucune') {
+            $modeParDefaut = ($residencesDisponibles ?? 0) > 0 ? 'existante' : 'nouvelle';
+        }
         $quartierSourceParDefaut = (($quartiers ?? collect())->isNotEmpty() && ! old('nouveau_quartier_nom')) ? 'existante' : 'nouvelle_entree';
         $quartiersAvecResidences = $quartiersAvecResidences ?? ($quartiers ?? collect())->filter(fn ($quartier) => $quartier->residences->isNotEmpty());
     @endphp
@@ -20,7 +26,7 @@
     </div>
 
     {{-- Carte formulaire glassmorphism — maquette adaptée au POST Laravel --}}
-    <form method="POST" action="{{ route('register') }}" class="rounded-xl bg-surface-container-low/90 backdrop-blur-2xl p-5 shadow-2xl flex flex-col gap-4">
+    <form method="POST" action="{{ route('register') }}" class="rounded-xl bg-surface-container-low/90 backdrop-blur-2xl p-5 shadow-2xl flex flex-col gap-4" x-data="{ role: '{{ $roleParDefaut }}', mode: '{{ $modeParDefaut }}' }">
         @csrf
 
         @if ($errors->any())
@@ -29,6 +35,38 @@
                 <span>Veuillez corriger les champs indiqués ci-dessous pour activer la protection de votre foyer.</span>
             </div>
         @endif
+
+        {{-- Choix du profil : habitant ou gestionnaire de résidence.
+             L'admin est créé par l'équipe ChillNet (seeder / back-office), jamais ici. --}}
+        <section class="flex flex-col gap-2">
+            <div class="flex items-center justify-between">
+                <label class="font-label-md text-label-md text-on-surface">Je m'inscris en tant que</label>
+                <span class="font-label-sm text-label-sm text-primary uppercase font-semibold">Profil</span>
+            </div>
+            <div class="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Rôle du compte">
+                <label class="flex cursor-pointer items-center gap-2 rounded-lg border p-3 font-body-sm text-body-sm transition-colors" :class="role === 'habitant' ? 'border-primary-container bg-primary-container/10 text-on-surface' : 'border-outline-variant/40 text-on-surface-variant'">
+                    <span class="material-symbols-outlined text-[20px]">group</span>
+                    <span class="flex flex-col">
+                        <span class="font-semibold">Habitant</span>
+                        <span class="text-xs opacity-80">Mon foyer, alertes & entraide</span>
+                    </span>
+                    <input type="radio" name="role" value="habitant" x-model="role" class="sr-only" @change="if (role === 'habitant') { /* tous les modes restent possibles */ }" />
+                </label>
+                <label class="flex cursor-pointer items-center gap-2 rounded-lg border p-3 font-body-sm text-body-sm transition-colors" :class="role === 'gestionnaire' ? 'border-primary-container bg-primary-container/10 text-on-surface' : 'border-outline-variant/40 text-on-surface-variant'">
+                    <span class="material-symbols-outlined text-[20px]">apartment</span>
+                    <span class="flex flex-col">
+                        <span class="font-semibold">Gestionnaire</span>
+                        <span class="text-xs opacity-80">Je gère une résidence</span>
+                    </span>
+                    <input type="radio" name="role" value="gestionnaire" x-model="role" class="sr-only" @change="if (role === 'gestionnaire' && mode === 'aucune') { mode = '{{ ($residencesDisponibles ?? 0) > 0 ? 'existante' : 'nouvelle' }}' }" />
+                </label>
+            </div>
+            <x-input-error :messages="$errors->get('role')" class="mt-1" />
+            <p class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[16px] text-primary">info</span>
+                <span>Compte administrateur ? Il est créé par l'équipe ChillNet, pas depuis ce formulaire.</span>
+            </p>
+        </section>
 
         {{-- Étape 1 maquette : identité du foyer --}}
         <div class="grid grid-cols-1 gap-3">
@@ -53,11 +91,15 @@
         </div>
 
         {{-- Localisation : logique 3 modes + source quartier (Alpine, équivalente à l'actuelle) --}}
-        <section class="flex flex-col gap-3" x-data="{ mode: '{{ $modeParDefaut }}' }">
+        <section class="flex flex-col gap-3">
             <div class="flex items-center justify-between">
                 <label class="font-label-md text-label-md text-on-surface">Localisation &amp; résidence</label>
                 <span class="font-label-sm text-label-sm text-primary uppercase font-semibold">Étape 1 — Mon foyer</span>
             </div>
+            <p x-show="role === 'gestionnaire'" x-cloak class="rounded-lg bg-primary-container/10 border border-primary-container/30 px-3 py-2.5 font-body-sm text-body-sm text-on-surface flex items-center gap-2">
+                <span class="material-symbols-outlined text-[18px] text-primary">apartment</span>
+                <span>En tant que gestionnaire, rattachez obligatoirement la résidence que vous gérez (liste ou nouvelle déclaration).</span>
+            </p>
             <div class="grid grid-cols-3 gap-2" role="radiogroup" aria-label="Mode de résidence">
                 <label class="flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border p-2.5 font-body-sm text-body-sm transition-colors" :class="mode === 'existante' ? 'border-primary-container bg-primary-container/10 text-on-surface' : 'border-outline-variant/40 text-on-surface-variant'">
                     <span class="material-symbols-outlined text-[18px]">location_city</span>
@@ -69,9 +111,9 @@
                     <input type="radio" name="residence_mode" value="nouvelle" x-model="mode" class="sr-only" />
                     <span>Nouvelle</span>
                 </label>
-                <label class="flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border p-2.5 font-body-sm text-body-sm transition-colors" :class="mode === 'aucune' ? 'border-primary-container bg-primary-container/10 text-on-surface' : 'border-outline-variant/40 text-on-surface-variant'">
+                <label class="flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border p-2.5 font-body-sm text-body-sm transition-colors" :class="mode === 'aucune' ? 'border-primary-container bg-primary-container/10 text-on-surface' : 'border-outline-variant/40 text-on-surface-variant'" x-show="role === 'habitant'">
                     <span class="material-symbols-outlined text-[18px]">schedule</span>
-                    <input type="radio" name="residence_mode" value="aucune" x-model="mode" class="sr-only" />
+                    <input type="radio" name="residence_mode" value="aucune" x-model="mode" class="sr-only" :disabled="role !== 'habitant'" />
                     <span>Plus tard</span>
                 </label>
             </div>

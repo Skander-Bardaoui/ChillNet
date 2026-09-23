@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Auth;
 
+use App\Enums\Role;
 use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -10,11 +11,16 @@ use Illuminate\Validation\Rules;
 /**
  * Inscription d'un foyer.
  *
+ * Le rôle se choisit entre `habitant` et `gestionnaire` (l'`admin` est créé
+ * uniquement par seeder / back-office, jamais depuis le formulaire public).
+ *
  * La résidence se choisit selon trois modes :
  *  - `existante` : le foyer sélectionne une résidence déjà référencée ;
  *  - `nouvelle`  : le foyer déclare sa résidence, et éventuellement son quartier
  *                  s'il n'apparaît pas dans la liste ;
- *  - `aucune`    : le foyer renseignera sa résidence plus tard depuis son profil.
+ *  - `aucune`    : le foyer renseignera sa résidence plus tard depuis son profil
+ *                  (habitant uniquement : un gestionnaire doit être rattaché
+ *                  d'emblée à la résidence qu'il gère).
  */
 class RegisterRequest extends FormRequest
 {
@@ -43,6 +49,12 @@ class RegisterRequest extends FormRequest
      */
     protected function prepareForValidation(): void
     {
+        // Rôle par défaut (compatibilité avec les anciens payloads de test) :
+        // un habitant simple, sans résidence obligatoire.
+        if (! $this->filled('role')) {
+            $this->merge(['role' => Role::Habitant->value]);
+        }
+
         if (! $this->filled('residence_mode')) {
             $this->merge(['residence_mode' => self::MODE_AUCUNE]);
         }
@@ -80,7 +92,16 @@ class RegisterRequest extends FormRequest
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique(User::class)],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
 
-            'residence_mode' => ['required', Rule::in(self::MODES)],
+            // Inscription publique : habitant ou gestionnaire uniquement.
+            // L'admin est créé via seeder / back-office, jamais ici.
+            'role' => ['required', Rule::in([Role::Habitant->value, Role::Gestionnaire->value])],
+
+            'residence_mode' => [
+                'required',
+                Rule::in($this->input('role') === Role::Gestionnaire->value
+                    ? [self::MODE_EXISTANTE, self::MODE_NOUVELLE]
+                    : self::MODES),
+            ],
 
             // Mode « résidence existante ».
             'residence_id' => [
@@ -117,6 +138,9 @@ class RegisterRequest extends FormRequest
             'password.required' => 'Le mot de passe est obligatoire.',
             'password.confirmed' => 'Les deux mots de passe ne correspondent pas.',
             'password.min' => 'Le mot de passe doit contenir au moins :min caractères.',
+
+            'role.required' => 'Veuillez choisir votre profil (habitant ou gestionnaire).',
+            'role.in' => 'Le profil choisi est invalide. L\'administrateur est créé par l\'équipe ChillNet.',
 
             'residence_mode.required' => 'Veuillez indiquer votre résidence (ou choisir « plus tard »).',
             'residence_mode.in' => 'Le choix de résidence est invalide.',

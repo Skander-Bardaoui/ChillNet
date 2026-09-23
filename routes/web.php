@@ -35,7 +35,13 @@ Route::get('/refuges', function () {
     return view('front.refuges', compact('points'));
 })->name('refuges.index');
 
-Route::middleware('auth')->group(function () {
+/*
+ * Espace habitant (connecté) : réservé au rôle habitant.
+ * Les managers (admin / gestionnaire) ont leur propre espace sur /admin :
+ * ils sont redirigés depuis /dashboard et reçoivent 403 ici — pas logique
+ * qu'ils consultent l'espace citoyen en tant que foyer.
+ */
+Route::middleware(['auth', 'role:habitant'])->group(function () {
     Route::get('/alertes', fn () => view('front.alertes'))->name('alertes.index');
     Route::get('/signalements', fn () => view('front.signalements'))->name('signalements.index');
     Route::get('/equipements', fn () => view('front.equipements'))->name('equipements.index');

@@ -38,11 +38,13 @@ class RegisteredUserController extends Controller
      */
     public function store(RegisterRequest $request): RedirectResponse
     {
+        $role = Role::from($request->validated('role'));
+
         $user = User::create([
             'name' => $request->validated('name'),
             'email' => $request->validated('email'),
             'password' => Hash::make($request->validated('password')),
-            'role' => Role::Habitant,
+            'role' => $role,
             'residence_id' => $this->resolveResidence($request)?->id,
         ]);
 

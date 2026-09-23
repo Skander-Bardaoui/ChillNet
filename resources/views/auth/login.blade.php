@@ -1,4 +1,4 @@
-<x-guest-layout title="Connexion Résident" subtitle="Accédez à votre tableau de bord de foyer et alertes de palier">
+<x-guest-layout title="Connexion" subtitle="Un seul formulaire pour tous : habitant, gestionnaire ou admin — vous êtes redirigé vers votre espace automatiquement">
     <x-auth-session-status class="mb-1" :status="session('status')" />
 
     {{-- Bannière alerte canicule — version compacte de la maquette --}}
@@ -26,7 +26,7 @@
     {{-- Carte formulaire glassmorphism — maquette, adaptée au POST Laravel --}}
     <section class="rounded-xl bg-surface-container-low/90 backdrop-blur-2xl p-5 shadow-2xl flex flex-col gap-4">
         <div class="flex items-center justify-between gap-3">
-            <h2 class="font-headline-sm text-headline-sm text-on-surface">Connexion Résident</h2>
+            <h2 class="font-headline-sm text-headline-sm text-on-surface">Connexion</h2>
             <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary font-label-sm text-label-sm font-semibold uppercase tracking-wider whitespace-nowrap">
                 <span class="w-2 h-2 rounded-full bg-primary-container"></span>
                 Accès Sécurisé
@@ -69,9 +69,10 @@
             </label>
 
             <button type="submit" class="w-full py-3 px-6 rounded-lg bg-primary-container text-on-primary-container font-title-md text-title-md font-bold hover:brightness-110 active:brightness-95 transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary-container/20">
-                <span>Se connecter à mon espace foyer</span>
+                <span>Se connecter à mon espace</span>
                 <span class="material-symbols-outlined text-[20px]">arrow_forward</span>
             </button>
+            <p class="font-body-sm text-body-sm text-on-surface-variant text-center">Habitant → tableau de bord foyer · Gestionnaire / Admin → espace de gestion (redirection automatique).</p>
         </form>
 
         {{-- Bloc entraide — ancien bouton alert() devenu vrai lien --}}

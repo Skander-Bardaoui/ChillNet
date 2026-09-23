@@ -69,12 +69,12 @@ class QuartierResidenceManagementTest extends TestCase
         $this->assertDatabaseHas('quartiers', ['id' => $quartier->id]);
     }
 
-    public function test_gestionnaire_can_create_a_residence_and_unchecked_options_are_false(): void
+    public function test_admin_can_create_a_residence_and_unchecked_options_are_false(): void
     {
-        $gestionnaire = $this->userWithRole(Role::Gestionnaire);
+        $admin = $this->userWithRole(Role::Admin);
         $quartier = Quartier::create(['nom' => 'Les Berges du Lac', 'ville' => 'Tunis', 'code_postal' => '1053']);
 
-        $this->actingAs($gestionnaire)
+        $this->actingAs($admin)
             ->post(route('back.residences.store'), [
                 'nom' => 'Résidence Lac View',
                 'adresse' => '20 Rue du Lac Léman',
@@ -93,9 +93,68 @@ class QuartierResidenceManagementTest extends TestCase
         $this->assertSame(60, $residence->nombre_logements);
     }
 
+    public function test_gestionnaire_cannot_create_or_delete_a_residence(): void
+    {
+        $quartier = Quartier::create(['nom' => 'Centre-Ville', 'ville' => 'Tunis', 'code_postal' => '1000']);
+        $sienne = Residence::create(['nom' => 'Ma résidence', 'adresse' => '1 rue des Tilleuls', 'quartier_id' => $quartier->id]);
+        $gestionnaire = User::factory()->create(['role' => Role::Gestionnaire, 'residence_id' => $sienne->id]);
+
+        $this->actingAs($gestionnaire)->get(route('back.residences.create'))->assertForbidden();
+        $this->actingAs($gestionnaire)->post(route('back.residences.store'), [
+            'nom' => 'Résidence interdite',
+            'adresse' => '2 rue des Tilleuls',
+            'quartier_id' => $quartier->id,
+            'nombre_logements' => 20,
+        ])->assertForbidden();
+        $this->actingAs($gestionnaire)->delete(route('back.residences.destroy', $sienne->id))->assertForbidden();
+
+        $this->assertDatabaseMissing('residences', ['nom' => 'Résidence interdite']);
+        $this->assertDatabaseHas('residences', ['id' => $sienne->id]);
+    }
+
+    public function test_gestionnaire_only_sees_and_edits_his_own_residence(): void
+    {
+        $quartier = Quartier::create(['nom' => 'Centre-Ville', 'ville' => 'Tunis', 'code_postal' => '1000']);
+        $sienne = Residence::create(['nom' => 'Ma résidence', 'adresse' => '1 rue des Tilleuls', 'quartier_id' => $quartier->id]);
+        $autre = Residence::create(['nom' => 'Résidence voisine', 'adresse' => '9 rue des Tilleuls', 'quartier_id' => $quartier->id]);
+        $gestionnaire = User::factory()->create(['role' => Role::Gestionnaire, 'residence_id' => $sienne->id]);
+
+        // Liste scopée : la sienne oui, la voisine non.
+        $this->actingAs($gestionnaire)->get(route('back.residences.index'))
+            ->assertOk()
+            ->assertSee('Ma résidence')
+            ->assertDontSee('Résidence voisine');
+
+        // Modifier la sienne : ok.
+        $this->actingAs($gestionnaire)->get(route('back.residences.edit', $sienne->id))->assertOk();
+        $this->actingAs($gestionnaire)->put(route('back.residences.update', $sienne->id), [
+            'nom' => 'Ma résidence rénovée',
+            'adresse' => '1 rue des Tilleuls',
+            'quartier_id' => $quartier->id,
+            'nombre_logements' => 25,
+        ])->assertRedirect(route('back.residences.index'));
+        $this->assertDatabaseHas('residences', ['id' => $sienne->id, 'nom' => 'Ma résidence rénovée']);
+
+        // Toucher à la voisine : interdit.
+        $this->actingAs($gestionnaire)->get(route('back.residences.edit', $autre->id))->assertForbidden();
+        $this->actingAs($gestionnaire)->put(route('back.residences.update', $autre->id), [
+            'nom' => 'Piratée',
+            'adresse' => '9 rue des Tilleuls',
+            'quartier_id' => $quartier->id,
+            'nombre_logements' => 10,
+        ])->assertForbidden();
+    }
+
+    public function test_gestionnaire_cannot_access_quartiers(): void
+    {
+        $gestionnaire = $this->userWithRole(Role::Gestionnaire);
+
+        $this->actingAs($gestionnaire)->get(route('back.quartiers.index'))->assertForbidden();
+    }
+
     public function test_a_residence_requires_an_existing_quartier(): void
     {
-        $this->actingAs($this->userWithRole(Role::Gestionnaire))
+        $this->actingAs($this->userWithRole(Role::Admin))
             ->post(route('back.residences.store'), [
                 'nom' => 'Résidence Fantôme',
                 'adresse' => '1 Rue Inexistante',
