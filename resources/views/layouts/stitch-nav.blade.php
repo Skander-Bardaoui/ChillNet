@@ -1,8 +1,10 @@
-{{-- Navbar ChillNet — liens contextuels : vitrine si invité, espace citoyen si connecté --}}
+{{-- Navbar ChillNet — vitrine si invité (indicateur de vigilance centré + actions à droite),
+     espace citoyen ou gestion si connecté. --}}
 @php
     $isManager = auth()->check() && (auth()->user()->isAdmin() || auth()->user()->isGestionnaire());
     $isAdmin = auth()->check() && auth()->user()->isAdmin();
-    // Invité : navigation 100% landing (ancres internes, aucun renvoi ailleurs).
+    // Invité : pas de liens dans la barre (les ancres de la landing ont été retirées) — le
+    // milieu de la barre est occupé par l'indicateur de vigilance, les actions sont à droite.
     // Habitant : espace citoyen (dashboard front + modules front).
     // Manager (admin/gestionnaire) : UNIQUEMENT l'espace gestion — aucune page
     // habitant visible (ni Mon espace, ni Alertes/Coupures/Refuges...). La
@@ -23,20 +25,18 @@
     ]);
     $navLinks = auth()->check()
         ? ($isManager ? $managerLinks : $habitantLinks)
-        : [
-            ['href' => route('home').'#accueil', 'label' => 'Accueil', 'active' => request()->routeIs('home')],
-            ['href' => route('home').'#refuges', 'label' => 'Refuges', 'active' => false],
-            ['href' => route('home').'#quartiers', 'label' => 'Quartiers', 'active' => false],
-            ['href' => route('home').'#conseils', 'label' => 'Conseils', 'active' => false],
-        ];
+        : [];
+    $sansLiens = count($navLinks) === 0;
     // Le logo renvoie vers l'espace du visiteur : back-office si manager
     // (lien direct, sans redirection), dashboard front si habitant, landing sinon.
     $logoHref = auth()->check()
         ? ($isManager ? route('back.dashboard') : route('dashboard'))
         : route('home');
 @endphp
-<header class="fixed top-0 left-0 right-0 z-50 bg-surface-container-lowest/80 backdrop-blur-2xl shadow-[0_4px_24px_rgba(0,0,0,0.4)]">
-<div class="h-16 w-full max-w-[1440px] mx-auto px-margin md:px-margin-lg flex items-center justify-between gap-space-md">
+{{-- Couleur de barre dédiée (--md-nav) : plus claire que la page en sombre, blanche en clair.
+     L'ombre et le liseré sont définis dans layouts/stitch-head (par thème). --}}
+<header class="fixed top-3 left-3 right-3 z-50 rounded-2xl bg-nav-surface/85 backdrop-blur-2xl">
+<div class="relative h-16 w-full max-w-[1440px] mx-auto px-margin md:px-margin-lg flex items-center justify-between gap-space-md">
 <div class="flex items-center gap-space-md shrink-0">
 <a href="{{ $logoHref }}" class="flex items-center gap-space-md">
 <div class="w-10 h-10 rounded-xl bg-surface-container flex items-center justify-center shadow-inner">
@@ -48,16 +48,27 @@
 </div>
 </a>
 </div>
-<div class="hidden xl:flex items-center gap-space-sm px-space-sm py-1 rounded-full bg-surface-container/70">
+@if ($sansLiens)
+{{-- Indicateur de vigilance, centré dans la barre (decoratif : aucun clic). --}}
+<div class="pointer-events-none absolute left-1/2 top-1/2 hidden lg:flex -translate-x-1/2 -translate-y-1/2 items-center gap-space-sm px-space-sm py-1 rounded-full bg-surface-container/70">
 <span class="relative flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-tertiary-container opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-tertiary-fixed-dim"></span></span>
-<span class="font-label-sm text-label-sm text-tertiary-fixed tracking-wide uppercase">Vigilance Canicule</span>
+<span class="font-label-sm text-label-sm text-tertiary-fixed tracking-wide uppercase whitespace-nowrap">Vigilance Canicule</span>
 <span class="text-outline-variant font-body-sm text-body-sm">|</span>
-<span class="font-body-sm text-body-sm text-on-surface-variant">Réseau sous surveillance</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant whitespace-nowrap">Réseau sous surveillance</span>
 </div>
+@endif
 <nav class="hidden lg:flex items-center gap-space-xs" aria-label="Navigation principale">
 @foreach ($navLinks as $link)
 <a href="{{ $link['href'] }}" class="px-space-sm py-1.5 rounded-lg font-label-md text-label-md transition-colors {{ $link['active'] ? 'bg-primary-container text-on-primary-container font-semibold shadow-[0_0_16px_rgba(0,229,255,0.25)]' : 'text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface' }}">{{ $link['label'] }}</a>
 @endforeach
+@if (request()->routeIs('home', 'accueil'))
+<button type="button" x-data="{ light: document.documentElement.classList.contains('light') }"
+    @click="light = !light; document.documentElement.classList.toggle('light', light); document.documentElement.classList.toggle('dark', !light); try { localStorage.setItem('chillnet-theme', light ? 'light' : 'dark'); } catch (e) {}"
+    class="p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors"
+    :aria-label="light ? 'Activer le thème sombre' : 'Activer le thème clair'" aria-label="Basculer le thème">
+    <span class="material-symbols-outlined text-[20px]" x-text="light ? 'dark_mode' : 'light_mode'">light_mode</span>
+</button>
+@endif
 @auth
 <form method="POST" action="{{ route('logout') }}" class="inline">@csrf<button type="submit" class="px-space-sm py-1.5 rounded-lg font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors">Déconnexion</button></form>
 @else
@@ -65,24 +76,32 @@
 <a href="{{ route('register') }}" class="px-space-sm py-1.5 rounded-lg bg-primary-container text-on-primary-container font-label-md text-label-md font-semibold hover:opacity-95 transition">Inscription</a>
 @endauth
 </nav>
-{{-- Navigation mobile --}}
+{{-- Navigation mobile : le menu contient les liens éventuels + les actions. --}}
 <div class="flex lg:hidden items-center gap-1" x-data="{ open: false }">
-@guest
-<a href="{{ route('register') }}" class="px-space-sm py-1.5 rounded-lg bg-primary-container text-on-primary-container font-label-md text-label-md font-semibold">Inscription</a>
-@endguest
+@if (request()->routeIs('home', 'accueil'))
+<button type="button" x-data="{ light: document.documentElement.classList.contains('light') }"
+    @click="light = !light; document.documentElement.classList.toggle('light', light); document.documentElement.classList.toggle('dark', !light); try { localStorage.setItem('chillnet-theme', light ? 'light' : 'dark'); } catch (e) {}"
+    class="p-2 rounded-full text-on-surface-variant hover:bg-surface-container-high"
+    :aria-label="light ? 'Activer le thème sombre' : 'Activer le thème clair'" aria-label="Basculer le thème">
+    <span class="material-symbols-outlined text-[20px]" x-text="light ? 'dark_mode' : 'light_mode'">light_mode</span>
+</button>
+@endif
 <button type="button" @click="open = !open" class="p-2 rounded-full text-on-surface-variant hover:bg-surface-container-high" :aria-expanded="open ? 'true' : 'false'" aria-label="Ouvrir le menu">
 <span class="material-symbols-outlined" x-text="open ? 'close' : 'menu'">menu</span>
 </button>
-<div x-show="open" x-cloak @click.outside="open = false" class="absolute left-margin right-margin top-16 rounded-xl border border-outline-variant/20 bg-surface-container-low/95 p-space-sm shadow-xl backdrop-blur-xl flex flex-col gap-1">
+<div x-show="open" x-cloak @click.outside="open = false" class="absolute left-margin right-margin top-16 rounded-xl border border-outline-variant/20 bg-nav-surface/95 p-space-sm shadow-xl backdrop-blur-xl flex flex-col gap-1">
 @foreach ($navLinks as $link)
 <a href="{{ $link['href'] }}" @click="open = false" class="px-3 py-2 rounded-lg font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface">{{ $link['label'] }}</a>
 @endforeach
+@if (! $sansLiens || auth()->check())
 <div class="h-px bg-outline-variant/20 my-1"></div>
+@endif
 @auth
 <a href="{{ route('profile.edit') }}" class="px-3 py-2 rounded-lg font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface">Mon profil</a>
 <form method="POST" action="{{ route('logout') }}">@csrf<button type="submit" class="w-full text-left px-3 py-2 rounded-lg font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface">Déconnexion</button></form>
 @else
 <a href="{{ route('login') }}" class="px-3 py-2 rounded-lg font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface">Connexion</a>
+<a href="{{ route('register') }}" class="px-3 py-2 rounded-lg bg-primary-container text-on-primary-container font-label-md text-label-md font-semibold hover:opacity-95 transition">Inscription</a>
 @endauth
 </div>
 </div>
