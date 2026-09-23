@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html class="dark" lang="fr">
+<html class="dark" lang="fr"@if (request()->routeIs('home', 'accueil')) data-theme-landing @endif>
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -10,7 +10,7 @@
 </head>
 <body class="bg-background font-body-md text-body-md text-on-surface antialiased min-h-screen">
 @include('layouts.stitch-nav')
-<main class="w-full pt-16 bg-surface min-h-screen">
+<main class="w-full pt-20 bg-surface min-h-screen">
 <div class="w-full max-w-[1440px] mx-auto px-margin md:px-margin-lg py-space-md flex flex-col gap-space-lg">
 @if (session('success'))
 <div class="rounded-xl bg-surface-container-low border border-primary-container/30 text-on-surface px-space-md py-space-sm flex items-center gap-2"><span class="material-symbols-outlined text-primary">check_circle</span><span>{{ session('success') }}</span></div>
