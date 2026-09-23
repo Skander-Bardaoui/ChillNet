@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 
 class AuthenticatedSessionController extends Controller
@@ -27,9 +28,17 @@ class AuthenticatedSessionController extends Controller
     {
         $user = $request->authenticate();
 
-        $this->issueAuthCookies($user);
+        $request->session()->regenerate();
 
-        return redirect()->intended(route('home', absolute: false));
+        $cookies = $this->issueAuthCookies($user, $request->boolean('remember'));
+
+        $response = redirect()->intended(route('dashboard', absolute: false));
+
+        foreach ($cookies as $cookie) {
+            $response->withCookie($cookie);
+        }
+
+        return $response;
     }
 
     /**
@@ -37,11 +46,21 @@ class AuthenticatedSessionController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
-        $this->clearAuthCookies();
+        // Révoque les deux jetons (access + refresh) portés par les cookies.
+        $cookies = $this->clearAuthCookies();
+
+        // Réinitialise l'utilisateur en mémoire sur le guard JWT.
+        Auth::guard('web')->logout();
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect('/');
+        $response = redirect('/');
+
+        foreach ($cookies as $cookie) {
+            $response->withCookie($cookie);
+        }
+
+        return $response;
     }
 }

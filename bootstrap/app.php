@@ -15,6 +15,15 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => \App\Http\Middleware\EnsureUserHasRole::class,
         ]);
 
+        // Les jetons JWT restent httpOnly (invisibles en JS : c'est normal et
+        // voulu), mais on les exclut du chiffrement Laravel pour qu'ils soient
+        // lisibles tels quels dans Inspecteur > Application > Cookies
+        // (valeur eyJ...) et conformes à jwt.decrypt_cookies = false.
+        $middleware->encryptCookies(except: [
+            \App\Support\AuthCookie::ACCESS,
+            \App\Support\AuthCookie::REFRESH,
+        ]);
+
         $middleware->web(append: [
             \App\Http\Middleware\RefreshExpiredJwtCookie::class,
         ]);

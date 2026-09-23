@@ -6,6 +6,7 @@ use App\Http\Controllers\Auth\IssuesJwtCookies;
 use App\Http\Requests\ProfileUpdateRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\View\View;
 
@@ -51,6 +52,9 @@ class ProfileController extends Controller
         $user = $request->user();
 
         $this->clearAuthCookies();
+
+        // Réinitialise l'utilisateur en mémoire sur le guard JWT avant de supprimer le compte.
+        Auth::guard('web')->logout();
 
         $user->delete();
 

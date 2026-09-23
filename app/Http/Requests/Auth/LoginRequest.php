@@ -31,6 +31,8 @@ class LoginRequest extends FormRequest
         return [
             'email' => ['required', 'string', 'email'],
             'password' => ['required', 'string'],
+            // Case « Se souvenir de moi » : allonge la durée de vie du refresh token.
+            'remember' => ['sometimes', 'boolean'],
         ];
     }
 
