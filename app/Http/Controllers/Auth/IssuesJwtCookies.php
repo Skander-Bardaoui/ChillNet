@@ -3,74 +3,86 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Models\User;
-use Illuminate\Support\Facades\Auth;
+use App\Support\AuthCookie;
+use App\Support\JwtTokens;
 use Illuminate\Support\Facades\Cookie;
-use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
 
 /**
- * Issues the access_token / refresh_token cookie pair that the 'web' guard
- * (config('auth.guards.web.driver') === 'jwt') reads on every request.
+ * Émission et révocation de la paire de cookies d'authentification
+ * (access_token + refresh_token) lue par le guard `web`
+ * (config('auth.guards.web.driver') === 'jwt').
  *
- * The access token is a normal short-lived JWT (jwt.ttl). The refresh token
- * is also a JWT — same secret, same signature verification — but carries a
- * 'token_type' => 'refresh' claim and a much longer TTL (jwt.refresh_ttl), so
- * it is only ever accepted by the refresh flow, never by the normal auth guard.
+ * La fabrication des jetons est centralisée dans App\Support\JwtTokens ; ce trait
+ * se contente de les déposer dans (ou de les retirer des) cookies de la réponse.
  */
 trait IssuesJwtCookies
 {
-    protected function issueAuthCookies(User $user): void
+    /**
+     * Construit la paire de cookies httpOnly (access + refresh).
+     *
+     * @return array<int, \Symfony\Component\HttpFoundation\Cookie>
+     */
+    protected function authCookies(User $user, bool $remember = false): array
     {
-        $accessToken = Auth::guard('web')->claims(['token_type' => 'access'])->login($user);
+        $tokens = JwtTokens::forUser($user, $remember);
 
-        JWTAuth::factory()->setTTL((int) config('jwt.refresh_ttl'));
-        $refreshToken = JWTAuth::claims(['token_type' => 'refresh'])->fromUser($user);
-        JWTAuth::factory()->setTTL((int) config('jwt.ttl'));
-
-        $secure = app()->environment('production');
-
-        Cookie::queue(cookie(
-            'access_token',
-            $accessToken,
-            (int) config('jwt.ttl'),
-            '/',
-            null,
-            $secure,
-            true,
-            false,
-            'lax',
-        ));
-
-        Cookie::queue(cookie(
-            'refresh_token',
-            $refreshToken,
-            (int) config('jwt.refresh_ttl'),
-            '/',
-            null,
-            $secure,
-            true,
-            false,
-            'lax',
-        ));
+        return [
+            AuthCookie::make(AuthCookie::ACCESS, $tokens['access_token'], AuthCookie::accessTtl()),
+            AuthCookie::make(AuthCookie::REFRESH, $tokens['refresh_token'], $tokens['refresh_ttl']),
+        ];
     }
 
-    protected function clearAuthCookies(): void
+    /**
+     * Connecte l'utilisateur en déposant une paire de cookies httpOnly.
+     *
+     * Les cookies sont à la fois mis en file (Cookie::queue) ET retournés pour
+     * être attachés directement à la réponse via ->withCookie() : la pose ne
+     * dépend donc plus d'un seul mécanisme.
+     *
+     * @return array<int, \Symfony\Component\HttpFoundation\Cookie>
+     */
+    protected function issueAuthCookies(User $user, bool $remember = false): array
     {
-        $accessToken = request()->cookie('access_token');
-        $refreshToken = request()->cookie('refresh_token');
+        $cookies = $this->authCookies($user, $remember);
 
-        foreach ([$accessToken, $refreshToken] as $token) {
-            if (! $token) {
-                continue;
-            }
-
-            try {
-                JWTAuth::setToken($token)->invalidate();
-            } catch (\Throwable $e) {
-                // already invalid/expired — nothing to blacklist
-            }
+        foreach ($cookies as $cookie) {
+            Cookie::queue($cookie);
         }
 
-        Cookie::queue(Cookie::forget('access_token'));
-        Cookie::queue(Cookie::forget('refresh_token'));
+        return $cookies;
+    }
+
+    /**
+     * Cookies d'effacement (même path que la pose).
+     *
+     * @return array<int, \Symfony\Component\HttpFoundation\Cookie>
+     */
+    protected function forgetAuthCookies(): array
+    {
+        return [
+            AuthCookie::forget(AuthCookie::ACCESS),
+            AuthCookie::forget(AuthCookie::REFRESH),
+        ];
+    }
+
+    /**
+     * Révoque les jetons portés par la requête puis efface les cookies.
+     *
+     * @return array<int, \Symfony\Component\HttpFoundation\Cookie>
+     */
+    protected function clearAuthCookies(): array
+    {
+        JwtTokens::invalidate(
+            request()->cookie(AuthCookie::ACCESS),
+            request()->cookie(AuthCookie::REFRESH),
+        );
+
+        $cookies = $this->forgetAuthCookies();
+
+        foreach ($cookies as $cookie) {
+            Cookie::queue($cookie);
+        }
+
+        return $cookies;
     }
 }

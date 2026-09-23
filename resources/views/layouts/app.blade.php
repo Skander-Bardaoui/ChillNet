@@ -1,36 +1,23 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="csrf-token" content="{{ csrf_token() }}">
-
-        <title>{{ config('app.name', 'Laravel') }}</title>
-
-        <!-- Fonts -->
-        <link rel="preconnect" href="https://fonts.bunny.net">
-        <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
-
-        <!-- Scripts -->
-        @vite(['resources/css/app.css', 'resources/js/app.js'])
-    </head>
-    <body class="font-sans antialiased">
-        <div class="min-h-screen bg-gray-100">
-            @include('layouts.navigation')
-
-            <!-- Page Heading -->
-            @isset($header)
-                <header class="bg-white shadow">
-                    <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-                        {{ $header }}
-                    </div>
-                </header>
-            @endisset
-
-            <!-- Page Content -->
-            <main>
-                {{ $slot }}
-            </main>
-        </div>
-    </body>
+<html class="dark" lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="csrf-token" content="{{ csrf_token() }}" />
+<title>{{ config('app.name', 'ChillNet') }}</title>
+@include('layouts.stitch-head')
+@vite(['resources/css/app.css', 'resources/js/app.js'])
+</head>
+<body class="bg-background font-body-md text-body-md text-on-surface antialiased min-h-screen">
+@include('layouts.stitch-nav')
+<main class="w-full pt-16 bg-surface min-h-screen">
+<div class="w-full max-w-[1440px] mx-auto px-margin md:px-margin-lg py-space-md flex flex-col gap-space-lg">
+@isset($header)
+<div class="rounded-xl bg-surface-container/70 backdrop-blur-md p-space-md shadow-md">{{ $header }}</div>
+@endisset
+{{ $slot }}
+</div>
+</main>
+@include('layouts.stitch-footer')
+</body>
 </html>

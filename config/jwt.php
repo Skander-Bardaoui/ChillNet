@@ -233,7 +233,9 @@ return [
     |
     */
 
-    'blacklist_grace_period' => (int) env('JWT_BLACKLIST_GRACE_PERIOD', 0),
+    // 30 s de tolérance : lors de la rotation du refresh token, une requête
+    // concurrente partie avec l'ancien jeton peut encore aboutir.
+    'blacklist_grace_period' => (int) env('JWT_BLACKLIST_GRACE_PERIOD', 30),
 
     /*
     |--------------------------------------------------------------------------

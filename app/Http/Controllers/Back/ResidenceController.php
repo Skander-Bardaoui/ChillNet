@@ -2,31 +2,50 @@
 
 namespace App\Http\Controllers\Back;
 
-use App\Entities\Quartier;
-use App\Entities\Residence;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreResidenceRequest;
-use App\Repositories\ResidenceRepository;
-use Doctrine\ORM\EntityManagerInterface;
+use App\Models\Quartier;
+use App\Models\Residence;
+use Illuminate\Http\Request;
 
+/**
+ * Séparation des rôles (voulue) :
+ *  - Admin        : CRUD global sur toutes les résidences + quartiers.
+ *  - Gestionnaire : SA résidence uniquement (lecture + modification).
+ *                   Pas de création, pas de suppression, pas d'accès aux
+ *                   résidences des autres. Sans résidence rattachée, liste vide
+ *                   avec consigne de contacter un admin.
+ */
 class ResidenceController extends Controller
 {
-    public function __construct(private readonly EntityManagerInterface $em)
-    {
-    }
-
     public function index()
     {
-        /** @var ResidenceRepository $repo */
-        $repo = $this->em->getRepository(Residence::class);
-        $residences = $repo->allWithQuartier();
+        $user = request()->user();
+
+        if ($user && $user->isGestionnaire()) {
+            $residences = Residence::with('quartier')
+                ->whereKey($user->residence_id)
+                ->get();
+
+            return view('back.residences.index', compact('residences'));
+        }
+
+        $residences = Residence::with('quartier')
+            ->orderBy(Quartier::select('nom')->whereColumn('quartiers.id', 'residences.quartier_id'))
+            ->orderBy('nom')
+            ->get();
 
         return view('back.residences.index', compact('residences'));
     }
 
     public function create()
     {
-        $quartiers = $this->em->getRepository(Quartier::class)->findBy([], ['nom' => 'ASC']);
+        // Seul l'admin déclare de nouvelles résidences dans le référentiel.
+        // Le gestionnaire, lui, a déclaré la sienne à l'inscription et ne
+        // gère ensuite que celle-ci (modification).
+        abort_if(request()->user()?->isGestionnaire(), 403, "Votre résidence est déjà rattachée : contactez un admin pour en déclarer une autre.");
+
+        $quartiers = Quartier::orderBy('nom')->get();
         $residence = null;
 
         return view('back.residences.create', compact('quartiers', 'residence'));
@@ -34,19 +53,9 @@ class ResidenceController extends Controller
 
     public function store(StoreResidenceRequest $request)
     {
-        $quartier = $this->em->getRepository(Quartier::class)->find($request->input('quartier_id'));
-        abort_if(! $quartier, 422, 'Quartier invalide.');
+        abort_if(request()->user()?->isGestionnaire(), 403, 'Seul un administrateur peut créer une résidence.');
 
-        $residence = new Residence();
-        $residence->setNom($request->input('nom'))
-            ->setAdresse($request->input('adresse'))
-            ->setNombreLogements((int) $request->input('nombre_logements', 0))
-            ->setSalleClimatisee($request->boolean('salle_climatisee'))
-            ->setPointFraicheur($request->boolean('point_fraicheur'))
-            ->setQuartier($quartier);
-
-        $this->em->persist($residence);
-        $this->em->flush();
+        Residence::create($this->attributes($request));
 
         return redirect()->route('back.residences.index')
             ->with('success', 'Résidence créée avec succès.');
@@ -54,31 +63,20 @@ class ResidenceController extends Controller
 
     public function edit(int $id)
     {
-        $residence = $this->em->getRepository(Residence::class)->find($id);
-        abort_if(! $residence, 404);
+        $this->authorizeResidence($id);
 
-        $quartiers = $this->em->getRepository(Quartier::class)->findBy([], ['nom' => 'ASC']);
+        $residence = Residence::findOrFail($id);
+        $quartiers = Quartier::orderBy('nom')->get();
 
         return view('back.residences.edit', compact('residence', 'quartiers'));
     }
 
     public function update(StoreResidenceRequest $request, int $id)
     {
-        $residence = $this->em->getRepository(Residence::class)->find($id);
-        abort_if(! $residence, 404);
+        $this->authorizeResidence($id);
 
-        $quartier = $this->em->getRepository(Quartier::class)->find($request->input('quartier_id'));
-        abort_if(! $quartier, 422, 'Quartier invalide.');
-
-        $residence->setNom($request->input('nom'))
-            ->setAdresse($request->input('adresse'))
-            ->setNombreLogements((int) $request->input('nombre_logements', 0))
-            ->setSalleClimatisee($request->boolean('salle_climatisee'))
-            ->setPointFraicheur($request->boolean('point_fraicheur'))
-            ->setQuartier($quartier)
-            ->touch();
-
-        $this->em->flush();
+        $residence = Residence::findOrFail($id);
+        $residence->update($this->attributes($request));
 
         return redirect()->route('back.residences.index')
             ->with('success', 'Résidence mise à jour avec succès.');
@@ -86,13 +84,42 @@ class ResidenceController extends Controller
 
     public function destroy(int $id)
     {
-        $residence = $this->em->getRepository(Residence::class)->find($id);
-        abort_if(! $residence, 404);
+        // La suppression d'une résidence (avec ses foyers rattachés) est une
+        // action globale réservée à l'admin.
+        abort_if(request()->user()?->isGestionnaire(), 403, 'Seul un administrateur peut supprimer une résidence.');
 
-        $this->em->remove($residence);
-        $this->em->flush();
+        Residence::findOrFail($id)->delete();
 
         return redirect()->route('back.residences.index')
             ->with('success', 'Résidence supprimée.');
+    }
+
+    /**
+     * Un gestionnaire ne peut ouvrir / modifier que sa propre résidence.
+     */
+    private function authorizeResidence(int $id): void
+    {
+        $user = request()->user();
+
+        if ($user?->isGestionnaire() && (int) $user->residence_id !== (int) $id) {
+            abort(403, 'Vous ne pouvez gérer que votre propre résidence.');
+        }
+    }
+
+    /**
+     * Attributs validés d'une résidence.
+     *
+     * Les cases à cocher ne sont envoyées que lorsqu'elles sont cochées : on les
+     * normalise explicitement en booléens pour que la décoche soit bien prise en compte.
+     *
+     * @return array<string, mixed>
+     */
+    private function attributes(Request $request): array
+    {
+        return [
+            ...$request->validated(),
+            'salle_climatisee' => $request->boolean('salle_climatisee'),
+            'point_fraicheur' => $request->boolean('point_fraicheur'),
+        ];
     }
 }

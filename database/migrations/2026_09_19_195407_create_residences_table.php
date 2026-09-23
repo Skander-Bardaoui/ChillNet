@@ -7,9 +7,7 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     /**
-     * Table backing the App\Entities\Residence Doctrine entity.
-     * Schema kept in sync manually with app/Entities/Residence.php — see note
-     * in the quartiers migration about why doctrine:schema:update isn't used here.
+     * Table backing the App\Models\Residence Eloquent model.
      */
     public function up(): void
     {

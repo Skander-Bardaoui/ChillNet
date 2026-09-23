@@ -7,10 +7,7 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     /**
-     * Table backing the App\Entities\Quartier Doctrine entity.
-     * Schema kept in sync manually with app/Entities/Quartier.php since
-     * Doctrine's schema-tool manages the whole DB and would drop Laravel's
-     * own tables (users, sessions, ...) if run against this shared database.
+     * Table backing the App\Models\Quartier Eloquent model.
      */
     public function up(): void
     {

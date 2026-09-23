@@ -2,11 +2,10 @@
 
 namespace Database\Seeders;
 
-use App\Entities\Quartier;
-use App\Entities\Residence;
 use App\Enums\Role;
+use App\Models\Quartier;
+use App\Models\Residence;
 use App\Models\User;
-use Doctrine\ORM\EntityManagerInterface;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -15,73 +14,69 @@ class DatabaseSeeder extends Seeder
     use WithoutModelEvents;
 
     /**
-     * Seed the application's database.
+     * Amorce le réseau ChillNet avec deux quartiers, trois résidences et
+     * un compte par rôle. Rejouable sans créer de doublons.
      */
-    public function run(EntityManagerInterface $em): void
+    public function run(): void
     {
-        $quartierCentre = new Quartier();
-        $quartierCentre->setNom('Centre-Ville')
-            ->setVille('Tunis')
-            ->setCodePostal('1000')
-            ->setDescription('Quartier central, forte densité de population.');
+        $centreVille = Quartier::updateOrCreate(
+            ['nom' => 'Centre-Ville', 'ville' => 'Tunis'],
+            [
+                'code_postal' => '1000',
+                'description' => 'Quartier central, forte densité de population.',
+            ],
+        );
 
-        $quartierLac = new Quartier();
-        $quartierLac->setNom('Les Berges du Lac')
-            ->setVille('Tunis')
-            ->setCodePostal('1053')
-            ->setDescription('Quartier résidentiel et d\'affaires.');
+        $bergesDuLac = Quartier::updateOrCreate(
+            ['nom' => 'Les Berges du Lac', 'ville' => 'Tunis'],
+            [
+                'code_postal' => '1053',
+                'description' => "Quartier résidentiel et d'affaires.",
+            ],
+        );
 
-        $em->persist($quartierCentre);
-        $em->persist($quartierLac);
-        $em->flush();
+        $oliviers = Residence::updateOrCreate(
+            ['nom' => 'Résidence Les Oliviers', 'quartier_id' => $centreVille->id],
+            [
+                'adresse' => '12 Avenue Habib Bourguiba',
+                'nombre_logements' => 48,
+                'salle_climatisee' => true,
+                'point_fraicheur' => true,
+            ],
+        );
 
-        $residenceA = new Residence();
-        $residenceA->setNom('Résidence Les Oliviers')
-            ->setAdresse('12 Avenue Habib Bourguiba')
-            ->setNombreLogements(48)
-            ->setSalleClimatisee(true)
-            ->setPointFraicheur(true)
-            ->setQuartier($quartierCentre);
+        Residence::updateOrCreate(
+            ['nom' => 'Résidence El Manar', 'quartier_id' => $centreVille->id],
+            [
+                'adresse' => '5 Rue de la Liberté',
+                'nombre_logements' => 30,
+                'salle_climatisee' => false,
+                'point_fraicheur' => false,
+            ],
+        );
 
-        $residenceB = new Residence();
-        $residenceB->setNom('Résidence El Manar')
-            ->setAdresse('5 Rue de la Liberté')
-            ->setNombreLogements(30)
-            ->setSalleClimatisee(false)
-            ->setPointFraicheur(false)
-            ->setQuartier($quartierCentre);
+        Residence::updateOrCreate(
+            ['nom' => 'Résidence Lac View', 'quartier_id' => $bergesDuLac->id],
+            [
+                'adresse' => '20 Rue du Lac Léman',
+                'nombre_logements' => 60,
+                'salle_climatisee' => true,
+                'point_fraicheur' => true,
+            ],
+        );
 
-        $residenceC = new Residence();
-        $residenceC->setNom('Résidence Lac View')
-            ->setAdresse('20 Rue du Lac Léman')
-            ->setNombreLogements(60)
-            ->setSalleClimatisee(true)
-            ->setPointFraicheur(true)
-            ->setQuartier($quartierLac);
+        $comptes = [
+            ['name' => 'Admin ChillNet', 'email' => 'admin@chillnet.test', 'role' => Role::Admin, 'residence_id' => null],
+            ['name' => 'Gestionnaire Oliviers', 'email' => 'gestionnaire@chillnet.test', 'role' => Role::Gestionnaire, 'residence_id' => $oliviers->id],
+            ['name' => 'Habitant Test', 'email' => 'habitant@chillnet.test', 'role' => Role::Habitant, 'residence_id' => $oliviers->id],
+        ];
 
-        $em->persist($residenceA);
-        $em->persist($residenceB);
-        $em->persist($residenceC);
-        $em->flush();
+        foreach ($comptes as $compte) {
+            if (User::where('email', $compte['email'])->exists()) {
+                continue;
+            }
 
-        User::factory()->create([
-            'name' => 'Admin ChillNet',
-            'email' => 'admin@chillnet.test',
-            'role' => Role::Admin,
-        ]);
-
-        User::factory()->create([
-            'name' => 'Gestionnaire Oliviers',
-            'email' => 'gestionnaire@chillnet.test',
-            'role' => Role::Gestionnaire,
-            'residence_id' => $residenceA->getId(),
-        ]);
-
-        User::factory()->create([
-            'name' => 'Habitant Test',
-            'email' => 'habitant@chillnet.test',
-            'role' => Role::Habitant,
-            'residence_id' => $residenceA->getId(),
-        ]);
+            User::factory()->create($compte);
+        }
     }
 }
