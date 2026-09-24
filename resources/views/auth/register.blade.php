@@ -153,7 +153,7 @@
                     </div>
                     <x-input-error :messages="$errors->get('nouvelle_residence_nom')" class="mt-1" />
                 </div>
-                <input type="text" name="nouvelle_residence_adresse" value="{{ old('nouvelle_residence_adresse') }}" placeholder="Adresse (optionnel)" :disabled="mode !== 'nouvelle'"
+                <input type="text" name="nouvelle_residence_adresse" aria-label="Adresse de la nouvelle résidence (optionnel)" value="{{ old('nouvelle_residence_adresse') }}" placeholder="Adresse (optionnel)" :disabled="mode !== 'nouvelle'"
                     class="w-full rounded-lg bg-surface-container-low border border-outline-variant/40 px-3 py-2.5 text-on-surface font-body-md text-body-md placeholder:text-outline-variant focus:outline-none focus:ring-2 focus:ring-primary-container transition-colors disabled:opacity-50" />
                 <x-input-error :messages="$errors->get('nouvelle_residence_adresse')" class="mt-1" />
 
@@ -186,17 +186,17 @@
 
                 <div x-show="source === 'nouvelle_entree'" x-cloak class="grid grid-cols-2 gap-2">
                     <div class="flex flex-col gap-1.5">
-                        <input type="text" name="nouveau_quartier_nom" value="{{ old('nouveau_quartier_nom') }}" placeholder="Quartier" :disabled="mode !== 'nouvelle' || source !== 'nouvelle_entree'"
+                        <input type="text" name="nouveau_quartier_nom" aria-label="Nom du nouveau quartier" value="{{ old('nouveau_quartier_nom') }}" placeholder="Quartier" :disabled="mode !== 'nouvelle' || source !== 'nouvelle_entree'"
                             class="rounded-lg bg-surface-container-low border border-outline-variant/40 px-3 py-2.5 text-on-surface font-body-md text-body-md placeholder:text-outline-variant focus:outline-none focus:ring-2 focus:ring-primary-container transition-colors disabled:opacity-50" />
                         <x-input-error :messages="$errors->get('nouveau_quartier_nom')" class="mt-1" />
                     </div>
                     <div class="flex flex-col gap-1.5">
-                        <input type="text" name="nouveau_quartier_ville" value="{{ old('nouveau_quartier_ville') }}" placeholder="Ville" :disabled="mode !== 'nouvelle' || source !== 'nouvelle_entree'"
+                        <input type="text" name="nouveau_quartier_ville" aria-label="Ville du nouveau quartier" value="{{ old('nouveau_quartier_ville') }}" placeholder="Ville" :disabled="mode !== 'nouvelle' || source !== 'nouvelle_entree'"
                             class="rounded-lg bg-surface-container-low border border-outline-variant/40 px-3 py-2.5 text-on-surface font-body-md text-body-md placeholder:text-outline-variant focus:outline-none focus:ring-2 focus:ring-primary-container transition-colors disabled:opacity-50" />
                         <x-input-error :messages="$errors->get('nouveau_quartier_ville')" class="mt-1" />
                     </div>
                     <div class="flex flex-col gap-1.5 col-span-2">
-                        <input type="text" name="nouveau_quartier_code_postal" value="{{ old('nouveau_quartier_code_postal') }}" placeholder="Code postal" :disabled="mode !== 'nouvelle' || source !== 'nouvelle_entree'"
+                        <input type="text" name="nouveau_quartier_code_postal" aria-label="Code postal du nouveau quartier" value="{{ old('nouveau_quartier_code_postal') }}" placeholder="Code postal" :disabled="mode !== 'nouvelle' || source !== 'nouvelle_entree'"
                             class="rounded-lg bg-surface-container-low border border-outline-variant/40 px-3 py-2.5 text-on-surface font-body-md text-body-md placeholder:text-outline-variant focus:outline-none focus:ring-2 focus:ring-primary-container transition-colors disabled:opacity-50" />
                         <x-input-error :messages="$errors->get('nouveau_quartier_code_postal')" class="mt-1" />
                     </div>

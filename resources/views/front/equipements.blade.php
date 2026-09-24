@@ -40,9 +40,9 @@
 <a href="tel:0800066666" class="shrink-0 inline-flex items-center gap-1 font-label-md text-label-md text-on-surface-variant hover:text-primary"><span class="material-symbols-outlined text-[16px]">call</span>0800 06 66 66</a>
 </article>
 <article class="rounded-xl bg-surface-container-low p-space-md shadow-sm flex flex-col md:flex-row md:items-center gap-space-sm border border-error/20">
-<div class="p-2 rounded-lg bg-error/15 text-error self-start"><span class="material-symbols-outlined text-[20px]">pulmonology</span></div>
-<div class="flex-1"><div class="flex items-center gap-2 flex-wrap"><h3 class="font-title-md text-title-md text-on-surface">Respirateur nocturne</h3><span class="px-2 py-0.5 rounded-full bg-error/15 text-error font-label-sm text-label-sm uppercase">Vital (médical)</span></div><p class="font-body-sm text-body-sm text-on-surface-variant">Chambre · batterie de secours 8h · contact d'urgence : fille — 06 12 34 56 78 (démo).</p></div>
-<a href="tel:15" class="shrink-0 inline-flex items-center gap-1 px-space-md py-2 rounded-lg bg-error text-on-error font-label-md text-label-md font-semibold"><span class="material-symbols-outlined text-[16px]">emergency</span>15 en cas de coupure</a>
+<div class="p-2 rounded-lg bg-red-100 text-red-800 self-start"><span class="material-symbols-outlined text-[20px]">pulmonology</span></div>
+<div class="flex-1"><div class="flex items-center gap-2 flex-wrap"><h3 class="font-title-md text-title-md text-on-surface">Respirateur nocturne</h3><span class="px-2 py-0.5 rounded-full bg-red-100 text-red-800 font-label-sm text-label-sm uppercase">Vital (médical)</span></div><p class="font-body-sm text-body-sm text-on-surface-variant">Chambre · batterie de secours 8h · contact d'urgence : fille — 06 12 34 56 78 (démo).</p></div>
+<a href="tel:190" class="shrink-0 inline-flex items-center gap-1 px-space-md py-2 rounded-lg bg-red-600 text-white font-label-md text-label-md font-semibold"><span class="material-symbols-outlined text-[16px]">emergency</span>190 en cas de coupure</a>
 </article>
 </section>
 
@@ -54,7 +54,7 @@
 </article>
 <article class="rounded-xl bg-surface-container-low p-space-md shadow-sm flex flex-col gap-2">
 <div class="flex items-center gap-2 text-primary"><span class="material-symbols-outlined text-[20px]">battery_charging_full</span><h3 class="font-title-md text-title-md text-on-surface">Conseil n°2 — appareil médical</h3></div>
-<p class="font-body-sm text-body-sm text-on-surface-variant">Chargez la batterie du respirateur avant 17h00 (pic réseau). En cas d'alerte, appelez le <a href="tel:15" class="text-primary font-semibold hover:underline">15</a> sans attendre.</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Chargez la batterie du respirateur avant 17h00 (pic réseau). En cas d'alerte, appelez le <a href="tel:190" class="text-primary font-semibold hover:underline">190</a> sans attendre.</p>
 </article>
 </section>
 </x-app-layout>

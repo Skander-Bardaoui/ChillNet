@@ -3,7 +3,7 @@
 <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
 <div>
 <p class="font-label-sm text-label-sm text-primary uppercase tracking-wider font-semibold">Tableau de bord résident — ChillNet</p>
-<h2 class="font-headline-lg text-headline-lg text-on-surface">Bonjour {{ auth()->user()->name }}</h2>
+<h1 class="font-headline-lg text-headline-lg text-on-surface">Bonjour {{ auth()->user()->name }}</h1>
 <p class="font-body-sm text-body-sm text-on-surface-variant mt-1">
 @if(auth()->user()->residence)
 {{ auth()->user()->residence->nom }}@if(auth()->user()->residence->quartier) — Quartier {{ auth()->user()->residence->quartier->nom }}@endif
@@ -70,7 +70,7 @@
 </div>
 </div>
 <div class="flex items-center gap-space-sm w-full lg:w-auto shrink-0 pt-2 lg:pt-0">
-<a href="tel:15" class="flex-1 lg:flex-initial px-space-md py-2.5 rounded-lg bg-surface-container text-primary font-label-md text-label-md hover:bg-surface-variant transition-colors flex items-center justify-center gap-2">
+<a href="tel:190" class="flex-1 lg:flex-initial px-space-md py-2.5 rounded-lg bg-surface-container text-primary font-label-md text-label-md hover:bg-surface-variant transition-colors flex items-center justify-center gap-2">
 <span class="material-symbols-outlined text-[18px]">radio</span>
 <span>Point de Situation — 15</span>
 </a>
@@ -217,7 +217,7 @@
 <span class="font-label-sm text-label-sm text-error font-semibold">18:00</span>
 <span class="material-symbols-outlined text-[18px] text-tertiary-fixed">offline_bolt</span>
 <span class="font-title-md text-title-md text-on-surface font-semibold">39.5°</span>
-<span class="px-1.5 py-0.5 rounded text-[10px] bg-error-container text-error font-semibold">91% MAX</span>
+<span class="px-1.5 py-0.5 rounded text-[10px] bg-error-container text-on-error-container font-semibold">91% MAX</span>
 </div>
 <div class="flex flex-col items-center p-2 rounded-lg bg-surface-container-high/60 text-center gap-1">
 <span class="font-label-sm text-label-sm text-on-surface-variant">20:00</span>
@@ -259,7 +259,7 @@
 <div class="w-full h-56 rounded-xl bg-surface-container-lowest relative overflow-hidden flex items-end p-space-md shadow-inner">
 <div class="relative z-10 w-full flex flex-wrap items-center justify-between gap-2 p-space-sm rounded-lg bg-surface-container-lowest/85 backdrop-blur-md">
 <div class="flex items-center gap-space-sm">
-<span class="w-3 h-3 rounded-full bg-primary-container shadow-[0_0_8px_#00e5ff]"></span>
+<span class="w-3 h-3 rounded-full bg-primary-container shadow-[0_0_8px_#1B77BA]"></span>
 <span class="font-body-sm text-body-sm text-on-surface font-medium">Parc des Remparts : Canopée active (-4°C mesuré)</span>
 </div>
 <div class="flex items-center gap-2">

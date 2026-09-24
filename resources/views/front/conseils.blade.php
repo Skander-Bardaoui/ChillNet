@@ -16,7 +16,7 @@ SEUIL CRITIQUE : 41.8°C RESSENTI
 <span class="material-symbols-outlined text-primary-fixed-dim text-[16px]">bolt</span>
 <span>Délestage préventif : <strong class="text-tertiary-fixed">14h00 – 16h30</strong></span>
 </div>
-<button class="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-error-container text-on-error-container font-label-md text-label-md hover:bg-error hover:text-on-error transition-all shadow-[0_0_16px_rgba(255,180,171,0.2)]" id="toggleUrgenceBtn" type="button">
+<button class="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-error-container text-on-error-container font-label-md text-label-md hover:bg-red-500 hover:text-white transition-all shadow-[0_0_16px_rgba(255,180,171,0.2)]" id="toggleUrgenceBtn" type="button" aria-haspopup="dialog" aria-controls="urgenceModal">
 <span class="material-symbols-outlined text-[16px]">emergency_home</span>
 <span>Alerte Non-Réponse</span>
 </button>
@@ -34,17 +34,17 @@ SEUIL CRITIQUE : 41.8°C RESSENTI
 <span class="text-outline-variant">•</span>
 <span class="font-label-sm text-label-sm text-on-surface-variant">Version 4.2 Hors-Ligne Synchronisée</span>
 </div>
-<h2 class="font-headline-lg text-headline-lg text-on-surface tracking-tight">
+<h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight">
 Survie Thermique, Protection Médicale &amp; Entraide de Quartier
-</h2>
+</h1>
 <p class="font-body-lg text-body-lg text-on-surface-variant mt-1">
 Protocoles techniques vérifiés pour faire face à la surchauffe urbaine combinée aux coupures électriques programmées.
 </p>
 </div>
 <div class="flex flex-wrap items-center gap-space-xs bg-surface-container-low p-1.5 rounded-xl self-start lg:self-auto">
-<a class="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high transition-colors text-error font-label-md text-label-md" href="tel:15">
+<a class="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high transition-colors text-error font-label-md text-label-md" href="tel:190">
 <span class="material-symbols-outlined text-[16px]">medical_services</span>
-SAMU 15
+SAMU 190
 </a>
 <a class="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high transition-colors text-tertiary-fixed font-label-md text-label-md" href="tel:0800066666">
 <span class="material-symbols-outlined text-[16px]">support_agent</span>
@@ -56,21 +56,21 @@ Urgence SMS 114
 </a>
 </div>
 </div>
-<div class="flex items-center gap-2 overflow-x-auto pb-1 border-b border-transparent">
-<button class="tab-button active flex items-center gap-2 px-4 py-2.5 rounded-lg font-title-md text-title-md bg-primary-container text-on-primary-container shadow-[0_0_16px_rgba(0,229,255,0.25)] transition-all" data-tab="gestes" type="button">
+<div class="flex items-center gap-2 overflow-x-auto pb-1 border-b border-transparent" role="tablist" aria-label="Rubriques des conseils">
+<button class="tab-button active flex items-center gap-2 px-4 py-2.5 rounded-lg font-title-md text-title-md bg-primary-container text-on-primary-container shadow-[0_0_16px_rgba(27,119,186,0.25)] transition-all" data-tab="gestes" type="button" role="tab" id="tabbtn-gestes" aria-controls="tab-gestes" aria-selected="true">
 <span class="material-symbols-outlined text-[20px]">ac_unit</span>
 <span>Conseils &amp; Gestes Clés</span>
 </button>
-<button class="tab-button flex items-center gap-2 px-4 py-2.5 rounded-lg font-title-md text-title-md bg-surface-container text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all" data-tab="sante" type="button">
+<button class="tab-button flex items-center gap-2 px-4 py-2.5 rounded-lg font-title-md text-title-md bg-surface-container text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all" data-tab="sante" type="button" role="tab" id="tabbtn-sante" aria-controls="tab-sante" aria-selected="false" tabindex="-1">
 <span class="material-symbols-outlined text-[20px]">vaccines</span>
 <span>Médicaments &amp; Chaîne du Froid</span>
 </button>
-<button class="tab-button flex items-center gap-2 px-4 py-2.5 rounded-lg font-title-md text-title-md bg-surface-container text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all" data-tab="solidarite" type="button">
+<button class="tab-button flex items-center gap-2 px-4 py-2.5 rounded-lg font-title-md text-title-md bg-surface-container text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all" data-tab="solidarite" type="button" role="tab" id="tabbtn-solidarite" aria-controls="tab-solidarite" aria-selected="false" tabindex="-1">
 <span class="material-symbols-outlined text-[20px]">group</span>
 <span>Réseau Solidarité Voisins</span>
 <span class="px-1.5 py-0.5 rounded-full text-label-sm font-label-sm bg-tertiary-container text-on-tertiary-container">3 alertes</span>
 </button>
-<button class="tab-button flex items-center gap-2 px-4 py-2.5 rounded-lg font-title-md text-title-md bg-surface-container text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all" data-tab="coupure" type="button">
+<button class="tab-button flex items-center gap-2 px-4 py-2.5 rounded-lg font-title-md text-title-md bg-surface-container text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all" data-tab="coupure" type="button" role="tab" id="tabbtn-coupure" aria-controls="tab-coupure" aria-selected="false" tabindex="-1">
 <span class="material-symbols-outlined text-[20px]">power_off</span>
 <span>Délestage &amp; Coupure Électrique</span>
 </button>
@@ -78,7 +78,7 @@ Urgence SMS 114
 </div>
 
 <!-- Active Tab Panel 1: Conseils & Fiches Réflexes (Bento Layout) -->
-<div class="tab-content flex flex-col gap-space-lg" id="tab-gestes">
+<div class="tab-content flex flex-col gap-space-lg" id="tab-gestes" role="tabpanel" aria-labelledby="tabbtn-gestes" tabindex="0">
 <div class="grid grid-cols-1 md:grid-cols-12 gap-space-md">
 <div class="md:col-span-8 bg-surface-container-low rounded-xl p-space-lg flex flex-col justify-between relative overflow-hidden shadow-md">
 <div class="absolute -right-16 -top-16 w-64 h-64 bg-primary/5 rounded-full blur-3xl pointer-events-none"></div>
@@ -104,7 +104,7 @@ Lorsque la température ambiante dépasse 37°C, le corps cesse d'évacuer la ch
 <span class="text-primary font-semibold">2.8 L / jour</span>
 </div>
 <div class="w-full bg-surface-container-highest h-2 rounded-full overflow-hidden mt-1">
-<div class="bg-primary-container h-full w-[65%] rounded-full shadow-[0_0_8px_rgba(0,229,255,0.4)]"></div>
+<div class="bg-primary-container h-full w-[65%] rounded-full shadow-[0_0_8px_rgba(27,119,186,0.4)]"></div>
 </div>
 <span class="font-body-sm text-body-sm text-on-surface-variant mt-1">Éviter eau glacée (&lt;10°C) qui coupe la transpiration.</span>
 </div>
@@ -136,8 +136,8 @@ Lorsque la température ambiante dépasse 37°C, le corps cesse d'évacuer la ch
 <span class="font-label-md text-label-md text-on-surface font-semibold">Signes d'alerte rouge :</span>
 <span class="font-body-sm text-body-sm text-on-surface-variant">Absence de sueur, propos incohérents, peau brûlante, vertiges.</span>
 </div>
-<a class="inline-flex items-center gap-1 text-error font-label-md text-label-md hover:underline shrink-0" href="tel:15">
-Appeler le 15 immédiatement →
+<a class="inline-flex items-center gap-1 text-error font-label-md text-label-md hover:underline shrink-0" href="tel:190">
+Appeler le 190 immédiatement →
 </a>
 </div>
 </div>
@@ -261,7 +261,7 @@ Coupelles d'eau fraîche changées toutes les 3h
 </li>
 </ul>
 <div class="mt-auto pt-2">
-<a href="tel:15" class="w-full py-2 px-3 rounded-lg bg-surface-container-high hover:bg-surface-variant text-on-surface text-label-md font-label-md flex items-center justify-center gap-1 transition-colors">
+<a href="tel:190" class="w-full py-2 px-3 rounded-lg bg-surface-container-high hover:bg-surface-variant text-on-surface text-label-md font-label-md flex items-center justify-center gap-1 transition-colors">
 <span class="material-symbols-outlined text-[16px]">health_and_safety</span>
 Fiche vétérinaire d'urgence
 </a>
@@ -271,7 +271,7 @@ Fiche vétérinaire d'urgence
 </div>
 
 <!-- Tab Panel 2: Sante / Medicaments -->
-<div class="tab-content hidden flex-col gap-space-lg" id="tab-sante">
+<div class="tab-content hidden flex-col gap-space-lg" id="tab-sante" role="tabpanel" aria-labelledby="tabbtn-sante" tabindex="0">
 <div class="grid grid-cols-1 lg:grid-cols-12 gap-space-md">
 <div class="lg:col-span-7 bg-surface-container-low p-space-lg rounded-xl flex flex-col gap-space-md shadow-md">
 <div class="flex items-center justify-between">
@@ -340,7 +340,7 @@ En cas de coupure supérieure à 4 heures, ne tentez pas de déplacer vos médic
 <span class="material-symbols-outlined text-tertiary-container text-[36px]">contact_support</span>
 <div>
 <span class="font-title-md text-title-md text-on-surface block">Doute sur la couleur d'un liquide ?</span>
-<span class="font-body-sm text-body-sm text-on-surface-variant">Ligne directe avec le centre antipoison : <a class="text-primary hover:underline" href="tel:0800066666">0800 06 66 66</a> • Urgence : <a class="text-error hover:underline" href="tel:15">15</a>.</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Ligne directe avec le centre antipoison : <a class="text-primary hover:underline" href="tel:0800066666">0800 06 66 66</a> • Urgence : <a class="text-error hover:underline" href="tel:190">190</a>.</span>
 </div>
 </div>
 </div>
@@ -348,7 +348,7 @@ En cas de coupure supérieure à 4 heures, ne tentez pas de déplacer vos médic
 </div>
 
 <!-- Tab Panel 3: Solidarite Voisins & Mutual Aid -->
-<div class="tab-content hidden flex-col gap-space-lg" id="tab-solidarite">
+<div class="tab-content hidden flex-col gap-space-lg" id="tab-solidarite" role="tabpanel" aria-labelledby="tabbtn-solidarite" tabindex="0">
 <div class="grid grid-cols-1 lg:grid-cols-12 gap-space-md">
 <div class="lg:col-span-8 flex flex-col gap-space-md">
 <div class="bg-surface-container-low p-space-md rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-space-sm shadow-md">
@@ -361,7 +361,7 @@ En cas de coupure supérieure à 4 heures, ne tentez pas de déplacer vos médic
 <p class="font-body-sm text-body-sm text-on-surface-variant">14 veilles actives aujourd'hui dans votre rayon de 500 mètres.</p>
 </div>
 </div>
-<button class="px-4 py-2 rounded-lg bg-primary-container text-on-primary-container font-label-md text-label-md hover:shadow-[0_0_20px_rgba(0,229,255,0.4)] transition-all shrink-0" id="openAideModal" type="button">
+<button class="px-4 py-2 rounded-lg bg-primary-container text-on-primary-container font-label-md text-label-md hover:shadow-[0_0_20px_rgba(27,119,186,0.4)] transition-all shrink-0" id="openAideModal" type="button" aria-haspopup="dialog" aria-controls="aideModal">
 + Proposer mon aide / équipement
 </button>
 </div>
@@ -490,7 +490,7 @@ Proposer mon salon
 </div>
 
 <!-- Tab Panel 4: Coupure & Delestage -->
-<div class="tab-content hidden flex-col gap-space-lg" id="tab-coupure">
+<div class="tab-content hidden flex-col gap-space-lg" id="tab-coupure" role="tabpanel" aria-labelledby="tabbtn-coupure" tabindex="0">
 <div class="grid grid-cols-1 md:grid-cols-3 gap-space-md">
 <div class="bg-surface-container-low p-space-md rounded-xl flex flex-col gap-space-sm shadow-md">
 <div class="w-10 h-10 rounded-lg bg-tertiary-container/20 text-tertiary-fixed flex items-center justify-center">
@@ -574,7 +574,7 @@ Non, s'il est utilisé à sec : il agit alors comme un four à chaleur tournante
 <div class="bg-surface-container p-4 rounded-lg flex flex-col gap-1">
 <span class="font-title-md text-title-md text-on-surface">Comment savoir si mon voisin âgé est en situation de détresse ?</span>
 <p class="font-body-sm text-body-sm text-on-surface-variant">
-Les volets fermés en continu l'après-midi sont normaux, mais si les volets ne s'ouvrent pas la nuit ou à l'aube pour aérer, et en l'absence de réponse aux coups de sonnette répétés, déclenchez sans délai l'alerte municipale ou composez le <a class="text-error hover:underline" href="tel:15">15</a> / <a class="text-error hover:underline" href="tel:112">112</a>.
+Les volets fermés en continu l'après-midi sont normaux, mais si les volets ne s'ouvrent pas la nuit ou à l'aube pour aérer, et en l'absence de réponse aux coups de sonnette répétés, déclenchez sans délai l'alerte municipale ou composez le <a class="text-error hover:underline" href="tel:190">190</a> / <a class="text-error hover:underline" href="tel:198">198</a>.
 </p>
 </div>
 <div class="bg-surface-container p-4 rounded-lg flex flex-col gap-1">
@@ -595,12 +595,12 @@ Les délestages tournants sont automatisés sur les postes sources haute-tension
 <!-- Banner Community Engagement -->
 <div class="bg-surface-container-highest/60 rounded-xl p-space-lg flex flex-col md:flex-row items-center justify-between gap-space-md">
 <div class="flex items-center gap-space-md">
-<div class="w-14 h-14 rounded-2xl bg-primary-container text-on-primary-container flex items-center justify-center shrink-0 shadow-[0_0_24px_rgba(0,229,255,0.3)]">
+<div class="w-14 h-14 rounded-2xl bg-primary-container text-on-primary-container flex items-center justify-center shrink-0 shadow-[0_0_24px_rgba(27,119,186,0.3)]">
 <span class="material-symbols-outlined text-[32px]">shield_with_heart</span>
 </div>
 <div>
 <h4 class="font-title-md text-title-md text-on-surface">Rejoindre la brigade citoyenne du quartier</h4>
-<p class="font-body-md text-body-md text-on-surface-variant">Recevez un kit glacière thermos, pastilles électrolytiques et un talkie-walkie basse fréquence pour relayer les secours en cas de blackout total. Urgence : <a class="text-error hover:underline" href="tel:15">15</a> • <a class="text-primary hover:underline" href="tel:0800066666">0800 06 66 66</a>.</p>
+<p class="font-body-md text-body-md text-on-surface-variant">Recevez un kit glacière thermos, pastilles électrolytiques et un talkie-walkie basse fréquence pour relayer les secours en cas de blackout total. Urgence : <a class="text-error hover:underline" href="tel:190">190</a> • <a class="text-primary hover:underline" href="tel:0800066666">0800 06 66 66</a>.</p>
 </div>
 </div>
 <a href="{{ route('register') }}" class="px-5 py-2.5 rounded-lg bg-secondary text-on-secondary font-title-md text-title-md hover:bg-secondary-fixed transition-colors shrink-0">
@@ -610,39 +610,39 @@ Devenir Sentinelle Résilience
 </div>
 
 <!-- Modal : Déclencher une Alerte pour un Voisin qui ne répond pas -->
-<div class="fixed inset-0 z-50 flex items-center justify-center bg-surface-dim/80 backdrop-blur-md hidden p-4" id="urgenceModal">
+<div class="fixed inset-0 z-50 flex items-center justify-center bg-surface-dim/80 backdrop-blur-md hidden p-4" id="urgenceModal" role="dialog" aria-modal="true" aria-labelledby="urgenceModalTitle">
 <div class="bg-surface-container-high rounded-xl max-w-lg w-full p-space-lg flex flex-col gap-space-md shadow-2xl relative">
 <div class="flex items-center justify-between">
 <div class="flex items-center gap-2 text-error">
 <span class="material-symbols-outlined text-[28px]">notification_important</span>
-<h3 class="font-headline-sm text-headline-sm text-on-surface">Alerte Non-Réponse Voisin</h3>
+<h3 class="font-headline-sm text-headline-sm text-on-surface" id="urgenceModalTitle" tabindex="-1">Alerte Non-Réponse Voisin</h3>
 </div>
-<button class="p-1 rounded-full text-on-surface-variant hover:text-on-surface" id="closeUrgenceModal" type="button">
+<button class="p-1 rounded-full text-on-surface-variant hover:text-on-surface" id="closeUrgenceModal" type="button" aria-label="Fermer la fenêtre d'alerte voisin">
 <span class="material-symbols-outlined text-[20px]">close</span>
 </button>
 </div>
 <p class="font-body-md text-body-md text-on-surface-variant">
-Ce formulaire transmet instantanément une notification géolocalisée à la brigade municipale de proximité et aux voisins sentinelles situés à moins de 150m. En danger immédiat, appelez le <a class="text-error hover:underline" href="tel:15">15</a>.
+Ce formulaire transmet instantanément une notification géolocalisée à la brigade municipale de proximité et aux voisins sentinelles situés à moins de 150m. En danger immédiat, appelez le <a class="text-error hover:underline" href="tel:190">190</a>.
 </p>
 <div class="space-y-3">
 <div>
-<label class="block font-label-md text-label-md text-on-surface mb-1">Identité ou description du voisin</label>
-<input class="w-full bg-surface-container px-3 py-2 rounded-lg text-on-surface placeholder:text-outline focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Ex: M. Mercier, 78 ans" type="text" />
+<label for="voisin-identite" class="block font-label-md text-label-md text-on-surface mb-1">Identité ou description du voisin</label>
+<input id="voisin-identite" name="voisin-identite" class="w-full bg-surface-container px-3 py-2 rounded-lg text-on-surface placeholder:text-outline focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Ex: M. Mercier, 78 ans" type="text" />
 </div>
 <div>
-<label class="block font-label-md text-label-md text-on-surface mb-1">Adresse précise &amp; Appartement</label>
-<input class="w-full bg-surface-container px-3 py-2 rounded-lg text-on-surface placeholder:text-outline focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Ex: 14 Rue des Lilas, Bât A, 3e étage gauche" type="text" />
+<label for="voisin-adresse" class="block font-label-md text-label-md text-on-surface mb-1">Adresse précise &amp; Appartement</label>
+<input id="voisin-adresse" name="voisin-adresse" class="w-full bg-surface-container px-3 py-2 rounded-lg text-on-surface placeholder:text-outline focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Ex: 14 Rue des Lilas, Bât A, 3e étage gauche" type="text" />
 </div>
 <div>
-<label class="block font-label-md text-label-md text-on-surface mb-1">Dernier contact &amp; Signes observés</label>
-<textarea class="w-full bg-surface-container px-3 py-2 rounded-lg text-on-surface placeholder:text-outline focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Volets clos depuis 36h, téléphone sonne dans le vide, pas de réponse aux frappes répétées..." rows="3"></textarea>
+<label for="voisin-signes" class="block font-label-md text-label-md text-on-surface mb-1">Dernier contact &amp; Signes observés</label>
+<textarea id="voisin-signes" name="voisin-signes" class="w-full bg-surface-container px-3 py-2 rounded-lg text-on-surface placeholder:text-outline focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Volets clos depuis 36h, téléphone sonne dans le vide, pas de réponse aux frappes répétées..." rows="3"></textarea>
 </div>
 </div>
 <div class="flex items-center justify-end gap-2 pt-2">
 <button class="px-4 py-2 rounded-lg bg-surface-container text-on-surface font-label-md text-label-md hover:bg-surface-variant transition-colors" id="cancelUrgenceModal" type="button">
 Annuler
 </button>
-<button class="px-5 py-2 rounded-lg bg-error-container text-on-error-container font-label-md text-label-md hover:bg-error hover:text-on-error transition-all shadow-[0_0_16px_rgba(255,180,171,0.2)]" id="submitUrgenceAlert" type="button">
+<button class="px-5 py-2 rounded-lg bg-error-container text-on-error-container font-label-md text-label-md hover:bg-red-500 hover:text-white transition-all shadow-[0_0_16px_rgba(255,180,171,0.2)]" id="submitUrgenceAlert" type="button">
 Transmettre aux Secours
 </button>
 </div>
@@ -650,14 +650,14 @@ Transmettre aux Secours
 </div>
 
 <!-- Modal : Proposer son aide ou du matériel -->
-<div class="fixed inset-0 z-50 flex items-center justify-center bg-surface-dim/80 backdrop-blur-md hidden p-4" id="aideModal">
+<div class="fixed inset-0 z-50 flex items-center justify-center bg-surface-dim/80 backdrop-blur-md hidden p-4" id="aideModal" role="dialog" aria-modal="true" aria-labelledby="aideModalTitle">
 <div class="bg-surface-container-high rounded-xl max-w-lg w-full p-space-lg flex flex-col gap-space-md shadow-2xl relative">
 <div class="flex items-center justify-between">
 <div class="flex items-center gap-2 text-primary">
 <span class="material-symbols-outlined text-[28px]">handshake</span>
-<h3 class="font-headline-sm text-headline-sm text-on-surface">Proposer Entraide &amp; Équipement</h3>
+<h3 class="font-headline-sm text-headline-sm text-on-surface" id="aideModalTitle" tabindex="-1">Proposer Entraide &amp; Équipement</h3>
 </div>
-<button class="p-1 rounded-full text-on-surface-variant hover:text-on-surface" id="closeAideModal" type="button">
+<button class="p-1 rounded-full text-on-surface-variant hover:text-on-surface" id="closeAideModal" type="button" aria-label="Fermer la fenêtre d'entraide">
 <span class="material-symbols-outlined text-[20px]">close</span>
 </button>
 </div>
@@ -666,8 +666,8 @@ Mettez à disposition une ressource critique pour sécuriser les personnes vuln�
 </p>
 <div class="space-y-3">
 <div>
-<label class="block font-label-md text-label-md text-on-surface mb-1">Type de soutien offert</label>
-<select class="w-full bg-surface-container px-3 py-2 rounded-lg text-on-surface focus:outline-none focus:ring-1 focus:ring-primary">
+<label for="aide-type" class="block font-label-md text-label-md text-on-surface mb-1">Type de soutien offert</label>
+<select id="aide-type" name="aide-type" class="w-full bg-surface-container px-3 py-2 rounded-lg text-on-surface focus:outline-none focus:ring-1 focus:ring-primary">
 <option>Pièce climatisée / salon frais (accueil 1-2h)</option>
 <option>Partage de groupe électrogène / batterie</option>
 <option>Glacière ou packs de glace congelés</option>
@@ -676,19 +676,19 @@ Mettez à disposition une ressource critique pour sécuriser les personnes vuln�
 </select>
 </div>
 <div>
-<label class="block font-label-md text-label-md text-on-surface mb-1">Vos coordonnées &amp; Localisation</label>
-<input class="w-full bg-surface-container px-3 py-2 rounded-lg text-on-surface placeholder:text-outline focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Ex: Thomas • Résidence Flore, 2ème • 06 12 34 56 78" type="text" />
+<label for="aide-coordonnees" class="block font-label-md text-label-md text-on-surface mb-1">Vos coordonnées &amp; Localisation</label>
+<input id="aide-coordonnees" name="aide-coordonnees" class="w-full bg-surface-container px-3 py-2 rounded-lg text-on-surface placeholder:text-outline focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Ex: Thomas • Résidence Flore, 2ème • 06 12 34 56 78" type="text" />
 </div>
 <div>
-<label class="block font-label-md text-label-md text-on-surface mb-1">Créneaux de disponibilité</label>
-<input class="w-full bg-surface-container px-3 py-2 rounded-lg text-on-surface placeholder:text-outline focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Ex: Tout l'après-midi, joignable par SMS" type="text" />
+<label for="aide-creneaux" class="block font-label-md text-label-md text-on-surface mb-1">Créneaux de disponibilité</label>
+<input id="aide-creneaux" name="aide-creneaux" class="w-full bg-surface-container px-3 py-2 rounded-lg text-on-surface placeholder:text-outline focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Ex: Tout l'après-midi, joignable par SMS" type="text" />
 </div>
 </div>
 <div class="flex items-center justify-end gap-2 pt-2">
 <button class="px-4 py-2 rounded-lg bg-surface-container text-on-surface font-label-md text-label-md hover:bg-surface-variant transition-colors" id="cancelAideModal" type="button">
 Fermer
 </button>
-<button class="px-5 py-2 rounded-lg bg-primary-container text-on-primary-container font-label-md text-label-md hover:shadow-[0_0_16px_rgba(0,229,255,0.3)] transition-all" id="submitAideAlert" type="button">
+<button class="px-5 py-2 rounded-lg bg-primary-container text-on-primary-container font-label-md text-label-md hover:shadow-[0_0_16px_rgba(27,119,186,0.3)] transition-all" id="submitAideAlert" type="button">
 Publier sur le réseau local
 </button>
 </div>
@@ -696,26 +696,40 @@ Publier sur le réseau local
 </div>
 
 <script>
+  // Onglets accessibles (motif APG Tabs) : aria-selected + navigation clavier.
   const tabButtons = document.querySelectorAll('.tab-button');
   const tabContents = document.querySelectorAll('.tab-content');
-  tabButtons.forEach(btn => {
-    btn.addEventListener('click', () => {
-      const target = btn.getAttribute('data-tab');
-      tabButtons.forEach(b => {
-        b.classList.remove('bg-primary-container', 'text-on-primary-container', 'shadow-[0_0_16px_rgba(0,229,255,0.25)]');
-        b.classList.add('bg-surface-container', 'text-on-surface-variant');
-      });
-      btn.classList.add('bg-primary-container', 'text-on-primary-container', 'shadow-[0_0_16px_rgba(0,229,255,0.25)]');
-      btn.classList.remove('bg-surface-container', 'text-on-surface-variant');
-      tabContents.forEach(content => {
-        if (content.id === 'tab-' + target) {
-          content.classList.remove('hidden');
-          content.classList.add('flex');
-        } else {
-          content.classList.add('hidden');
-          content.classList.remove('flex');
-        }
-      });
+  const selectTab = (btn, focus) => {
+    const target = btn.getAttribute('data-tab');
+    tabButtons.forEach(b => {
+      const selected = b === btn;
+      b.classList.remove('bg-primary-container', 'text-on-primary-container', 'shadow-[0_0_16px_rgba(27,119,186,0.25)]');
+      b.classList.add('bg-surface-container', 'text-on-surface-variant');
+      b.setAttribute('aria-selected', selected ? 'true' : 'false');
+      b.tabIndex = selected ? 0 : -1;
+    });
+    btn.classList.add('bg-primary-container', 'text-on-primary-container', 'shadow-[0_0_16px_rgba(27,119,186,0.25)]');
+    btn.classList.remove('bg-surface-container', 'text-on-surface-variant');
+    tabContents.forEach(content => {
+      if (content.id === 'tab-' + target) {
+        content.classList.remove('hidden');
+        content.classList.add('flex');
+      } else {
+        content.classList.add('hidden');
+        content.classList.remove('flex');
+      }
+    });
+    if (focus) btn.focus();
+  };
+  tabButtons.forEach((btn, i) => {
+    btn.addEventListener('click', () => selectTab(btn, false));
+    btn.addEventListener('keydown', (e) => {
+      let next = null;
+      if (e.key === 'ArrowRight') next = tabButtons[(i + 1) % tabButtons.length];
+      else if (e.key === 'ArrowLeft') next = tabButtons[(i - 1 + tabButtons.length) % tabButtons.length];
+      else if (e.key === 'Home') next = tabButtons[0];
+      else if (e.key === 'End') next = tabButtons[tabButtons.length - 1];
+      if (next) { e.preventDefault(); selectTab(next, true); }
     });
   });
   const urgenceModal = document.getElementById('urgenceModal');
@@ -723,8 +737,8 @@ Publier sur le réseau local
   const closeUrgenceModal = document.getElementById('closeUrgenceModal');
   const cancelUrgenceModal = document.getElementById('cancelUrgenceModal');
   const submitUrgenceAlert = document.getElementById('submitUrgenceAlert');
-  const openUrgence = () => urgenceModal.classList.remove('hidden');
-  const closeUrgence = () => urgenceModal.classList.add('hidden');
+  const openUrgence = () => { urgenceModal.classList.remove('hidden'); document.getElementById('urgenceModalTitle').focus(); };
+  const closeUrgence = () => { urgenceModal.classList.add('hidden'); if (toggleUrgenceBtn) toggleUrgenceBtn.focus(); };
   if (toggleUrgenceBtn) toggleUrgenceBtn.addEventListener('click', openUrgence);
   if (closeUrgenceModal) closeUrgenceModal.addEventListener('click', closeUrgence);
   if (cancelUrgenceModal) cancelUrgenceModal.addEventListener('click', closeUrgence);
@@ -746,11 +760,18 @@ Publier sur le réseau local
   const closeAideModal = document.getElementById('closeAideModal');
   const cancelAideModal = document.getElementById('cancelAideModal');
   const submitAideAlert = document.getElementById('submitAideAlert');
-  const openAide = () => aideModal.classList.remove('hidden');
+  const openAide = () => { aideModal.classList.remove('hidden'); document.getElementById('aideModalTitle').focus(); };
+  const closeAide = () => { aideModal.classList.add('hidden'); if (openAideModal) openAideModal.focus(); };
   if (openAideModal) openAideModal.addEventListener('click', openAide);
   document.querySelectorAll('.js-open-aide').forEach(b => b.addEventListener('click', openAide));
-  if (closeAideModal) closeAideModal.addEventListener('click', () => aideModal.classList.add('hidden'));
-  if (cancelAideModal) cancelAideModal.addEventListener('click', () => aideModal.classList.add('hidden'));
+  if (closeAideModal) closeAideModal.addEventListener('click', closeAide);
+  if (cancelAideModal) cancelAideModal.addEventListener('click', closeAide);
+  // Échap ferme la modale ouverte et rend le focus (SC 2.1.2).
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    if (urgenceModal && !urgenceModal.classList.contains('hidden')) closeUrgence();
+    else if (aideModal && !aideModal.classList.contains('hidden')) closeAide();
+  });
   if (submitAideAlert) {
     submitAideAlert.addEventListener('click', () => {
       submitAideAlert.innerText = 'Proposition En Ligne ✓';

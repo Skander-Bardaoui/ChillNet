@@ -1,4 +1,5 @@
 <x-public-layout :title="$quartier->nom">
+<h1 class="sr-only">Quartier {{ $quartier->nom }} — points de fraîcheur et carte</h1>
 <a href="{{ route('home') }}" class="inline-flex items-center gap-1 font-body-sm text-body-sm text-primary hover:underline"><span class="material-symbols-outlined text-[16px]">arrow_back</span>Retour à l'accueil</a>
 
 {{-- Screen Stitch — carte des fraîcheurs / refuges, adaptée au quartier courant --}}
@@ -25,16 +26,16 @@
 </div>
 <div class="hidden lg:flex items-center gap-space-xs text-on-surface-variant pl-space-md">
 <span class="material-symbols-outlined text-[18px] text-tertiary-container">bolt</span>
-<span class="font-body-sm text-body-sm">Charge Réseau Secteur : <strong class="text-tertiary">84%</strong> (Stable)</span>
+<span class="font-body-sm text-body-sm">Charge Réseau Secteur : <strong class="text-tertiary-fixed">84%</strong> (Stable)</span>
 </div>
 </div>
 <div class="flex items-center gap-space-sm ml-auto">
 <span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant">Mode Carte:</span>
-<button class="px-space-sm py-1 rounded bg-surface-container-high text-primary font-label-sm text-label-sm flex items-center gap-1 shadow-sm transition-colors hover:bg-surface-variant" id="btnThermalToggle" type="button">
+<button class="px-space-sm py-1 rounded bg-surface-container-high text-primary font-label-sm text-label-sm flex items-center gap-1 shadow-sm transition-colors hover:bg-surface-variant" id="btnThermalToggle" type="button" aria-pressed="true">
 <span class="material-symbols-outlined text-[16px]">layers</span>
 <span>Thermographie active</span>
 </button>
-<button class="p-1.5 rounded bg-surface-container-high text-on-surface-variant hover:text-primary transition-colors" id="btnGpsLocate" title="Me géolocaliser" type="button">
+<button class="p-1.5 rounded bg-surface-container-high text-on-surface-variant hover:text-primary transition-colors" id="btnGpsLocate" title="Me géolocaliser" aria-label="Me géolocaliser" type="button">
 <span class="material-symbols-outlined text-[18px]">my_location</span>
 </button>
 </div>
@@ -61,7 +62,7 @@
 <span>Fontaines &amp; Brumiseurs</span>
 </button>
 <button class="filter-btn shrink-0 px-space-md py-1.5 rounded-full font-label-md text-label-md transition-all flex items-center gap-1.5 bg-surface-container text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high" data-category="pmr" type="button">
-<span class="material-symbols-outlined text-[16px] text-tertiary">accessible</span>
+<span class="material-symbols-outlined text-[16px] text-tertiary-fixed">accessible</span>
 <span>Points de fraîcheur ({{ $nbFraicheur }})</span>
 </button>
 </div>
@@ -84,13 +85,13 @@
 <span class="font-label-sm text-label-sm text-on-surface uppercase tracking-wide">{{ $quartier->nom }} — {{ $quartier->ville }} {{ $quartier->code_postal }} · Rayon 1.2 km</span>
 </div>
 <div class="flex items-center gap-1 bg-surface-container-lowest/90 backdrop-blur-md p-1 rounded-lg shadow-sm">
-<button class="p-1 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors" title="Zoom avant" type="button">
+<button class="p-1 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors" title="Zoom avant" aria-label="Zoom avant" type="button">
 <span class="material-symbols-outlined text-[18px]">add</span>
 </button>
-<button class="p-1 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors" title="Zoom arrière" type="button">
+<button class="p-1 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors" title="Zoom arrière" aria-label="Zoom arrière" type="button">
 <span class="material-symbols-outlined text-[18px]">remove</span>
 </button>
-<button class="p-1 rounded text-primary hover:bg-surface-container-high transition-colors" title="Boussole Nord" type="button">
+<button class="p-1 rounded text-primary hover:bg-surface-container-high transition-colors" title="Boussole Nord" aria-label="Recentrer la carte vers le nord" type="button">
 <span class="material-symbols-outlined text-[18px]">explore</span>
 </button>
 </div>
@@ -100,7 +101,7 @@
 <span class="relative flex h-6 w-6">
 <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-container opacity-70"></span>
 <span class="relative inline-flex rounded-full h-6 w-6 bg-primary-container/40 items-center justify-center">
-<span class="h-3 w-3 rounded-full bg-primary-container shadow-[0_0_12px_#00e5ff]"></span>
+<span class="h-3 w-3 rounded-full bg-primary-container shadow-[0_0_12px_#1B77BA]"></span>
 </span>
 </span>
 <span class="mt-1 bg-surface-container-lowest/90 backdrop-blur-sm text-primary font-label-sm text-label-sm px-1.5 py-0.5 rounded shadow">Vous êtes ici</span>
@@ -115,7 +116,7 @@
 </div>
 </button>
 <button class="pin-marker absolute top-[68%] left-[28%] -translate-x-1/2 -translate-y-1/2 pointer-events-auto group focus:outline-none transition-transform hover:scale-110 active:scale-95" data-spot="parc" type="button">
-<div class="relative flex items-center justify-center p-2 rounded-full bg-primary text-on-primary shadow-[0_0_20px_rgba(0,229,255,0.4)]">
+<div class="relative flex items-center justify-center p-2 rounded-full bg-primary text-on-primary shadow-[0_0_20px_rgba(27,119,186,0.4)]">
 <span class="material-symbols-outlined text-[20px]">park</span>
 </div>
 <div class="absolute left-1/2 -translate-x-1/2 mt-1.5 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap bg-surface-container-lowest/95 backdrop-blur-md px-2 py-0.5 rounded shadow text-primary font-label-sm text-label-sm">
@@ -123,7 +124,7 @@ Parc du quartier (520m)
 </div>
 </button>
 <button class="pin-marker absolute top-[28%] left-[24%] -translate-x-1/2 -translate-y-1/2 pointer-events-auto group focus:outline-none transition-transform hover:scale-110 active:scale-95" data-spot="fontaine" type="button">
-<div class="flex items-center justify-center p-1.5 rounded-full bg-surface-container-highest text-primary-container shadow-[0_0_14px_rgba(0,229,255,0.3)]">
+<div class="flex items-center justify-center p-1.5 rounded-full bg-surface-container-highest text-primary-container shadow-[0_0_14px_rgba(27,119,186,0.3)]">
 <span class="material-symbols-outlined text-[16px]">water_drop</span>
 </div>
 <div class="absolute left-1/2 -translate-x-1/2 mt-1 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap bg-surface-container-lowest/90 px-1.5 py-0.5 rounded text-on-surface-variant font-label-sm text-label-sm">
@@ -134,7 +135,7 @@ Fontaine active (180m)
 <div class="relative flex items-center justify-center p-2 rounded-full bg-tertiary-container text-on-tertiary-container shadow-[0_0_20px_rgba(255,199,105,0.4)]">
 <span class="material-symbols-outlined text-[18px]">emergency</span>
 </div>
-<div class="absolute left-1/2 -translate-x-1/2 mt-1.5 opacity-90 group-hover:opacity-100 transition-opacity whitespace-nowrap bg-surface-container-lowest/95 backdrop-blur-md px-2 py-0.5 rounded shadow text-tertiary font-label-sm text-label-sm">
+<div class="absolute left-1/2 -translate-x-1/2 mt-1.5 opacity-90 group-hover:opacity-100 transition-opacity whitespace-nowrap bg-surface-container-lowest/95 backdrop-blur-md px-2 py-0.5 rounded shadow text-tertiary-fixed font-label-sm text-label-sm">
 Espace Répit (salle climatisée)
 </div>
 </button>
@@ -184,7 +185,7 @@ Lancer le guidage
 <div class="p-space-sm rounded-lg bg-surface-container-low shadow-sm">
 <span class="font-label-sm text-label-sm uppercase text-on-surface-variant block">Salles climatisées</span>
 <div class="flex items-baseline gap-1 mt-0.5">
-<span class="font-headline-sm text-headline-sm text-tertiary">{{ $nbClim }}</span>
+<span class="font-headline-sm text-headline-sm text-tertiary-fixed">{{ $nbClim }}</span>
 <span class="font-label-sm text-label-sm text-tertiary-fixed-dim">équipées</span>
 </div>
 </div>
@@ -261,7 +262,7 @@ Fontaine filtrée fraîche
 Wi-Fi d'urgence ouvert
 </span>
 <span class="px-2 py-1 rounded bg-surface-container-high text-on-surface font-label-sm text-label-sm flex items-center gap-1">
-<span class="material-symbols-outlined text-[14px] text-tertiary">accessible</span>
+<span class="material-symbols-outlined text-[14px] text-tertiary-fixed">accessible</span>
 Accès PMR total
 </span>
 </div>
@@ -321,7 +322,7 @@ Résidences du quartier — {{ $nbResidences }} vérifiée(s)
 <p class="font-body-sm text-body-sm text-on-surface-variant">Demander le passage d'une maraude de rafraîchissement</p>
 </div>
 </div>
-<a href="tel:15" class="shrink-0 px-space-md py-2 rounded-lg bg-surface-container-high text-primary hover:bg-surface-variant font-label-md text-label-md font-medium transition-colors">Signaler</a>
+<a href="tel:190" class="shrink-0 px-space-md py-2 rounded-lg bg-surface-container-high text-primary hover:bg-surface-variant font-label-md text-label-md font-medium transition-colors">Signaler</a>
 </div>
 </div>
 </div>
@@ -357,6 +358,7 @@ Résidences du quartier — {{ $nbResidences }} vérifiée(s)
     let active = true;
     thermalToggle.addEventListener('click', () => {
       active = !active;
+      thermalToggle.setAttribute('aria-pressed', active ? 'true' : 'false');
       if (active) {
         thermalToggle.classList.add('text-primary', 'bg-surface-container-high');
         thermalToggle.classList.remove('text-on-surface-variant');

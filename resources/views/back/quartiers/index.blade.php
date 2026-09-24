@@ -6,11 +6,11 @@
 <div class="rounded-xl bg-surface-container-low shadow-md overflow-hidden">
 <table class="min-w-full">
 <thead><tr class="border-b border-outline-variant/20">
-<th class="px-6 py-3 text-left font-label-sm text-label-sm uppercase text-on-surface-variant">Nom</th>
-<th class="px-6 py-3 text-left font-label-sm text-label-sm uppercase text-on-surface-variant">Ville</th>
-<th class="px-6 py-3 text-left font-label-sm text-label-sm uppercase text-on-surface-variant">Code postal</th>
-<th class="px-6 py-3 text-left font-label-sm text-label-sm uppercase text-on-surface-variant">Résidences</th>
-<th class="px-6 py-3"></th>
+<th scope="col" class="px-6 py-3 text-left font-label-sm text-label-sm uppercase text-on-surface-variant">Nom</th>
+<th scope="col" class="px-6 py-3 text-left font-label-sm text-label-sm uppercase text-on-surface-variant">Ville</th>
+<th scope="col" class="px-6 py-3 text-left font-label-sm text-label-sm uppercase text-on-surface-variant">Code postal</th>
+<th scope="col" class="px-6 py-3 text-left font-label-sm text-label-sm uppercase text-on-surface-variant">Résidences</th>
+<th scope="col" class="px-6 py-3"><span class="sr-only">Actions</span></th>
 </tr></thead>
 <tbody>
 @forelse ($quartiers as $quartier)
