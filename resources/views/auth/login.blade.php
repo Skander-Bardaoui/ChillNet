@@ -2,7 +2,7 @@
     <x-auth-session-status class="mb-1" :status="session('status')" />
 
     {{-- Bannière alerte canicule — version compacte de la maquette --}}
-    <aside aria-label="Alerte Canicule et Urgences" class="relative overflow-hidden rounded-xl bg-error-container text-on-error-container px-4 py-3 shadow-lg shadow-error-container/20">
+    <aside aria-label="Alerte Canicule et Urgences" class="relative overflow-hidden rounded-xl bg-error-container text-on-error-container border border-error/20 px-4 py-3 shadow-lg shadow-error-container/20">
         <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
             <span class="flex h-2.5 w-2.5 relative shrink-0">
                 <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-error opacity-75"></span>
@@ -10,17 +10,16 @@
             </span>
             <p class="font-label-md text-label-md font-bold uppercase tracking-wider">Alerte Canicule Niveau 3 <span class="normal-case font-normal tracking-normal opacity-90">— entraide et vigie thermique activées</span></p>
             <div class="flex flex-wrap items-center gap-2 text-sm">
-                <a class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-container-lowest/40 hover:bg-surface-container-lowest/70 transition-colors font-semibold" href="tel:15">
+                <a class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-on-error-container/10 hover:bg-on-error-container/20 border border-on-error-container/15 transition-colors font-semibold" href="tel:190">
                     <span class="material-symbols-outlined text-[16px] text-error">emergency</span>
-                    <span>SAMU : 15</span>
+                    <span>SAMU : 190</span>
                 </a>
-                <a class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-container-lowest/40 hover:bg-surface-container-lowest/70 transition-colors" href="tel:0800066666">
-                    <span class="material-symbols-outlined text-[16px] text-tertiary-container">support_agent</span>
+                <a class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-on-error-container/10 hover:bg-on-error-container/20 border border-on-error-container/15 transition-colors" href="tel:0800066666">
+                    <span class="material-symbols-outlined text-[16px] text-error">support_agent</span>
                     <span>0800 06 66 66</span>
                 </a>
             </div>
         </div>
-        <span class="material-symbols-outlined absolute -right-3 -bottom-4 opacity-10 text-[90px] pointer-events-none">warning</span>
     </aside>
 
     {{-- Carte formulaire glassmorphism — maquette, adaptée au POST Laravel --}}

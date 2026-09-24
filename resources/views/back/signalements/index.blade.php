@@ -5,12 +5,12 @@
 <div class="rounded-xl bg-surface-container-low shadow-md overflow-hidden">
 <table class="min-w-full">
 <thead><tr class="border-b border-outline-variant/20">
-<th class="px-6 py-3 text-left font-label-sm text-label-sm uppercase text-on-surface-variant">Catégorie</th>
-<th class="px-6 py-3 text-left font-label-sm text-label-sm uppercase text-on-surface-variant">Urgence</th>
-<th class="px-6 py-3 text-left font-label-sm text-label-sm uppercase text-on-surface-variant">Résidence</th>
-<th class="px-6 py-3 text-left font-label-sm text-label-sm uppercase text-on-surface-variant">Description</th>
-<th class="px-6 py-3 text-left font-label-sm text-label-sm uppercase text-on-surface-variant">Statut</th>
-<th class="px-6 py-3"></th>
+<th scope="col" class="px-6 py-3 text-left font-label-sm text-label-sm uppercase text-on-surface-variant">Catégorie</th>
+<th scope="col" class="px-6 py-3 text-left font-label-sm text-label-sm uppercase text-on-surface-variant">Urgence</th>
+<th scope="col" class="px-6 py-3 text-left font-label-sm text-label-sm uppercase text-on-surface-variant">Résidence</th>
+<th scope="col" class="px-6 py-3 text-left font-label-sm text-label-sm uppercase text-on-surface-variant">Description</th>
+<th scope="col" class="px-6 py-3 text-left font-label-sm text-label-sm uppercase text-on-surface-variant">Statut</th>
+<th scope="col" class="px-6 py-3"><span class="sr-only">Actions</span></th>
 </tr></thead>
 <tbody>
 <tr class="border-b border-outline-variant/10 hover:bg-surface-container/60">
@@ -21,7 +21,7 @@
 <td class="px-6 py-4">
 <form method="POST" action="#">
 @csrf
-<select name="statut" class="rounded-lg bg-surface-container border border-outline-variant/40 px-3 py-2 text-on-surface focus:border-primary-container focus:outline-none">
+<select name="statut" aria-label="Statut du signalement" class="rounded-lg bg-surface-container border border-outline-variant/40 px-3 py-2 text-on-surface focus:border-primary-container focus:outline-none">
 <option selected>Nouveau</option>
 <option>En traitement</option>
 <option>Résolu</option>
@@ -40,7 +40,7 @@
 <td class="px-6 py-4">
 <form method="POST" action="#">
 @csrf
-<select name="statut" class="rounded-lg bg-surface-container border border-outline-variant/40 px-3 py-2 text-on-surface focus:border-primary-container focus:outline-none">
+<select name="statut" aria-label="Statut du signalement" class="rounded-lg bg-surface-container border border-outline-variant/40 px-3 py-2 text-on-surface focus:border-primary-container focus:outline-none">
 <option>Nouveau</option>
 <option selected>En traitement</option>
 <option>Résolu</option>
@@ -59,7 +59,7 @@
 <td class="px-6 py-4">
 <form method="POST" action="#">
 @csrf
-<select name="statut" class="rounded-lg bg-surface-container border border-outline-variant/40 px-3 py-2 text-on-surface focus:border-primary-container focus:outline-none">
+<select name="statut" aria-label="Statut du signalement" class="rounded-lg bg-surface-container border border-outline-variant/40 px-3 py-2 text-on-surface focus:border-primary-container focus:outline-none">
 <option>Nouveau</option>
 <option>En traitement</option>
 <option selected>Résolu</option>

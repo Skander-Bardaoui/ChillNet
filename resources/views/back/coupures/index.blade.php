@@ -6,11 +6,11 @@
 <div class="rounded-xl bg-surface-container-low shadow-md overflow-hidden">
 <table class="min-w-full">
 <thead><tr class="border-b border-outline-variant/20">
-<th class="px-6 py-3 text-left font-label-sm text-label-sm uppercase text-on-surface-variant">Zone</th>
-<th class="px-6 py-3 text-left font-label-sm text-label-sm uppercase text-on-surface-variant">Type</th>
-<th class="px-6 py-3 text-left font-label-sm text-label-sm uppercase text-on-surface-variant">Statut</th>
-<th class="px-6 py-3 text-left font-label-sm text-label-sm uppercase text-on-surface-variant">Horaires</th>
-<th class="px-6 py-3"></th>
+<th scope="col" class="px-6 py-3 text-left font-label-sm text-label-sm uppercase text-on-surface-variant">Zone</th>
+<th scope="col" class="px-6 py-3 text-left font-label-sm text-label-sm uppercase text-on-surface-variant">Type</th>
+<th scope="col" class="px-6 py-3 text-left font-label-sm text-label-sm uppercase text-on-surface-variant">Statut</th>
+<th scope="col" class="px-6 py-3 text-left font-label-sm text-label-sm uppercase text-on-surface-variant">Horaires</th>
+<th scope="col" class="px-6 py-3"><span class="sr-only">Actions</span></th>
 </tr></thead>
 <tbody>
 <tr class="border-b border-outline-variant/10 hover:bg-surface-container/60">

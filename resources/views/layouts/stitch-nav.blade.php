@@ -59,16 +59,14 @@
 @endif
 <nav class="hidden lg:flex items-center gap-space-xs" aria-label="Navigation principale">
 @foreach ($navLinks as $link)
-<a href="{{ $link['href'] }}" class="px-space-sm py-1.5 rounded-lg font-label-md text-label-md transition-colors {{ $link['active'] ? 'bg-primary-container text-on-primary-container font-semibold shadow-[0_0_16px_rgba(0,229,255,0.25)]' : 'text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface' }}">{{ $link['label'] }}</a>
+<a href="{{ $link['href'] }}" @if($link['active']) aria-current="page" @endif class="px-space-sm py-1.5 rounded-lg font-label-md text-label-md transition-colors {{ $link['active'] ? 'bg-primary-container text-on-primary-container font-semibold shadow-[0_2px_10px_rgba(27,119,186,0.35)]' : 'text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface' }}">{{ $link['label'] }}</a>
 @endforeach
-@if (request()->routeIs('home', 'accueil'))
-<button type="button" x-data="{ light: document.documentElement.classList.contains('light') }"
-    @click="light = !light; document.documentElement.classList.toggle('light', light); document.documentElement.classList.toggle('dark', !light); try { localStorage.setItem('chillnet-theme', light ? 'light' : 'dark'); } catch (e) {}"
+{{-- Toggle clair/sombre disponible sur toutes les pages --}}
+<button type="button" onclick="chillnetToggleTheme(this)"
     class="p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors"
-    :aria-label="light ? 'Activer le thème sombre' : 'Activer le thème clair'" aria-label="Basculer le thème">
-    <span class="material-symbols-outlined text-[20px]" x-text="light ? 'dark_mode' : 'light_mode'">light_mode</span>
+    aria-label="Basculer le thème">
+    <span class="material-symbols-outlined text-[20px]" data-theme-icon>dark_mode</span>
 </button>
-@endif
 @auth
 <form method="POST" action="{{ route('logout') }}" class="inline">@csrf<button type="submit" class="px-space-sm py-1.5 rounded-lg font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors">Déconnexion</button></form>
 @else
@@ -78,20 +76,17 @@
 </nav>
 {{-- Navigation mobile : le menu contient les liens éventuels + les actions. --}}
 <div class="flex lg:hidden items-center gap-1" x-data="{ open: false }">
-@if (request()->routeIs('home', 'accueil'))
-<button type="button" x-data="{ light: document.documentElement.classList.contains('light') }"
-    @click="light = !light; document.documentElement.classList.toggle('light', light); document.documentElement.classList.toggle('dark', !light); try { localStorage.setItem('chillnet-theme', light ? 'light' : 'dark'); } catch (e) {}"
+<button type="button" onclick="chillnetToggleTheme(this)"
     class="p-2 rounded-full text-on-surface-variant hover:bg-surface-container-high"
-    :aria-label="light ? 'Activer le thème sombre' : 'Activer le thème clair'" aria-label="Basculer le thème">
-    <span class="material-symbols-outlined text-[20px]" x-text="light ? 'dark_mode' : 'light_mode'">light_mode</span>
+    aria-label="Basculer le thème">
+    <span class="material-symbols-outlined text-[20px]" data-theme-icon>dark_mode</span>
 </button>
-@endif
 <button type="button" @click="open = !open" class="p-2 rounded-full text-on-surface-variant hover:bg-surface-container-high" :aria-expanded="open ? 'true' : 'false'" aria-label="Ouvrir le menu">
 <span class="material-symbols-outlined" x-text="open ? 'close' : 'menu'">menu</span>
 </button>
 <div x-show="open" x-cloak @click.outside="open = false" class="absolute left-margin right-margin top-16 rounded-xl border border-outline-variant/20 bg-nav-surface/95 p-space-sm shadow-xl backdrop-blur-xl flex flex-col gap-1">
 @foreach ($navLinks as $link)
-<a href="{{ $link['href'] }}" @click="open = false" class="px-3 py-2 rounded-lg font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface">{{ $link['label'] }}</a>
+<a href="{{ $link['href'] }}" @click="open = false" @if($link['active']) aria-current="page" @endif class="px-3 py-2 rounded-lg font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface">{{ $link['label'] }}</a>
 @endforeach
 @if (! $sansLiens || auth()->check())
 <div class="h-px bg-outline-variant/20 my-1"></div>
