@@ -18,7 +18,7 @@ class HomeController extends Controller
             ->get();
 
         // Landing page = welcome.blade.php (simple, visuelle, peu de texte).
-        return view('welcome', compact('quartiers', 'pointsFraicheur'));
+        return view('home', compact('quartiers', 'pointsFraicheur'));
     }
 
     public function quartier(int $id)
