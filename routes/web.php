@@ -8,6 +8,11 @@ use App\Http\Controllers\Front\SignalementController as FrontSignalementControll
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
+/*
+|--------------------------------------------------------------------------
+| Front office — public + habitant
+|--------------------------------------------------------------------------
+*/
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/accueil', [HomeController::class, 'index'])->name('accueil');
 Route::get('/quartiers/{id}', [HomeController::class, 'quartier'])->name('quartiers.show');

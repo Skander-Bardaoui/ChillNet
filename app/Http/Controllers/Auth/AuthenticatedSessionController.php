@@ -28,7 +28,7 @@ class AuthenticatedSessionController extends Controller
     {
         $user = $request->authenticate();
 
-        Auth::guard('web')->login($user, $request->boolean('remember'));
+        Auth::guard('web')->setUser($user);
         $request->session()->regenerate();
 
         $cookies = $this->issueAuthCookies($user, $request->boolean('remember'));

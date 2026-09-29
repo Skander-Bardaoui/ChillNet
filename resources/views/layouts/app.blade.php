@@ -11,8 +11,8 @@
 <body class="bg-background font-body-md text-body-md text-on-surface antialiased min-h-screen">
 <a href="#contenu" class="skip-link">Aller au contenu</a>
 @include('layouts.stitch-nav')
-<main id="contenu" tabindex="-1" class="w-full pt-16 min-h-screen">
-<div class="w-full max-w-[1440px] mx-auto px-margin md:px-margin-lg py-space-lg">
+<main id="contenu" tabindex="-1" class="w-full pt-16 bg-surface min-h-screen">
+<div class="w-full max-w-[1440px] mx-auto px-margin md:px-margin-lg py-space-md flex flex-col gap-space-lg">
     @if (session('success'))
         <div role="status" class="mb-space-md rounded-xl bg-surface-container-low border border-primary-container/30 text-on-surface px-space-md py-space-sm flex items-center gap-2">
             <span class="material-symbols-outlined text-primary">check_circle</span>
@@ -25,10 +25,10 @@
             <span>{{ session('error') }}</span>
         </div>
     @endif
-    @if (isset($header))
-        <header class="mb-space-lg">{{ $header }}</header>
-    @endif
-    {{ $slot }}
+@isset($header)
+<div class="rounded-xl bg-surface-container/70 backdrop-blur-md p-space-md shadow-md">{{ $header }}</div>
+@endisset
+{{ $slot }}
 </div>
 </main>
 @include('layouts.stitch-footer')
