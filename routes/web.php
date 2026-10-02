@@ -1,11 +1,16 @@
 <?php
 
+use App\Http\Controllers\Back\CoupureController as BackCoupureController;
 use App\Http\Controllers\Back\QuartierController;
 use App\Http\Controllers\Back\ResidenceController;
+use App\Http\Controllers\Front\CoupureController as FrontCoupureController;
 use App\Http\Controllers\Back\SignalementController as BackSignalementController;
 use App\Http\Controllers\Front\HomeController;
 use App\Http\Controllers\Front\SignalementController as FrontSignalementController;
 use App\Http\Controllers\ProfileController;
+use App\Models\Residence;
+use App\Support\AuthCookie;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -29,10 +34,18 @@ Route::get('/conseils', fn () => view('front.conseils'))->name('conseils');
 |   Module 5 (Rihab)   : signalements communautaires.
 |--------------------------------------------------------------------------
 */
-Route::get('/coupures', fn () => view('front.coupures'))->name('coupures.index');
+/*
+|--------------------------------------------------------------------------
+| Module 2 (Imen) : coupures de courant — RÉEL (base de données).
+| Front public : carte + liste des coupures actives, filtre par zone.
+| Signalement habitant : formulaire connecté (voir groupe habitant plus bas).
+| Les autres modules restent en vitrine TEMPLATE UNIQUEMENT.
+|--------------------------------------------------------------------------
+*/
+Route::get('/coupures', [FrontCoupureController::class, 'index'])->name('coupures.index');
 Route::get('/points-fraicheur/{id}', fn (string $id) => view('front.point-show'))->name('points.show');
 Route::get('/refuges', function () {
-    $points = App\Models\Residence::pointFraicheur()->with('quartier')->orderBy('nom')->get();
+    $points = Residence::pointFraicheur()->with('quartier')->orderBy('nom')->get();
 
     return view('front.refuges', compact('points'));
 })->name('refuges.index');
@@ -52,6 +65,12 @@ Route::middleware(['auth', 'role:habitant'])->group(function () {
     Route::delete('/signalements/{signalement}', [FrontSignalementController::class, 'destroy'])->name('front.signalements.destroy');
     Route::get('/signalements/{signalement}/pdf', [FrontSignalementController::class, 'downloadPdf'])->name('front.signalements.pdf');
     Route::get('/equipements', fn () => view('front.equipements'))->name('equipements.index');
+
+    // Module 2 : l'habitant signale une coupure en cours.
+    Route::get('/coupures/signaler', [FrontCoupureController::class, 'create'])->name('coupures.create');
+    Route::post('/coupures', [FrontCoupureController::class, 'store'])->name('coupures.store');
+    // Module 2 : « je confirme » — crédibilise un signalement constaté aussi.
+    Route::post('/coupures/{coupure}/confirmer', [FrontCoupureController::class, 'confirm'])->name('coupures.confirm');
 });
 
 /*
@@ -61,13 +80,13 @@ Route::middleware(['auth', 'role:habitant'])->group(function () {
 | avec Inspecteur > Application > Cookies).
 |--------------------------------------------------------------------------
 */
-Route::get('/auth/status', function (Illuminate\Http\Request $request) {
+Route::get('/auth/status', function (Request $request) {
     return response()->json([
         'authenticated' => auth()->check(),
         'user' => auth()->check() ? auth()->user()->only(['id', 'name', 'email']) : null,
         'cookies' => [
-            'access_token' => $request->hasCookie(App\Support\AuthCookie::ACCESS),
-            'refresh_token' => $request->hasCookie(App\Support\AuthCookie::REFRESH),
+            'access_token' => $request->hasCookie(AuthCookie::ACCESS),
+            'refresh_token' => $request->hasCookie(AuthCookie::REFRESH),
         ],
         'hint' => 'Les cookies httpOnly se vérifient dans DevTools > Application > Cookies, pas dans document.cookie ni localStorage.',
     ]);
@@ -104,12 +123,15 @@ Route::prefix('admin')->name('back.')->middleware(['auth', 'role:admin,gestionna
         ->middleware('role:admin');
     Route::resource('residences', ResidenceController::class)->except(['show']);
 
+    // Module 2 : back office coupures (gestionnaire = sa zone, admin = tout).
+    Route::resource('coupures', BackCoupureController::class)->except(['show']);
+
     /*
     |----------------------------------------------------------------------
     | Back office vitrine par module (TEMPLATE UNIQUEMENT).
     |----------------------------------------------------------------------
     */
-    foreach (['alertes', 'coupures', 'conseils'] as $module) {
+    foreach (['alertes', 'conseils'] as $module) {
         Route::get("/{$module}", fn () => view("back.{$module}.index"))->name("{$module}.index");
         Route::get("/{$module}/creer", fn () => view("back.{$module}.create"))->name("{$module}.create");
         Route::get("/{$module}/{id}/modifier", fn (string $id) => view("back.{$module}.edit"))->name("{$module}.edit");

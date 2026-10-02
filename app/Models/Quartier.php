@@ -19,8 +19,26 @@ class Quartier extends Model
         'nom',
         'ville',
         'code_postal',
+        'latitude',
+        'longitude',
         'description',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'latitude' => 'float',
+            'longitude' => 'float',
+        ];
+    }
+
+    /**
+     * Le quartier a-t-il une position pour la carte Leaflet ?
+     */
+    public function hasCoordinates(): bool
+    {
+        return $this->latitude !== null && $this->longitude !== null;
+    }
 
     /**
      * @return HasMany<Residence, $this>
@@ -28,6 +46,16 @@ class Quartier extends Model
     public function residences(): HasMany
     {
         return $this->hasMany(Residence::class, 'quartier_id');
+    }
+
+    /**
+     * Coupures qui touchent ce quartier (la zone = le quartier).
+     *
+     * @return HasMany<Coupure, $this>
+     */
+    public function coupures(): HasMany
+    {
+        return $this->hasMany(Coupure::class, 'quartier_id');
     }
 
     /**

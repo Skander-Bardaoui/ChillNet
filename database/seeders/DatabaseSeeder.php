@@ -14,8 +14,9 @@ class DatabaseSeeder extends Seeder
     use WithoutModelEvents;
 
     /**
-     * Amorce le réseau ChillNet avec deux quartiers, trois résidences et
-     * un compte par rôle. Rejouable sans créer de doublons.
+     * Amorce le réseau ChillNet avec deux quartiers, trois résidences,
+     * trois coupures de démo et un compte par rôle.
+     * Rejouable sans créer de doublons.
      */
     public function run(): void
     {
@@ -24,6 +25,8 @@ class DatabaseSeeder extends Seeder
             [
                 'code_postal' => '1000',
                 'description' => 'Quartier central, forte densité de population.',
+                'latitude' => 36.8008,
+                'longitude' => 10.1800,
             ],
         );
 
@@ -32,6 +35,8 @@ class DatabaseSeeder extends Seeder
             [
                 'code_postal' => '1053',
                 'description' => "Quartier résidentiel et d'affaires.",
+                'latitude' => 36.8325,
+                'longitude' => 10.2800,
             ],
         );
 
@@ -78,5 +83,8 @@ class DatabaseSeeder extends Seeder
 
             User::factory()->create($compte);
         }
+
+        // Module 2 (coupures) : après les quartiers, on amorce 3 coupures démo.
+        $this->call(CoupureSeeder::class);
     }
 }
