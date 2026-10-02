@@ -2,7 +2,9 @@
 
 use App\Http\Controllers\Back\QuartierController;
 use App\Http\Controllers\Back\ResidenceController;
+use App\Http\Controllers\Back\SignalementController as BackSignalementController;
 use App\Http\Controllers\Front\HomeController;
+use App\Http\Controllers\Front\SignalementController as FrontSignalementController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
@@ -43,7 +45,12 @@ Route::get('/refuges', function () {
  */
 Route::middleware(['auth', 'role:habitant'])->group(function () {
     Route::get('/alertes', fn () => view('front.alertes'))->name('alertes.index');
-    Route::get('/signalements', fn () => view('front.signalements'))->name('signalements.index');
+    Route::get('/signalements', [FrontSignalementController::class, 'index'])->name('signalements.index');
+    Route::post('/signalements', [FrontSignalementController::class, 'store'])->name('front.signalements.store');
+    Route::get('/signalements/{signalement}/modifier', [FrontSignalementController::class, 'edit'])->name('front.signalements.edit');
+    Route::patch('/signalements/{signalement}', [FrontSignalementController::class, 'update'])->name('front.signalements.update');
+    Route::delete('/signalements/{signalement}', [FrontSignalementController::class, 'destroy'])->name('front.signalements.destroy');
+    Route::get('/signalements/{signalement}/pdf', [FrontSignalementController::class, 'downloadPdf'])->name('front.signalements.pdf');
     Route::get('/equipements', fn () => view('front.equipements'))->name('equipements.index');
 });
 
@@ -108,7 +115,8 @@ Route::prefix('admin')->name('back.')->middleware(['auth', 'role:admin,gestionna
         Route::get("/{$module}/{id}/modifier", fn (string $id) => view("back.{$module}.edit"))->name("{$module}.edit");
     }
     Route::get('/points-fraicheur', fn () => view('back.points.index'))->name('points.index');
-    Route::get('/signalements', fn () => view('back.signalements.index'))->name('signalements.index');
+    Route::get('/signalements', [BackSignalementController::class, 'index'])->name('signalements.index');
+    Route::patch('/signalements/{signalement}', [BackSignalementController::class, 'update'])->name('signalements.update');
 });
 
 require __DIR__.'/auth.php';
