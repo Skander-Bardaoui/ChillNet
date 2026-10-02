@@ -3,7 +3,6 @@
 namespace App\Support;
 
 use App\Models\User;
-use Illuminate\Support\Facades\Auth;
 use PHPOpenSourceSaver\JWTAuth\Exceptions\JWTException;
 use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
 
@@ -36,9 +35,9 @@ final class JwtTokens
     {
         $refreshTtl = AuthCookie::refreshTtl($remember);
 
-        $accessToken = Auth::guard('web')
-            ->claims(['token_type' => self::TYPE_ACCESS])
-            ->login($user);
+        $accessToken = JWTAuth::claims([
+            'token_type' => self::TYPE_ACCESS,
+        ])->fromUser($user);
 
         JWTAuth::factory()->setTTL($refreshTtl);
         $refreshToken = JWTAuth::claims([

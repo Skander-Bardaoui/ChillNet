@@ -1,76 +1,23 @@
 <x-back-layout :title="'Signalements communautaires'">
-<div class="flex justify-between items-center">
-<p class="font-body-sm text-body-sm text-on-surface-variant">3 signalement(s) à traiter</p>
-</div>
-<div class="rounded-xl bg-surface-container-low shadow-md overflow-hidden">
-<table class="min-w-full">
-<thead><tr class="border-b border-outline-variant/20">
-<th scope="col" class="px-6 py-3 text-left font-label-sm text-label-sm uppercase text-on-surface-variant">Catégorie</th>
-<th scope="col" class="px-6 py-3 text-left font-label-sm text-label-sm uppercase text-on-surface-variant">Urgence</th>
-<th scope="col" class="px-6 py-3 text-left font-label-sm text-label-sm uppercase text-on-surface-variant">Résidence</th>
-<th scope="col" class="px-6 py-3 text-left font-label-sm text-label-sm uppercase text-on-surface-variant">Description</th>
-<th scope="col" class="px-6 py-3 text-left font-label-sm text-label-sm uppercase text-on-surface-variant">Statut</th>
-<th scope="col" class="px-6 py-3"><span class="sr-only">Actions</span></th>
-</tr></thead>
-<tbody>
-<tr class="border-b border-outline-variant/10 hover:bg-surface-container/60">
-<td class="px-6 py-4 text-on-surface">Climatisation en panne</td>
-<td class="px-6 py-4"><span class="px-2 py-0.5 rounded-md bg-red-100 text-red-800 font-label-sm text-label-sm">Haute</span></td>
-<td class="px-6 py-4 text-on-surface-variant">Résidence Les Jasmins</td>
-<td class="px-6 py-4 text-on-surface-variant">Clim de la salle commune hors service.</td>
-<td class="px-6 py-4">
-<form method="POST" action="#">
-@csrf
-<select name="statut" aria-label="Statut du signalement" class="rounded-lg bg-surface-container border border-outline-variant/40 px-3 py-2 text-on-surface focus:border-primary-container focus:outline-none">
-<option selected>Nouveau</option>
-<option>En traitement</option>
-<option>Résolu</option>
-</select>
+@if (session('success'))<div class="rounded-lg bg-green-100 px-4 py-3 text-green-900 mb-4">{{ session('success') }}</div>@endif
+<form method="GET" action="{{ route('back.signalements.index') }}" class="mb-4 grid grid-cols-1 gap-3 rounded-xl bg-surface-container-low p-4 md:grid-cols-4">
+<select name="categorie" aria-label="Filtrer par catégorie" class="rounded-lg border border-outline-variant/40 bg-surface-container px-3 py-2"><option value="">Toutes les catégories</option><option value="fuite" @selected(($filters['categorie'] ?? '') === 'fuite')>Fuite</option><option value="panne_locale" @selected(($filters['categorie'] ?? '') === 'panne_locale')>Panne locale</option><option value="personne_vulnerable" @selected(($filters['categorie'] ?? '') === 'personne_vulnerable')>Personne vulnérable</option><option value="autre" @selected(($filters['categorie'] ?? '') === 'autre')>Autre</option></select>
+<select name="urgence" aria-label="Filtrer par urgence" class="rounded-lg border border-outline-variant/40 bg-surface-container px-3 py-2"><option value="">Toutes les urgences</option><option value="vitale" @selected(($filters['urgence'] ?? '') === 'vitale')>Vitale</option><option value="prioritaire" @selected(($filters['urgence'] ?? '') === 'prioritaire')>Prioritaire</option><option value="normale" @selected(($filters['urgence'] ?? '') === 'normale')>Normale</option></select>
+<select name="statut" aria-label="Filtrer par statut" class="rounded-lg border border-outline-variant/40 bg-surface-container px-3 py-2"><option value="">Tous les statuts</option><option value="nouveau" @selected(($filters['statut'] ?? '') === 'nouveau')>Nouveau</option><option value="en_traitement" @selected(($filters['statut'] ?? '') === 'en_traitement')>En traitement</option><option value="resolu" @selected(($filters['statut'] ?? '') === 'resolu')>Résolu</option></select>
+<button class="rounded-lg bg-primary-container px-3 py-2 text-on-primary-container">Filtrer</button>
 </form>
-</td>
-<td class="px-6 py-4 text-right whitespace-nowrap">
-<button type="button" class="px-4 py-2 rounded-lg bg-primary-container text-on-primary-container font-label-md text-label-md font-semibold hover:opacity-95">Enregistrer</button>
-</td>
+<div class="rounded-xl bg-surface-container-low shadow-md overflow-x-auto"><table class="min-w-full"><thead><tr class="border-b border-outline-variant/20"><th class="px-6 py-3 text-left">Catégorie</th><th class="px-6 py-3 text-left">Urgence</th><th class="px-6 py-3 text-left">Habitant / résidence</th><th class="px-6 py-3 text-left">Description</th><th class="px-6 py-3 text-left">Statut</th><th class="px-6 py-3">Date</th></tr></thead><tbody>
+@forelse ($signalements as $signalement)
+<tr class="border-b border-outline-variant/10">
+<td class="px-6 py-4">{{ $signalement->categorie === 'autre' ? $signalement->categorie_autre : str_replace('_', ' ', ucfirst($signalement->categorie)) }}</td>
+<td class="px-6 py-4"><span class="inline-flex rounded-full px-2 py-1 text-xs font-semibold {{ $signalement->urgence === 'vitale' ? 'bg-red-100 text-red-800' : ($signalement->urgence === 'prioritaire' ? 'bg-orange-100 text-orange-800' : 'bg-green-100 text-green-800') }}">{{ ucfirst($signalement->urgence) }}</span><form method="POST" action="{{ route('back.signalements.update', $signalement) }}" class="mt-2">@csrf @method('PATCH')<input type="hidden" name="statut" value="{{ $signalement->statut }}"><select name="urgence" aria-label="Urgence du signalement" class="rounded-lg border border-outline-variant/40 bg-surface-container px-2 py-1"><option value="vitale" @selected($signalement->urgence === 'vitale')>Vitale</option><option value="prioritaire" @selected($signalement->urgence === 'prioritaire')>Prioritaire</option><option value="normale" @selected($signalement->urgence === 'normale')>Normale</option></select><button class="mt-1 rounded-lg bg-primary-container px-2 py-1 text-xs text-on-primary-container">Modifier</button></form></td>
+<td class="px-6 py-4">{{ $signalement->habitant->name }}<br><span class="text-on-surface-variant">{{ $signalement->residence->nom }}</span></td>
+<td class="px-6 py-4 max-w-sm">{{ $signalement->description }}@if ($signalement->photo_path)<br><a href="{{ asset('storage/'.$signalement->photo_path) }}" target="_blank" class="text-primary font-semibold hover:underline">Voir la photo</a>@endif</td>
+<td class="px-6 py-4"><form method="POST" action="{{ route('back.signalements.update', $signalement) }}">@csrf @method('PATCH')<input type="hidden" name="urgence" value="{{ $signalement->urgence }}"><select name="statut" aria-label="Statut du signalement" class="rounded-lg bg-surface-container border border-outline-variant/40 px-3 py-2"><option value="nouveau" @selected($signalement->statut === 'nouveau')>Nouveau</option><option value="en_traitement" @selected($signalement->statut === 'en_traitement')>En traitement</option><option value="resolu" @selected($signalement->statut === 'resolu')>Résolu</option></select><button class="mt-2 rounded-lg bg-primary-container px-3 py-2 text-on-primary-container">Enregistrer</button></form></td>
+<td class="px-6 py-4">{{ $signalement->date_signalement->format('d/m/Y') }}</td>
 </tr>
-<tr class="border-b border-outline-variant/10 hover:bg-surface-container/60">
-<td class="px-6 py-4 text-on-surface">Coupure d'eau</td>
-<td class="px-6 py-4"><span class="px-2 py-0.5 rounded-md bg-orange-100 text-orange-800 font-label-sm text-label-sm">Moyenne</span></td>
-<td class="px-6 py-4 text-on-surface-variant">Résidence El Yasmine</td>
-<td class="px-6 py-4 text-on-surface-variant">Pression faible au 3e étage.</td>
-<td class="px-6 py-4">
-<form method="POST" action="#">
-@csrf
-<select name="statut" aria-label="Statut du signalement" class="rounded-lg bg-surface-container border border-outline-variant/40 px-3 py-2 text-on-surface focus:border-primary-container focus:outline-none">
-<option>Nouveau</option>
-<option selected>En traitement</option>
-<option>Résolu</option>
-</select>
-</form>
-</td>
-<td class="px-6 py-4 text-right whitespace-nowrap">
-<button type="button" class="px-4 py-2 rounded-lg bg-primary-container text-on-primary-container font-label-md text-label-md font-semibold hover:opacity-95">Enregistrer</button>
-</td>
-</tr>
-<tr class="border-b border-outline-variant/10 hover:bg-surface-container/60">
-<td class="px-6 py-4 text-on-surface">Surchauffe ascenseur</td>
-<td class="px-6 py-4"><span class="px-2 py-0.5 rounded-md bg-yellow-100 text-yellow-800 font-label-sm text-label-sm">Basse</span></td>
-<td class="px-6 py-4 text-on-surface-variant">Résidence Les Oliviers</td>
-<td class="px-6 py-4 text-on-surface-variant">Ascenseur bloqué aux heures chaudes.</td>
-<td class="px-6 py-4">
-<form method="POST" action="#">
-@csrf
-<select name="statut" aria-label="Statut du signalement" class="rounded-lg bg-surface-container border border-outline-variant/40 px-3 py-2 text-on-surface focus:border-primary-container focus:outline-none">
-<option>Nouveau</option>
-<option>En traitement</option>
-<option selected>Résolu</option>
-</select>
-</form>
-</td>
-<td class="px-6 py-4 text-right whitespace-nowrap">
-<button type="button" class="px-4 py-2 rounded-lg bg-primary-container text-on-primary-container font-label-md text-label-md font-semibold hover:opacity-95">Enregistrer</button>
-</td>
-</tr>
-</tbody>
-</table>
-</div>
+@empty
+<tr><td colspan="6" class="px-6 py-4 text-on-surface-variant">Aucun signalement à traiter.</td></tr>
+@endforelse
+</tbody></table></div>
 </x-back-layout>
