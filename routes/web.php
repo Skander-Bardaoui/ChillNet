@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Back\AlerteController as BackAlerteController;
 use App\Http\Controllers\Back\CoupureController as BackCoupureController;
+use App\Http\Controllers\Back\DashboardController as BackDashboardController;
 use App\Http\Controllers\Back\QuartierController;
 use App\Http\Controllers\Back\ResidenceController;
 use App\Http\Controllers\Front\AlerteController as FrontAlerteController;
@@ -119,9 +120,7 @@ Route::middleware('auth')->group(function () {
 |--------------------------------------------------------------------------
 */
 Route::prefix('admin')->name('back.')->middleware(['auth', 'role:admin,gestionnaire'])->group(function () {
-    Route::get('/', function () {
-        return view('back.dashboard');
-    })->name('dashboard');
+    Route::get('/', [BackDashboardController::class, 'index'])->name('dashboard');
 
     Route::resource('quartiers', QuartierController::class)
         ->except(['show'])
