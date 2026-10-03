@@ -35,4 +35,28 @@ return [
         ],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Météo & IA canicule (Module 1 — alertes / vigilance)
+    |--------------------------------------------------------------------------
+    |
+    | WeatherAPI fournit la température/humidité en direct par quartier
+    | (coordonnées lat/lng). Groq (compatible OpenAI) rédige le message
+    | personnalisé ; le niveau de vigilance reste décidé par des seuils PHP
+    | déterministes (voir VigilanceAiService).
+    |
+    */
+
+    'weather' => [
+        'key' => env('WEATHER_API_KEY'),
+        'base_url' => env('WEATHER_BASE_URL', 'https://api.weatherapi.com/v1'),
+        'seuil_defaut' => env('WEATHER_SEUIL_DEFAUT', 35),
+    ],
+
+    'groq' => [
+        'key' => env('GROQ_API_KEY'),
+        'base_url' => env('GROQ_BASE_URL', 'https://api.groq.com/openai/v1'),
+        'model' => env('GROQ_MODEL', 'openai/gpt-oss-120b'),
+    ],
+
 ];

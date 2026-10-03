@@ -56,17 +56,28 @@ class CoupureController extends Controller
 
         // Carte du back-office : TOUTES les coupures du périmètre (pas
         // seulement la page), avec les 3 statuts (vert = résolue).
+        // Marqueurs : le point posé sur la carte s'il existe (ciblage libre),
+        // sinon le centre géolocalisé du quartier (coupures historiques).
         $marqueurs = [];
         $toutes = (clone $query)->with('quartier')->orderBy('debut', 'desc')->get();
         foreach ($toutes as $coupure) {
-            if (! $coupure->quartier || ! $coupure->quartier->hasCoordinates()) {
+            if ($coupure->hasCoordinates()) {
+                $lat = $coupure->latitude;
+                $lng = $coupure->longitude;
+            } elseif ($coupure->quartier?->hasCoordinates()) {
+                $lat = $coupure->quartier->latitude;
+                $lng = $coupure->quartier->longitude;
+            } else {
                 continue;
             }
+
+            $zoneNom = $coupure->quartier?->nom ?? $coupure->lieu ?? 'Zone';
+
             $marqueurs[] = [
-                'lat' => $coupure->quartier->latitude,
-                'lng' => $coupure->quartier->longitude,
+                'lat' => $lat,
+                'lng' => $lng,
                 'statut' => $coupure->statut?->value ?? $coupure->statut,
-                'titre' => ($coupure->type?->label() ?? $coupure->type).' — '.$coupure->quartier->nom,
+                'titre' => ($coupure->type?->label() ?? $coupure->type).' — '.$zoneNom,
                 'detail' => ($coupure->lieu ? $coupure->lieu.' · ' : '').($coupure->statut?->label() ?? $coupure->statut)
                     .' · '.($coupure->debut?->format('d/m H:i') ?? '?')
                     .' → '.($coupure->fin?->format('d/m H:i') ?? '—'),
@@ -74,17 +85,7 @@ class CoupureController extends Controller
             ];
         }
 
-        // Centre : la zone du gestionnaire si elle est géolocalisée,
-        // sinon le barycentre des quartiers, sinon Tunis par défaut.
-        $maZone = $user?->residence?->quartier;
-        if ($maZone && $maZone->hasCoordinates()) {
-            $centre = [$maZone->latitude, $maZone->longitude];
-        } else {
-            $geo = Quartier::whereNotNull('latitude')->whereNotNull('longitude')->get();
-            $centre = $geo->isNotEmpty()
-                ? [$geo->avg('latitude'), $geo->avg('longitude')]
-                : [36.8065, 10.1815];
-        }
+        $centre = $this->centreCarte();
 
         return view('back.coupures.index', compact('coupures', 'tri', 'stats', 'marqueurs', 'centre'));
     }
@@ -93,8 +94,9 @@ class CoupureController extends Controller
     {
         $quartiers = $this->quartiersAccessibles();
         $coupure = null;
+        $centre = $this->centreCarte();
 
-        return view('back.coupures.create', compact('quartiers', 'coupure'));
+        return view('back.coupures.create', compact('quartiers', 'coupure', 'centre'));
     }
 
     public function store(StoreCoupureRequest $request)
@@ -115,8 +117,9 @@ class CoupureController extends Controller
 
         $coupure = Coupure::findOrFail($id);
         $quartiers = $this->quartiersAccessibles();
+        $centre = $this->centreCarte();
 
-        return view('back.coupures.edit', compact('coupure', 'quartiers'));
+        return view('back.coupures.edit', compact('coupure', 'quartiers', 'centre'));
     }
 
     public function update(StoreCoupureRequest $request, int $id)
@@ -172,8 +175,32 @@ class CoupureController extends Controller
     }
 
     /**
-     * Données validées + garde-fou gestionnaire :
-     * on force la zone à la sienne même si le formulaire est trafiqué.
+     * Centre par défaut de la carte : la zone du gestionnaire si elle est
+     * géolocalisée, sinon le barycentre des quartiers, sinon Tunis.
+     *
+     * @return array{0: float, 1: float}
+     */
+    private function centreCarte(): array
+    {
+        $maZone = request()->user()?->residence?->quartier;
+
+        if ($maZone && $maZone->hasCoordinates()) {
+            return [(float) $maZone->latitude, (float) $maZone->longitude];
+        }
+
+        $geo = Quartier::whereNotNull('latitude')->whereNotNull('longitude')->get();
+
+        return $geo->isNotEmpty()
+            ? [(float) $geo->avg('latitude'), (float) $geo->avg('longitude')]
+            : [36.8065, 10.1815];
+    }
+
+    /**
+     * Données validées + garde-fous :
+     *  - le gestionnaire est TOUJOURS ramené à sa zone, même si le formulaire
+     *    est trafiqué ;
+     *  - un point posé sans quartier est rattaché au quartier le plus proche
+     *    (interne), sans jamais dépendre de son existence (nullable).
      *
      * @return array<string, mixed>
      */
@@ -181,21 +208,15 @@ class CoupureController extends Controller
     {
         $data = $request->validated();
 
-        // Le back-office n'utilise que des zones existantes : on retire
-        // les champs du mode « déclaration à la volée » (réservé au front).
-        unset(
-            $data['zone_mode'],
-            $data['nouveau_quartier_nom'],
-            $data['nouveau_quartier_ville'],
-            $data['nouveau_quartier_code_postal'],
-            $data['nouveau_latitude'],
-            $data['nouveau_longitude'],
-        );
-
         $user = request()->user();
 
         if ($user?->isGestionnaire() && $user->residence?->quartier_id) {
             $data['quartier_id'] = $user->residence->quartier_id;
+        } elseif (empty($data['quartier_id']) && ! empty($data['latitude']) && ! empty($data['longitude'])) {
+            $data['quartier_id'] = Quartier::plusProche(
+                (float) $data['latitude'],
+                (float) $data['longitude'],
+            )?->id;
         }
 
         // Le statut résolu/en cours/prevue est modifiable ici (back office),

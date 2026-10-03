@@ -11,6 +11,7 @@
     // sidebar du layout back contient déjà toute la navigation gestion.
     $habitantLinks = [
         ['href' => route('dashboard'), 'label' => 'Mon espace', 'active' => request()->routeIs('dashboard')],
+        ['href' => route('lieux.index'), 'label' => 'Mes lieux', 'active' => request()->routeIs('lieux.*')],
         ['href' => route('alertes.index'), 'label' => 'Alertes', 'active' => request()->routeIs('alertes.*')],
         ['href' => route('coupures.index'), 'label' => 'Coupures', 'active' => request()->routeIs('coupures.*')],
         ['href' => route('refuges.index'), 'label' => 'Refuges', 'active' => request()->routeIs('refuges.*', 'points.*')],

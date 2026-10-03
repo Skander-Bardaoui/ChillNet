@@ -16,6 +16,8 @@ class StoreResidenceRequest extends FormRequest
         return [
             'nom' => ['required', 'string', 'min:2', 'max:150'],
             'adresse' => ['required', 'string', 'min:5', 'max:255'],
+            'latitude' => ['nullable', 'numeric', 'between:-90,90'],
+            'longitude' => ['nullable', 'numeric', 'between:-180,180'],
             'quartier_id' => ['required', 'integer', 'exists:quartiers,id'],
             'nombre_logements' => ['required', 'integer', 'min:0', 'max:5000'],
             'salle_climatisee' => ['sometimes', 'boolean'],

@@ -27,6 +27,8 @@ class Coupure extends Model
      */
     protected $fillable = [
         'quartier_id',
+        'latitude',
+        'longitude',
         'lieu',
         'type',
         'statut',
@@ -46,9 +48,19 @@ class Coupure extends Model
             'type' => TypeCoupure::class,
             'statut' => StatutCoupure::class,
             'confirmations' => 'integer',
+            'latitude' => 'float',
+            'longitude' => 'float',
             'debut' => 'datetime',
             'fin' => 'datetime',
         ];
+    }
+
+    /**
+     * Le point posé sur la carte (ciblage libre, indépendant du quartier).
+     */
+    public function hasCoordinates(): bool
+    {
+        return $this->latitude !== null && $this->longitude !== null;
     }
 
     /**

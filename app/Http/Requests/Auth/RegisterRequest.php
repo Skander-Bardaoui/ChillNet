@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Auth;
 
+use App\Enums\ProfilVulnerabilite;
 use App\Enums\Role;
 use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
@@ -14,13 +15,13 @@ use Illuminate\Validation\Rules;
  * Le rôle se choisit entre `habitant` et `gestionnaire` (l'`admin` est créé
  * uniquement par seeder / back-office, jamais depuis le formulaire public).
  *
- * La résidence se choisit selon trois modes :
- *  - `existante` : le foyer sélectionne une résidence déjà référencée ;
- *  - `nouvelle`  : le foyer déclare sa résidence, et éventuellement son quartier
- *                  s'il n'apparaît pas dans la liste ;
- *  - `aucune`    : le foyer renseignera sa résidence plus tard depuis son profil
- *                  (habitant uniquement : un gestionnaire doit être rattaché
- *                  d'emblée à la résidence qu'il gère).
+ * Deux parcours distincts :
+ *  - **habitant** : il pose un point sur la carte (latitude/longitude) qui
+ *    devient son premier « lieu » personnel. Aucun quartier, aucune résidence
+ *    à choisir — le quartier reste interne et sera déduit de la position.
+ *  - **gestionnaire** : il rattache obligatoirement la résidence qu'il gère,
+ *    soit `existante` (déjà référencée), soit `nouvelle` (déclarée par le
+ *    gestionnaire, avec son quartier existant ou créé à la volée).
  */
 class RegisterRequest extends FormRequest
 {
@@ -43,20 +44,33 @@ class RegisterRequest extends FormRequest
     }
 
     /**
-     * Normalise la requête avant validation : le mode a une valeur par défaut et
-     * les champs du mode non retenu sont neutralisés (un formulaire HTML peut
-     * envoyer des champs masqués).
+     * Normalise la requête avant validation : le rôle a une valeur par défaut,
+     * et les champs du parcours non retenu sont neutralisés (un formulaire HTML
+     * peut envoyer des champs masqués).
      */
     protected function prepareForValidation(): void
     {
         // Rôle par défaut (compatibilité avec les anciens payloads de test) :
-        // un habitant simple, sans résidence obligatoire.
+        // un habitant simple.
         if (! $this->filled('role')) {
             $this->merge(['role' => Role::Habitant->value]);
         }
 
-        if (! $this->filled('residence_mode')) {
-            $this->merge(['residence_mode' => self::MODE_AUCUNE]);
+        // L'habitant décrit son foyer par un point géolocalisé, pas par une
+        // résidence : on neutralise tout le bloc résidence/quartier.
+        if ($this->input('role') === Role::Habitant->value) {
+            $this->merge([
+                'residence_mode' => null,
+                'residence_id' => null,
+                'nouvelle_residence_nom' => null,
+                'nouvelle_residence_adresse' => null,
+                'quartier_id' => null,
+                'nouveau_quartier_nom' => null,
+                'nouveau_quartier_ville' => null,
+                'nouveau_quartier_code_postal' => null,
+            ]);
+
+            return;
         }
 
         $mode = $this->input('residence_mode');
@@ -87,6 +101,9 @@ class RegisterRequest extends FormRequest
         // n'a été sélectionné.
         $quartierAAjouter = fn (): bool => $modeNouvelle() && ! $this->filled('quartier_id');
 
+        // Le point géolocalisé du lieu est exigé pour un habitant.
+        $habitant = fn (): bool => $this->input('role') === Role::Habitant->value;
+
         return [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique(User::class)],
@@ -96,8 +113,16 @@ class RegisterRequest extends FormRequest
             // L'admin est créé via seeder / back-office, jamais ici.
             'role' => ['required', Rule::in([Role::Habitant->value, Role::Gestionnaire->value])],
 
+            // Habitant : premier lieu géolocalisé (point sur la carte).
+            'lieu_nom' => ['nullable', 'string', 'min:2', 'max:120'],
+            'lieu_adresse' => ['nullable', 'string', 'min:3', 'max:255'],
+            'latitude' => ['nullable', 'numeric', 'between:-90,90', Rule::requiredIf($habitant)],
+            'longitude' => ['nullable', 'numeric', 'between:-180,180', Rule::requiredIf($habitant)],
+
+            // Gestionnaire : rattachement obligatoire à une résidence.
             'residence_mode' => [
-                'required',
+                'nullable',
+                Rule::requiredIf(fn (): bool => $this->input('role') === Role::Gestionnaire->value),
                 Rule::in($this->input('role') === Role::Gestionnaire->value
                     ? [self::MODE_EXISTANTE, self::MODE_NOUVELLE]
                     : self::MODES),
@@ -122,6 +147,11 @@ class RegisterRequest extends FormRequest
             'nouveau_quartier_nom' => ['nullable', 'string', 'min:2', 'max:120', Rule::requiredIf($quartierAAjouter)],
             'nouveau_quartier_ville' => ['nullable', 'string', 'min:2', 'max:120', Rule::requiredIf($quartierAAjouter)],
             'nouveau_quartier_code_postal' => ['nullable', 'string', 'regex:/^[0-9A-Za-z\- ]{3,10}$/'],
+
+            // Profil de vulnérabilité du foyer (facultatif) : personnalise les
+            // messages de vigilance canicule.
+            'profil_vulnerabilites' => ['nullable', 'array'],
+            'profil_vulnerabilites.*' => ['string', Rule::in(ProfilVulnerabilite::persistables())],
         ];
     }
 
@@ -144,6 +174,15 @@ class RegisterRequest extends FormRequest
 
             'residence_mode.required' => 'Veuillez indiquer votre résidence (ou choisir « plus tard »).',
             'residence_mode.in' => 'Le choix de résidence est invalide.',
+
+            'lieu_nom.min' => 'Le nom du lieu est trop court.',
+            'lieu_nom.max' => 'Le nom du lieu est trop long.',
+            'latitude.required' => 'Posez votre point sur la carte (ou utilisez « Me localiser »).',
+            'latitude.numeric' => 'La latitude doit être un nombre.',
+            'latitude.between' => 'La latitude doit être comprise entre -90 et 90.',
+            'longitude.required' => 'Posez votre point sur la carte (ou utilisez « Me localiser »).',
+            'longitude.numeric' => 'La longitude doit être un nombre.',
+            'longitude.between' => 'La longitude doit être comprise entre -180 et 180.',
 
             'residence_id.required' => 'Veuillez sélectionner votre résidence dans la liste.',
             'residence_id.exists' => 'La résidence sélectionnée n\'existe plus, choisissez-en une autre.',

@@ -6,6 +6,7 @@ use App\Enums\StatutCoupure;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreCoupureRequest;
 use App\Models\Coupure;
+use App\Models\Lieu;
 use App\Models\Quartier;
 use Illuminate\Http\Request;
 
@@ -84,17 +85,28 @@ class CoupureController extends Controller
             }
         }
 
+        // Un marqueur par coupure : le point posé librement s'il existe,
+        // sinon le centre géolocalisé du quartier (coupures historiques).
         $marqueurs = [];
-        $toutes = (clone $base)->orderBy('debut')->get();
+        $toutes = (clone $base)->with('quartier')->orderBy('debut')->get();
         foreach ($toutes as $coupure) {
-            if (! $coupure->quartier || ! $coupure->quartier->hasCoordinates()) {
+            if ($coupure->hasCoordinates()) {
+                $lat = $coupure->latitude;
+                $lng = $coupure->longitude;
+            } elseif ($coupure->quartier?->hasCoordinates()) {
+                $lat = $coupure->quartier->latitude;
+                $lng = $coupure->quartier->longitude;
+            } else {
                 continue;
             }
+
+            $zoneNom = $coupure->quartier?->nom ?? $coupure->lieu ?? 'Zone signalée';
+
             $marqueurs[] = [
-                'lat' => $coupure->quartier->latitude,
-                'lng' => $coupure->quartier->longitude,
+                'lat' => $lat,
+                'lng' => $lng,
                 'statut' => $coupure->statut?->value ?? $coupure->statut,
-                'titre' => ($coupure->type?->label() ?? $coupure->type).' — '.$coupure->quartier->nom,
+                'titre' => ($coupure->type?->label() ?? $coupure->type).' — '.$zoneNom,
                 'detail' => ($coupure->lieu ? $coupure->lieu.' · ' : '').'De '.($coupure->debut?->format('d/m H:i') ?? '?').' à '.($coupure->fin?->format('d/m H:i') ?? '—').' · '.($coupure->description ?? ''),
             ];
         }
@@ -104,35 +116,42 @@ class CoupureController extends Controller
 
     /**
      * Formulaire habitant : signaler une coupure en cours.
+     *
+     * L'habitant choisit l'un de SES lieux (Domicile, Travail…). Le quartier
+     * interne est déduit de ce lieu : plus aucune liste de quartiers.
      */
-    public function create()
+    public function create(Request $request)
     {
-        $quartiers = Quartier::orderBy('nom')->get();
-        $coupure = null;
+        $lieux = $request->user()->lieux()
+            ->orderByDesc('est_principal')
+            ->orderBy('nom')
+            ->get();
 
-        // Quartiers géolocalisés pour le bouton "Me localiser" (Haversine en JS).
-        $quartiersGeo = [];
-        // Tous les quartiers pour la recherche (même sans coordonnées).
-        $quartiersSearch = [];
-        foreach ($quartiers as $quartier) {
-            $quartiersSearch[] = [
-                'id' => $quartier->id,
-                'nom' => $quartier->nom,
-                'ville' => $quartier->ville,
-                'lat' => $quartier->latitude,
-                'lng' => $quartier->longitude,
-            ];
-            if ($quartier->hasCoordinates()) {
-                $quartiersGeo[] = [
-                    'id' => $quartier->id,
-                    'nom' => $quartier->nom,
-                    'lat' => $quartier->latitude,
-                    'lng' => $quartier->longitude,
-                ];
-            }
+        // Repère visuel : le lieu principal, sinon le premier déclaré.
+        $principal = $lieux->firstWhere('est_principal', true) ?? $lieux->first();
+
+        $lieuxJson = $lieux->map(fn (Lieu $lieu): array => [
+            'id' => $lieu->id,
+            'nom' => $lieu->nom,
+            'typeLabel' => $lieu->type->label(),
+            'lat' => $lieu->latitude !== null ? (float) $lieu->latitude : null,
+            'lng' => $lieu->longitude !== null ? (float) $lieu->longitude : null,
+            'principal' => (bool) $lieu->est_principal,
+        ])->values();
+
+        $geo = $lieuxJson->filter(fn (array $l): bool => $l['lat'] !== null && $l['lng'] !== null);
+
+        if ($principal?->hasCoordinates()) {
+            $centre = [(float) $principal->latitude, (float) $principal->longitude];
+        } elseif ($geo->isNotEmpty()) {
+            $centre = [$geo->avg('lat'), $geo->avg('lng')];
+        } else {
+            $centre = [36.8065, 10.1815];
         }
 
-        return view('front.coupures-create', compact('quartiers', 'coupure', 'quartiersGeo', 'quartiersSearch'));
+        $lieuIdParDefaut = old('lieu_id', $principal?->id);
+
+        return view('front.coupures-create', compact('lieux', 'lieuxJson', 'centre', 'lieuIdParDefaut'));
     }
 
     /**
@@ -167,69 +186,40 @@ class CoupureController extends Controller
     }
 
     /**
-     * L'habitant ne crée que des coupures "en cours" :
-     * on force le statut même si le formulaire envoie autre chose.
+     * L'habitant signale une coupure depuis l'un de ses lieux.
      *
-     * Équivalent manuel avec validate() (sans FormRequest) :
-     *   $data = $request->validate([
-     *       'quartier_id' => 'required|exists:quartiers,id',
-     *       'type' => 'required|in:delestage,surcharge,panne,maintenance',
-     *       'debut' => 'required|date',
-     *       ...
-     *   ], [ 'quartier_id.required' => 'Veuillez sélectionner...' ]);
-     * Ici on utilise StoreCoupureRequest qui fait exactement ce validate()
-     * + les messages d'erreur en français + l'anti-chevauchement.
+     * On ne crée que des coupures « en cours » (statut forcé), rattachées au
+     * quartier interne du lieu choisi. Le contrôleur vérifie l'appartenance du
+     * lieu au foyer (la Request le fait déjà via `exists` + `user_id`).
      */
     public function store(StoreCoupureRequest $request)
     {
+        $user = $request->user();
         $data = $request->validated();
 
-        // Zone déclarée à la volée : on crée le quartier (ou on réutilise
-        // celui déjà déclaré par un voisin — firstOrCreate = pas de doublon),
-        // avec la position cliquée sur la carte / donnée par le GPS.
-        // C'est le même pattern que l'inscription (declareResidence).
-        if ($request->input('zone_mode') === StoreCoupureRequest::MODE_NOUVELLE) {
-            $quartier = Quartier::firstOrCreate(
-                [
-                    'nom' => trim((string) $request->input('nouveau_quartier_nom')),
-                    'ville' => trim((string) $request->input('nouveau_quartier_ville')),
-                ],
-                [
-                    'code_postal' => $request->input('nouveau_quartier_code_postal') ?: '0000',
-                    'latitude' => $request->input('nouveau_latitude'),
-                    'longitude' => $request->input('nouveau_longitude'),
-                    'description' => 'Quartier déclaré par un habitant lors d\'un signalement de coupure.',
-                ],
-            );
+        $lieu = $user->lieux()->findOrFail((int) $data['lieu_id']);
 
-            $data['quartier_id'] = $quartier->id;
-
-            // Cas limite : le quartier existait déjà (déclaré par un voisin
-            // entre-temps) avec une coupure qui chevauche. La Request a sauté
-            // le contrôle (zone crue neuve) : on le refait ici explicitement.
-            if (Coupure::chevauche($data['quartier_id'], (string) ($data['debut'] ?? now()), $data['fin'] ?? null, null, $data['lieu'] ?? null)) {
-                return back()
-                    ->withErrors(['debut' => 'Une autre coupure (en cours ou prévue) occupe déjà cet endroit (même zone, même rue) sur ce créneau.'])
-                    ->withInput();
-            }
+        // Sans zone interne (aucun quartier géolocalisé proche), impossible de
+        // rattacher le signalement : on l'explique plutôt que de planter.
+        if (! $lieu->quartier_id) {
+            return back()
+                ->withErrors(['lieu_id' => "Ce lieu n'est relié à aucune zone : impossible de rattacher le signalement."])
+                ->withInput();
         }
 
-        // On retire les champs du formulaire qui ne sont pas des colonnes :
-        // seuls quartier_id/type/statut/debut/fin/description partent en base.
-        unset(
-            $data['zone_mode'],
-            $data['nouveau_quartier_nom'],
-            $data['nouveau_quartier_ville'],
-            $data['nouveau_quartier_code_postal'],
-            $data['nouveau_latitude'],
-            $data['nouveau_longitude'],
-        );
+        $data['quartier_id'] = $lieu->quartier_id;
 
-        // Sécurité front : un signalement habitant = toujours "en cours".
+        // On mémorise le point exact du lieu : la carte publique est plus précise.
+        if ($lieu->hasCoordinates()) {
+            $data['latitude'] = $lieu->latitude;
+            $data['longitude'] = $lieu->longitude;
+        }
+
+        unset($data['lieu_id']);
+
+        // Signalement habitant = toujours « en cours ».
         $data['statut'] = StatutCoupure::EnCours->value;
-        $data['user_id'] = $request->user()?->id;
-
-        // Si l'habitant ne met pas d'heure de début, on prend maintenant.
+        $data['user_id'] = $user->id;
         $data['debut'] ??= now();
 
         Coupure::create($data);

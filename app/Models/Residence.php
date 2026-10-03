@@ -19,6 +19,8 @@ class Residence extends Model
     protected $fillable = [
         'nom',
         'adresse',
+        'latitude',
+        'longitude',
         'nombre_logements',
         'salle_climatisee',
         'point_fraicheur',
@@ -31,10 +33,20 @@ class Residence extends Model
     protected function casts(): array
     {
         return [
+            'latitude' => 'float',
+            'longitude' => 'float',
             'nombre_logements' => 'integer',
             'salle_climatisee' => 'boolean',
             'point_fraicheur' => 'boolean',
         ];
+    }
+
+    /**
+     * La résidence a-t-elle une position pour la carte Leaflet ?
+     */
+    public function hasCoordinates(): bool
+    {
+        return $this->latitude !== null && $this->longitude !== null;
     }
 
     /**

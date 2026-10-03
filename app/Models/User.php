@@ -2,11 +2,13 @@
 
 namespace App\Models;
 
+use App\Enums\ProfilVulnerabilite;
 use App\Enums\Role;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use PHPOpenSourceSaver\JWTAuth\Contracts\JWTSubject;
@@ -54,6 +56,7 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
         'password',
         'role',
         'residence_id',
+        'profil_vulnerabilites',
     ];
 
     /**
@@ -64,6 +67,28 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
     public function residence(): BelongsTo
     {
         return $this->belongsTo(Residence::class, 'residence_id');
+    }
+
+    /**
+     * Lieux personnels du foyer (Domicile, Travail…). Remplacent le quartier
+     * dans l'espace habitant : chaque lieu est géolocalisé et se voit
+     * auto-assigner le quartier le plus proche (usage interne).
+     *
+     * @return HasMany<Lieu, $this>
+     */
+    public function lieux(): HasMany
+    {
+        return $this->hasMany(Lieu::class, 'user_id');
+    }
+
+    /**
+     * Lieu principal du foyer : celui marqué `est_principal`, sinon le premier
+     * déclaré. `null` tant que l'habitant n'a pas posé de lieu.
+     */
+    public function lieuPrincipal(): ?Lieu
+    {
+        return $this->lieux()->where('est_principal', true)->first()
+            ?? $this->lieux()->orderBy('id')->first();
     }
 
     public function isAdmin(): bool
@@ -90,6 +115,35 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
     }
 
     /**
+     * Profils de vulnérabilité du foyer (personne âgée, enfant, équipement
+     * médical…). Sert à personnaliser le message d'alerte canicule.
+     *
+     * @return array<int, ProfilVulnerabilite>
+     */
+    public function profilsVulnerabilite(): array
+    {
+        $valeurs = $this->profil_vulnerabilites ?? [];
+
+        return array_values(array_filter(array_map(
+            fn (string $valeur): ?ProfilVulnerabilite => ProfilVulnerabilite::tryFrom($valeur),
+            is_array($valeurs) ? $valeurs : [],
+        )));
+    }
+
+    public function aUnProfilVulnerable(): bool
+    {
+        return $this->profilsVulnerabilite() !== [];
+    }
+
+    /**
+     * Profil dominant (le premier renseigné), ou `Standard` si aucun.
+     */
+    public function profilPrincipal(): ProfilVulnerabilite
+    {
+        return $this->profilsVulnerabilite()[0] ?? ProfilVulnerabilite::Standard;
+    }
+
+    /**
      * The attributes that should be hidden for serialization.
      *
      * @var list<string>
@@ -110,6 +164,7 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'role' => Role::class,
+            'profil_vulnerabilites' => 'array',
         ];
     }
 }

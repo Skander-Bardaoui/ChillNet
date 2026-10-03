@@ -1,11 +1,15 @@
 <?php
 
+use App\Http\Controllers\Back\AlerteController as BackAlerteController;
 use App\Http\Controllers\Back\CoupureController as BackCoupureController;
 use App\Http\Controllers\Back\QuartierController;
 use App\Http\Controllers\Back\ResidenceController;
+use App\Http\Controllers\Front\AlerteController as FrontAlerteController;
 use App\Http\Controllers\Front\CoupureController as FrontCoupureController;
 use App\Http\Controllers\Back\SignalementController as BackSignalementController;
+use App\Http\Controllers\Front\DashboardController;
 use App\Http\Controllers\Front\HomeController;
+use App\Http\Controllers\Front\LieuController as FrontLieuController;
 use App\Http\Controllers\Front\SignalementController as FrontSignalementController;
 use App\Http\Controllers\ProfileController;
 use App\Models\Residence;
@@ -57,7 +61,8 @@ Route::get('/refuges', function () {
  * qu'ils consultent l'espace citoyen en tant que foyer.
  */
 Route::middleware(['auth', 'role:habitant'])->group(function () {
-    Route::get('/alertes', fn () => view('front.alertes'))->name('alertes.index');
+    // Module 1 : les alertes canicule VALIDÉES et actives du quartier de l'habitant.
+    Route::get('/alertes', [FrontAlerteController::class, 'index'])->name('alertes.index');
     Route::get('/signalements', [FrontSignalementController::class, 'index'])->name('signalements.index');
     Route::post('/signalements', [FrontSignalementController::class, 'store'])->name('front.signalements.store');
     Route::get('/signalements/{signalement}/modifier', [FrontSignalementController::class, 'edit'])->name('front.signalements.edit');
@@ -71,6 +76,13 @@ Route::middleware(['auth', 'role:habitant'])->group(function () {
     Route::post('/coupures', [FrontCoupureController::class, 'store'])->name('coupures.store');
     // Module 2 : « je confirme » — crédibilise un signalement constaté aussi.
     Route::post('/coupures/{coupure}/confirmer', [FrontCoupureController::class, 'confirm'])->name('coupures.confirm');
+
+    // Mes lieux : les endroits géolocalisés du foyer (Domicile, Travail…).
+    Route::get('/mes-lieux', [FrontLieuController::class, 'index'])->name('lieux.index');
+    Route::post('/mes-lieux', [FrontLieuController::class, 'store'])->name('lieux.store');
+    Route::patch('/mes-lieux/{lieu}/principal', [FrontLieuController::class, 'principal'])->name('lieux.principal');
+    Route::patch('/mes-lieux/{lieu}', [FrontLieuController::class, 'update'])->name('lieux.update');
+    Route::delete('/mes-lieux/{lieu}', [FrontLieuController::class, 'destroy'])->name('lieux.destroy');
 });
 
 /*
@@ -92,15 +104,8 @@ Route::get('/auth/status', function (Request $request) {
     ]);
 })->name('auth.status');
 
-Route::get('/dashboard', function () {
-    $user = auth()->user();
-
-    if ($user->isAdmin() || $user->isGestionnaire()) {
-        return redirect()->route('back.dashboard');
-    }
-
-    return view('front.dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('/dashboard', [DashboardController::class, 'index'])
+    ->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -126,12 +131,17 @@ Route::prefix('admin')->name('back.')->middleware(['auth', 'role:admin,gestionna
     // Module 2 : back office coupures (gestionnaire = sa zone, admin = tout).
     Route::resource('coupures', BackCoupureController::class)->except(['show']);
 
+    // Module 1 : back office alertes canicule (CRUD + validation + IA).
+    Route::post('/alertes/prefill', [BackAlerteController::class, 'prefill'])->name('alertes.prefill');
+    Route::patch('/alertes/{alerte}/valider', [BackAlerteController::class, 'valider'])->name('alertes.valider');
+    Route::resource('alertes', BackAlerteController::class)->except(['show']);
+
     /*
     |----------------------------------------------------------------------
     | Back office vitrine par module (TEMPLATE UNIQUEMENT).
     |----------------------------------------------------------------------
     */
-    foreach (['alertes', 'conseils'] as $module) {
+    foreach (['conseils'] as $module) {
         Route::get("/{$module}", fn () => view("back.{$module}.index"))->name("{$module}.index");
         Route::get("/{$module}/creer", fn () => view("back.{$module}.create"))->name("{$module}.create");
         Route::get("/{$module}/{id}/modifier", fn (string $id) => view("back.{$module}.edit"))->name("{$module}.edit");

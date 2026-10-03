@@ -199,9 +199,9 @@ class QuartierResidenceManagementTest extends TestCase
         $this->seed();
 
         $this->assertSame(2, Quartier::count());
-        $this->assertSame(3, Residence::count());
+        $this->assertSame(7, Residence::count());
         $this->assertSame(3, User::count());
-        $this->assertSame(2, Residence::pointFraicheur()->count());
+        $this->assertSame(6, Residence::pointFraicheur()->count());
         $this->assertSame(1, User::where('role', Role::Admin->value)->count());
     }
 }

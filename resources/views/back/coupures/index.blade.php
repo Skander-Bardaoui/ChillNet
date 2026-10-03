@@ -74,8 +74,8 @@
 @forelse ($coupures as $coupure)
 <tr class="border-b border-outline-variant/10 hover:bg-surface-container/60 last:border-0">
 <td class="px-6 py-4">
-<p class="font-title-md text-title-md text-on-surface font-medium flex items-center gap-2"><span class="h-2 w-2 rounded-full shrink-0 @if(($coupure->statut?->value ?? $coupure->statut) === 'en_cours') bg-red-600 @elseif(($coupure->statut?->value ?? $coupure->statut) === 'prevue') bg-orange-500 @else bg-green-600 @endif"></span>{{ $coupure->quartier?->nom ?? '—' }}</p>
-<p class="font-body-sm text-body-sm text-on-surface-variant ml-4">{{ $coupure->quartier?->ville }}@if($coupure->lieu) · {{ $coupure->lieu }}@endif</p>
+<p class="font-title-md text-title-md text-on-surface font-medium flex items-center gap-2"><span class="h-2 w-2 rounded-full shrink-0 @if(($coupure->statut?->value ?? $coupure->statut) === 'en_cours') bg-red-600 @elseif(($coupure->statut?->value ?? $coupure->statut) === 'prevue') bg-orange-500 @else bg-green-600 @endif"></span>{{ $coupure->quartier?->nom ?? $coupure->lieu ?? 'Point sur la carte' }}</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant ml-4">@if ($coupure->quartier){{ $coupure->quartier->ville }}@if($coupure->lieu) · {{ $coupure->lieu }}@endif @elseif ($coupure->hasCoordinates())<span class="inline-flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">my_location</span>{{ rtrim(rtrim(number_format((float) $coupure->latitude, 4, ',', ''), '0'), ',') }}, {{ rtrim(rtrim(number_format((float) $coupure->longitude, 4, ',', ''), '0'), ',') }}</span>@else—@endif</p>
 </td>
 <td class="px-6 py-4 text-on-surface-variant whitespace-nowrap">{{ $coupure->type?->label() ?? $coupure->type }}</td>
 <td class="px-6 py-4">

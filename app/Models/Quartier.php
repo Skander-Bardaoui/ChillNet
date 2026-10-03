@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
+use App\Support\Geo;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
@@ -41,6 +43,30 @@ class Quartier extends Model
     }
 
     /**
+     * Quartier géolocalisé le plus proche d'un point (Haversine, en PHP).
+     * Sert à rattacher automatiquement un « lieu » habitant à une zone
+     * interne, sans que l'habitant ait à choisir un quartier.
+     */
+    public static function plusProche(?float $latitude, ?float $longitude): ?self
+    {
+        if ($latitude === null || $longitude === null) {
+            return null;
+        }
+
+        return static::query()
+            ->whereNotNull('latitude')
+            ->whereNotNull('longitude')
+            ->get()
+            ->sortBy(fn (self $quartier): float => Geo::distanceKm(
+                $latitude,
+                $longitude,
+                (float) $quartier->latitude,
+                (float) $quartier->longitude,
+            ))
+            ->first();
+    }
+
+    /**
      * @return HasMany<Residence, $this>
      */
     public function residences(): HasMany
@@ -56,6 +82,16 @@ class Quartier extends Model
     public function coupures(): HasMany
     {
         return $this->hasMany(Coupure::class, 'quartier_id');
+    }
+
+    /**
+     * Alertes canicule qui couvrent ce quartier (relation N---N).
+     *
+     * @return BelongsToMany<Alerte, $this>
+     */
+    public function alertes(): BelongsToMany
+    {
+        return $this->belongsToMany(Alerte::class, 'alerte_quartier', 'quartier_id', 'alerte_id');
     }
 
     /**

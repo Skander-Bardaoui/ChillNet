@@ -10,7 +10,7 @@
 <div class="rounded-2xl bg-surface-container-low shadow-sm border border-outline-variant/20 p-space-md">
 <h2 class="font-title-md text-title-md text-on-surface font-semibold flex items-center gap-2"><span class="material-symbols-outlined text-primary">info</span>État actuel</h2>
 <div class="mt-2 flex flex-col gap-2 font-body-sm text-body-sm text-on-surface-variant">
-<p><strong class="text-on-surface">Zone :</strong> {{ $coupure->quartier?->nom }} ({{ $coupure->quartier?->ville }})</p>
+<p><strong class="text-on-surface">Zone :</strong> @if ($coupure->quartier){{ $coupure->quartier->nom }} ({{ $coupure->quartier->ville }})@elseif ($coupure->hasCoordinates())Point sur la carte@else—@endif@if ($coupure->lieu) · {{ $coupure->lieu }}@endif</p>
 <p><strong class="text-on-surface">Statut :</strong> {{ $coupure->statut?->label() }}</p>
 <p class="inline-flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">groups</span><strong class="text-on-surface">{{ $coupure->confirmations }}</strong>&nbsp;confirmation(s) d'habitants</p>
 </div>

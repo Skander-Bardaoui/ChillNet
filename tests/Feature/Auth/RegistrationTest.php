@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Auth;
 
+use App\Models\Lieu;
 use App\Models\Quartier;
 use App\Models\Residence;
 use App\Models\User;
@@ -21,15 +22,21 @@ class RegistrationTest extends TestCase
 
     public function test_new_users_can_register(): void
     {
-        $response = $this->post('/register', [
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-            'password' => 'password',
-            'password_confirmation' => 'password',
-        ]);
+        // Un habitant pose un point sur la carte : c'est son premier lieu.
+        $response = $this->post('/register', $this->payload([
+            'lieu_nom' => 'Domicile',
+            'latitude' => 36.8008,
+            'longitude' => 10.1800,
+        ]));
 
         $this->assertAuthenticated();
         $response->assertRedirect(route('dashboard', absolute: false));
+
+        $user = User::firstWhere('email', 'test@example.com');
+        $this->assertNotNull($user);
+        $this->assertSame(1, $user->lieux()->count());
+        $this->assertSame('Domicile', $user->lieux()->first()->nom);
+        $this->assertTrue($user->lieux()->first()->est_principal);
     }
 
     public function test_registration_screen_lists_referenced_residences(): void
@@ -43,12 +50,38 @@ class RegistrationTest extends TestCase
             ->assertSee('Résidence Les Oliviers');
     }
 
+    public function test_habitant_must_provide_a_location_point(): void
+    {
+        $this->post('/register', $this->payload())->assertSessionHasErrors(['latitude', 'longitude']);
+
+        $this->assertGuest();
+        $this->assertNull(User::firstWhere('email', 'test@example.com'));
+    }
+
+    public function test_habitant_location_is_assigned_to_the_nearest_quartier(): void
+    {
+        $quartier = Quartier::create([
+            'nom' => 'Centre-Ville', 'ville' => 'Tunis',
+            'latitude' => 36.8008, 'longitude' => 10.1800,
+        ]);
+
+        $this->post('/register', $this->payload([
+            'latitude' => 36.8010,
+            'longitude' => 10.1805,
+        ]));
+
+        $lieu = Lieu::firstWhere('user_id', User::firstWhere('email', 'test@example.com')->id);
+        $this->assertNotNull($lieu);
+        $this->assertSame($quartier->id, $lieu->quartier_id);
+    }
+
     public function test_user_can_join_an_existing_residence(): void
     {
         $quartier = Quartier::create(['nom' => 'Sainte-Anne', 'ville' => 'Marseille', 'code_postal' => '13008']);
         $residence = Residence::create(['nom' => 'Les Oliviers', 'adresse' => '12 rue des Tilleuls', 'quartier_id' => $quartier->id]);
 
         $this->post('/register', $this->payload([
+            'role' => 'gestionnaire',
             'residence_mode' => 'existante',
             'residence_id' => $residence->id,
         ]));
@@ -60,6 +93,7 @@ class RegistrationTest extends TestCase
     public function test_existing_mode_requires_a_residence(): void
     {
         $this->post('/register', $this->payload([
+            'role' => 'gestionnaire',
             'residence_mode' => 'existante',
             'residence_id' => '',
         ]))->assertSessionHasErrors('residence_id');
@@ -73,6 +107,7 @@ class RegistrationTest extends TestCase
         $quartier = Quartier::create(['nom' => 'Sainte-Anne', 'ville' => 'Marseille', 'code_postal' => '13008']);
 
         $this->post('/register', $this->payload([
+            'role' => 'gestionnaire',
             'residence_mode' => 'nouvelle',
             'nouvelle_residence_nom' => 'Résidence du Parc',
             'nouvelle_residence_adresse' => '4 avenue du Parc',
@@ -91,6 +126,7 @@ class RegistrationTest extends TestCase
     public function test_user_can_declare_a_residence_and_its_quartier(): void
     {
         $this->post('/register', $this->payload([
+            'role' => 'gestionnaire',
             'residence_mode' => 'nouvelle',
             'nouvelle_residence_nom' => 'Résidence des Vignes',
             'nouveau_quartier_nom' => 'Les Hauts de Vignes',
@@ -117,6 +153,7 @@ class RegistrationTest extends TestCase
         $existante = Residence::create(['nom' => 'Résidence des Vignes', 'quartier_id' => $quartier->id]);
 
         $this->post('/register', $this->payload([
+            'role' => 'gestionnaire',
             'residence_mode' => 'nouvelle',
             'nouvelle_residence_nom' => 'Résidence des Vignes',
             'nouveau_quartier_nom' => 'Les Hauts de Vignes',
@@ -131,6 +168,7 @@ class RegistrationTest extends TestCase
     public function test_declaring_a_residence_requires_a_quartier(): void
     {
         $this->post('/register', $this->payload([
+            'role' => 'gestionnaire',
             'residence_mode' => 'nouvelle',
             'nouvelle_residence_nom' => 'Résidence des Vignes',
         ]))->assertSessionHasErrors(['nouveau_quartier_nom', 'nouveau_quartier_ville']);
@@ -138,9 +176,12 @@ class RegistrationTest extends TestCase
         $this->assertGuest();
     }
 
-    public function test_user_can_register_without_a_residence(): void
+    public function test_habitant_registration_does_not_create_a_residence(): void
     {
-        $this->post('/register', $this->payload(['residence_mode' => 'aucune']));
+        $this->post('/register', $this->payload([
+            'latitude' => 36.8008,
+            'longitude' => 10.1800,
+        ]));
 
         $this->assertAuthenticated();
         $this->assertNull(User::firstWhere('email', 'test@example.com')->residence_id);

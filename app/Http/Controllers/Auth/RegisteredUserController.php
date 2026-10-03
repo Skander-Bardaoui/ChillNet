@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Enums\LieuType;
 use App\Enums\Role;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\RegisterRequest;
@@ -46,8 +47,17 @@ class RegisteredUserController extends Controller
             'email' => $request->validated('email'),
             'password' => Hash::make($request->validated('password')),
             'role' => $role,
-            'residence_id' => $this->resolveResidence($request)?->id,
+            // Seul le gestionnaire est rattaché à une résidence ; l'habitant
+            // décrit son foyer par un lieu géolocalisé (voir ci-dessous).
+            'residence_id' => $role === Role::Gestionnaire
+                ? $this->resolveResidence($request)?->id
+                : null,
+            'profil_vulnerabilites' => $request->validated('profil_vulnerabilites') ?? [],
         ]);
+
+        if ($role === Role::Habitant) {
+            $this->enregistrerLieu($user, $request);
+        }
 
         event(new Registered($user));
 
@@ -63,6 +73,22 @@ class RegisteredUserController extends Controller
         }
 
         return $response;
+    }
+
+    /**
+     * Crée le premier lieu de l'habitant à partir du point posé sur la carte.
+     * Le quartier est déduit automatiquement (le plus proche) par le modèle.
+     */
+    protected function enregistrerLieu(User $user, RegisterRequest $request): void
+    {
+        $user->lieux()->create([
+            'nom' => trim((string) ($request->validated('lieu_nom') ?: 'Domicile')),
+            'type' => LieuType::Domicile,
+            'adresse' => $request->validated('lieu_adresse'),
+            'latitude' => $request->validated('latitude'),
+            'longitude' => $request->validated('longitude'),
+            'est_principal' => true,
+        ]);
     }
 
     /**

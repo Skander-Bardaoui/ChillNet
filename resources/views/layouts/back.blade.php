@@ -30,7 +30,7 @@
 
 {{-- Barre latérale de gestion : marque, navigation, sortie. Sur mobile elle devient une
      bande horizontale défilante, pour que la gestion reste utilisable sans navbar. --}}
-<aside class="flex items-center md:items-stretch md:flex-col gap-space-xs md:w-64 md:shrink-0 px-margin py-space-sm md:py-space-md border-b md:border-b-0 md:border-r border-outline-variant/20 bg-surface-container-lowest/80 backdrop-blur-xl overflow-x-auto md:overflow-visible">
+<aside class="flex items-center md:items-stretch md:flex-col gap-space-xs md:w-64 md:shrink-0 px-margin py-space-sm md:py-space-md border-b md:border-b-0 md:border-r border-outline-variant/20 bg-surface-container-lowest/80 backdrop-blur-xl overflow-x-auto md:sticky md:top-0 md:h-screen md:overflow-x-hidden md:overflow-y-auto">
 
 <div class="hidden md:flex flex-col gap-space-sm pb-space-sm mb-space-xs border-b border-outline-variant/20">
 <a href="{{ route('back.dashboard') }}" class="flex items-center gap-space-sm">
