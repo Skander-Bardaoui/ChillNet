@@ -8,16 +8,20 @@ use App\Http\Requests\StoreCoupureRequest;
 use App\Models\Coupure;
 use App\Models\Lieu;
 use App\Models\Quartier;
+use App\Services\CoupureRiskAiService;
 use Illuminate\Http\Request;
 
 /**
  * Front office des coupures (module 2).
  *
- *  - Tout le monde (public) : carte + liste des coupures actives, filtre par zone.
+ *  - Tout le monde (public) : carte + liste des coupures actives, filtre par zone,
+ *    score de risque IA par zone et anomalies détectées.
  *  - Habitant connecté : signale une coupure EN COURS.
  */
 class CoupureController extends Controller
 {
+    public function __construct(private CoupureRiskAiService $risk) {}
+
     /**
      * Carte des coupures actives + liste filtrable par zone, triée et paginée.
      * La carte montre TOUTES les coupures filtrées, la liste est paginée (10/page).
@@ -32,9 +36,15 @@ class CoupureController extends Controller
             ->whereIn('statut', [StatutCoupure::EnCours->value, StatutCoupure::Prevue->value])
             ->when($request->filled('quartier_id'), fn ($q) => $q->parZone((int) $request->input('quartier_id')));
 
-        // Compteurs de l'en-tête (requêtes COUNT légères).
-        $nbActives = (clone $base)->where('statut', StatutCoupure::EnCours->value)->count();
-        $nbPrevues = (clone $base)->where('statut', StatutCoupure::Prevue->value)->count();
+        // Compteurs de l'en-tête (scopes Eloquent : en cours / prévues).
+        $nbActives = (clone $base)->actives()->count();
+        $nbPrevues = (clone $base)->prevues()->count();
+        $nbZones = (clone $base)->whereNotNull('quartier_id')->distinct()->count('quartier_id');
+
+        // Brique IA : score de risque par zone (historique + canicule) et
+        // détection d'anomalies (afflux de signalements = incident majeur ?).
+        $risques = $this->risk->scoresPourQuartiers($quartiers);
+        $anomalies = $this->risk->detecterAnomalies();
 
         // Tri demandé (?tri=...), valeur par défaut : plus récent d'abord.
         $tri = $request->input('tri', 'recent');
@@ -111,7 +121,7 @@ class CoupureController extends Controller
             ];
         }
 
-        return view('front.coupures', compact('quartiers', 'coupures', 'nbActives', 'nbPrevues', 'tri', 'centre', 'quartiersCoords', 'marqueurs'));
+        return view('front.coupures', compact('quartiers', 'coupures', 'nbActives', 'nbPrevues', 'nbZones', 'risques', 'anomalies', 'tri', 'centre', 'quartiersCoords', 'marqueurs'));
     }
 
     /**
@@ -199,15 +209,14 @@ class CoupureController extends Controller
 
         $lieu = $user->lieux()->findOrFail((int) $data['lieu_id']);
 
-        // Sans zone interne (aucun quartier géolocalisé proche), impossible de
-        // rattacher le signalement : on l'explique plutôt que de planter.
-        if (! $lieu->quartier_id) {
-            return back()
-                ->withErrors(['lieu_id' => "Ce lieu n'est relié à aucune zone : impossible de rattacher le signalement."])
-                ->withInput();
-        }
-
-        $data['quartier_id'] = $lieu->quartier_id;
+        // Zone interne : celle déjà déduite du lieu, sinon on la recalcule depuis
+        // le point. `coupures.quartier_id` est nullable : un signalement reste
+        // valide même sans quartier géolocalisé à proximité (la carte s'appuie
+        // alors sur les coordonnées exactes du lieu).
+        $data['quartier_id'] = $lieu->quartier_id
+            ?? ($lieu->hasCoordinates()
+                ? Quartier::plusProche((float) $lieu->latitude, (float) $lieu->longitude)?->id
+                : null);
 
         // On mémorise le point exact du lieu : la carte publique est plus précise.
         if ($lieu->hasCoordinates()) {
@@ -217,10 +226,9 @@ class CoupureController extends Controller
 
         unset($data['lieu_id']);
 
-        // Signalement habitant = toujours « en cours ».
+        // Signalement habitant = toujours « en cours » (début obligatoire côté règles).
         $data['statut'] = StatutCoupure::EnCours->value;
         $data['user_id'] = $user->id;
-        $data['debut'] ??= now();
 
         Coupure::create($data);
 

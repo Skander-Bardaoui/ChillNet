@@ -84,6 +84,37 @@ class CoupureSignalementTest extends TestCase
         $this->assertSame('rue des Lilas', $coupure->lieu);
     }
 
+    public function test_a_habitant_signals_a_coupure_from_a_lieu_without_a_zone(): void
+    {
+        // Aucun quartier géolocalisé : le lieu reste sans zone interne.
+        $habitant = User::factory()->create(['role' => Role::Habitant]);
+        $lieu = $habitant->lieux()->create([
+            'nom' => 'Domicile',
+            'type' => LieuType::Domicile,
+            'latitude' => 36.8008,
+            'longitude' => 10.1800,
+            'est_principal' => true,
+        ]);
+
+        $this->assertNull($lieu->quartier_id);
+
+        $this->actingAs($habitant)
+            ->post(route('coupures.store'), [
+                'lieu_id' => $lieu->id,
+                'type' => 'panne',
+                'debut' => now()->format('Y-m-d\TH:i'),
+            ])
+            ->assertRedirect(route('coupures.index'))
+            ->assertSessionHasNoErrors();
+
+        $coupure = Coupure::firstOrFail();
+
+        $this->assertNull($coupure->quartier_id);
+        $this->assertSame($habitant->id, $coupure->user_id);
+        $this->assertNotNull($coupure->latitude);
+        $this->assertNotNull($coupure->longitude);
+    }
+
     public function test_a_habitant_cannot_signal_from_another_households_lieu(): void
     {
         $quartier = $this->quartier();

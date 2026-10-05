@@ -40,22 +40,28 @@ class AlerteController extends Controller
         $user = $request->user();
         $quartierId = $user?->residence?->quartier_id;
 
-        $query = Alerte::with('quartiers')
-            ->when($user && $user->isGestionnaire(), fn ($q) => $q->parQuartier((int) $quartierId))
+        // Périmètre du gestionnaire : sa zone uniquement (admin = tout).
+        $base = Alerte::query()
+            ->when($user && $user->isGestionnaire(), fn ($q) => $q->parQuartier((int) $quartierId));
+
+        // Chiffres clés : calculés sur le périmètre SEUL, indépendamment des
+        // filtres d'affichage — sinon « total » varierait selon le filtre.
+        $stats = [
+            'total' => (clone $base)->count(),
+            'actives' => (clone $base)->actives()->count(),
+            'programmees' => (clone $base)->programmees()->count(),
+            'terminees' => (clone $base)->terminees()->count(),
+            'brouillons' => (clone $base)->where('validee', false)->count(),
+            'rouge' => (clone $base)->where('niveau', NiveauAlerte::Rouge->value)->count(),
+            'orange' => (clone $base)->where('niveau', NiveauAlerte::Orange->value)->count(),
+            'jaune' => (clone $base)->where('niveau', NiveauAlerte::Jaune->value)->count(),
+        ];
+
+        // Liste filtrable (filtres d'affichage uniquement).
+        $query = (clone $base)->with('quartiers')
             ->when($request->filled('quartier_id'), fn ($q) => $q->parQuartier((int) $request->input('quartier_id')))
             ->when(in_array($request->input('niveau'), array_column(NiveauAlerte::cases(), 'value'), true),
                 fn ($q) => $q->niveau(NiveauAlerte::from($request->input('niveau'))));
-
-        $stats = [
-            'total' => (clone $query)->count(),
-            'actives' => (clone $query)->actives()->count(),
-            'programmees' => (clone $query)->programmees()->count(),
-            'terminees' => (clone $query)->terminees()->count(),
-            'brouillons' => (clone $query)->where('validee', false)->count(),
-            'rouge' => (clone $query)->where('niveau', NiveauAlerte::Rouge->value)->count(),
-            'orange' => (clone $query)->where('niveau', NiveauAlerte::Orange->value)->count(),
-            'jaune' => (clone $query)->where('niveau', NiveauAlerte::Jaune->value)->count(),
-        ];
 
         // Marqueurs de la carte : un cercle par alerte géolocalisée, sinon une
         // entrée par (alerte × quartier) géolocalisé pour les alertes héritées.
@@ -247,7 +253,8 @@ class AlerteController extends Controller
             ]);
         }
 
-        $historique = $ids !== [] ? $this->ia->historiquePourQuartier((int) $ids[0], 3) : [];
+        // Historique sur TOUS les quartiers visés, pas seulement le premier.
+        $historique = $ids !== [] ? $this->ia->historiquePourQuartier($ids, 3) : [];
         $analyse = $this->ia->analyse($meteo->temperature, $meteo->humidite, $historique, $seuil);
         $niveau = $analyse['niveau'];
 

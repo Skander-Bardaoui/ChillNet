@@ -7,7 +7,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
- * Résidence rattachée à un quartier (modèle Eloquent, table `residences`).
+ * Résidence (ensemble résidentiel) rattachée à un quartier.
+ *
+ * Trois usages dans l'application :
+ *  - périmètre du gestionnaire : sa zone d'action est le quartier de sa résidence ;
+ *  - point de fraîcheur / refuge affiché aux habitants (voir scopePointFraicheur) ;
+ *  - cible d'un signalement (voir Signalement::residence()).
+ *
+ * Seul le rôle `gestionnaire` est rattaché à une résidence (users.residence_id).
+ * Un habitant décrit son foyer par un `Lieu` géolocalisé, jamais par une résidence.
  */
 class Residence extends Model
 {
@@ -65,6 +73,16 @@ class Residence extends Model
     public function users(): HasMany
     {
         return $this->hasMany(User::class, 'residence_id');
+    }
+
+    /**
+     * Signalements déposés sur cette résidence.
+     *
+     * @return HasMany<Signalement, $this>
+     */
+    public function signalements(): HasMany
+    {
+        return $this->hasMany(Signalement::class, 'residence_id');
     }
 
     /**

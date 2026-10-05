@@ -10,6 +10,8 @@ use App\Models\Lieu;
 use App\Models\Quartier;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class AlerteFrontTest extends TestCase
@@ -184,5 +186,73 @@ class AlerteFrontTest extends TestCase
             ->get(route('alertes.index'))
             ->assertOk()
             ->assertDontSee('Cercle Lointain');
+    }
+
+    /**
+     * Payload de prévision horaire : 48 h futures, avec des pics au-dessus du
+     * seuil par défaut (35 °C) pour produire des marqueurs.
+     *
+     * @return array<string, mixed>
+     */
+    private function forecastPayload(): array
+    {
+        $hours = [];
+        for ($i = 0; $i < 48; $i++) {
+            $moment = now()->addHours($i + 1);
+            $hours[] = [
+                'time_epoch' => $moment->getTimestamp(),
+                'time' => $moment->format('Y-m-d H:i'),
+                'temp_c' => 30 + ($i % 10),
+                'feelslike_c' => 31 + ($i % 10),
+                'humidity' => 45,
+                'wind_kph' => 8,
+                'condition' => ['text' => 'Ensoleillé'],
+            ];
+        }
+
+        return [
+            'location' => ['name' => 'Tunis', 'tz_id' => 'Africa/Tunis'],
+            'forecast' => ['forecastday' => [['hour' => $hours]]],
+        ];
+    }
+
+    public function test_the_alertes_page_shows_the_48h_temperature_curve(): void
+    {
+        Cache::flush();
+        $centre = Quartier::create([
+            'nom' => 'Centre-Ville',
+            'ville' => 'Tunis',
+            'code_postal' => '1000',
+            'latitude' => 36.8008,
+            'longitude' => 10.1800,
+        ]);
+        $habitant = $this->habitant();
+        $this->lieu($habitant, $centre, 36.8008, 10.1800);
+
+        config(['services.weather.key' => 'fake-key']);
+        Http::fake([
+            'api.weatherapi.com/v1/current.json*' => Http::response([
+                'location' => ['name' => 'Tunis'],
+                'current' => [
+                    'temp_c' => 33.0,
+                    'feelslike_c' => 35.0,
+                    'humidity' => 40,
+                    'wind_kph' => 9,
+                    'condition' => ['text' => 'Ensoleillé'],
+                ],
+            ]),
+            'api.weatherapi.com/v1/forecast.json*' => Http::response($this->forecastPayload()),
+        ]);
+
+        $this->actingAs($habitant)
+            ->get(route('alertes.index'))
+            ->assertOk()
+            ->assertSee('Courbe de température')
+            ->assertSee('courbeTempStroke', false)
+            ->assertSee('courbeTempFill', false)
+            ->assertSee('@mouseenter', false)
+            ->assertSee('x-data', false)
+            ->assertSee('Seuil')
+            ->assertDontSee('NaN');
     }
 }

@@ -43,6 +43,46 @@
 <div id="carte-back-coupures" class="w-full h-72 md:h-80 z-0"></div>
 </div>
 
+{{-- Anomalie IA : afflux de signalements = possible incident majeur non déclaré. --}}
+@if ($anomalies->isNotEmpty())
+<div class="rounded-2xl bg-red-50 border border-red-300 p-space-md flex items-start gap-3" role="alert">
+<span class="material-symbols-outlined text-red-700 text-[28px] shrink-0">crisis_alert</span>
+<div>
+<p class="font-title-md text-title-md text-red-900 font-semibold">Anomalie détectée par l'IA</p>
+<ul class="mt-1 flex flex-col gap-1">
+@foreach ($anomalies as $anomalie)
+<li class="font-body-sm text-body-sm text-red-800 flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">bolt</span>{{ $anomalie['message'] }}</li>
+@endforeach
+</ul>
+</div>
+</div>
+@endif
+
+{{-- Risque de coupure IA par zone : historique corrélé à la canicule. --}}
+@if ($risques->isNotEmpty())
+<div class="rounded-2xl bg-surface-container-low shadow-md border border-outline-variant/20 p-space-md">
+<div class="flex items-center gap-2 mb-3">
+<span class="material-symbols-outlined text-primary text-[22px]">auto_awesome</span>
+<h2 class="font-title-md text-title-md text-on-surface font-semibold">Risque de coupure par zone <span class="font-body-sm text-body-sm text-on-surface-variant font-normal">(IA · historique + canicule)</span></h2>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+@foreach ($risques->take(6) as $risque)
+@php $nr = $risque['niveau']; @endphp
+<div class="rounded-xl bg-surface-container border border-outline-variant/20 p-3 flex flex-col gap-2">
+<div class="flex items-center justify-between gap-2">
+<span class="font-title-sm text-title-sm text-on-surface font-medium inline-flex items-center gap-1"><span class="material-symbols-outlined text-[18px]" style="color: {{ $nr->couleurHex() }};">{{ $nr->icone() }}</span>{{ $risque['quartier']->nom }}</span>
+<span class="px-2.5 py-0.5 rounded-full {{ $nr->badgeClasses() }} font-label-sm text-label-sm font-semibold whitespace-nowrap">{{ $nr->label() }}</span>
+</div>
+<div class="h-2 w-full rounded-full bg-surface-container-high overflow-hidden">
+<div class="h-full rounded-full" style="width: {{ $risque['score'] }}%; background: {{ $nr->couleurHex() }};"></div>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Score {{ $risque['score'] }}/100 · {{ $risque['raison'] }}</p>
+</div>
+@endforeach
+</div>
+</div>
+@endif
+
 {{-- Barre d'outils : tri --}}
 <div class="flex flex-col sm:flex-row sm:items-center gap-3">
 <p class="font-body-sm text-body-sm text-on-surface-variant">{{ $coupures->total() }} coupure(s) au total</p>

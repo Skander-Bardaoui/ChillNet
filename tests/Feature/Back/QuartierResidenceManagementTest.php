@@ -3,9 +3,13 @@
 namespace Tests\Feature\Back;
 
 use App\Enums\Role;
+use App\Enums\StatutCoupure;
+use App\Models\Alerte;
+use App\Models\Coupure;
 use App\Models\Quartier;
 use App\Models\Residence;
 use App\Models\User;
+use App\Services\CoupureRiskAiService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -198,10 +202,60 @@ class QuartierResidenceManagementTest extends TestCase
         $this->seed();
         $this->seed();
 
+        // Rejouer le seeder ne doit jamais dupliquer le réseau…
         $this->assertSame(2, Quartier::count());
         $this->assertSame(7, Residence::count());
-        $this->assertSame(3, User::count());
+        $this->assertSame(4, User::count());
         $this->assertSame(6, Residence::pointFraicheur()->count());
         $this->assertSame(1, User::where('role', Role::Admin->value)->count());
+        $this->assertSame(2, User::where('role', Role::Gestionnaire->value)->count());
+
+        // …ni les données de démo des deux modules.
+        $this->assertSame(8, Alerte::count());
+        $this->assertSame(9, Coupure::count());
+    }
+
+    public function test_the_seeded_coupures_cover_every_status_and_trigger_an_anomaly(): void
+    {
+        $this->seed();
+
+        // Les 3 statuts sont représentés.
+        foreach (StatutCoupure::cases() as $statut) {
+            $this->assertGreaterThan(
+                0,
+                Coupure::where('statut', $statut->value)->count(),
+                "Aucune coupure de démo au statut {$statut->value}.",
+            );
+        }
+
+        // Au moins une coupure ciblée par point, sans quartier (chemin nullable).
+        $this->assertGreaterThan(0, Coupure::whereNull('quartier_id')->whereNotNull('latitude')->count());
+
+        // L'afflux de signalements sur Centre-Ville déclenche l'anomalie du module IA.
+        $anomalies = app(CoupureRiskAiService::class)->detecterAnomalies();
+        $this->assertTrue(
+            $anomalies->contains(fn (array $a): bool => $a['quartier']->nom === 'Centre-Ville'),
+            'La détection d\'anomalie aurait dû remonter Centre-Ville.',
+        );
+    }
+
+    public function test_the_seeded_alertes_cover_every_level_status_and_targeting(): void
+    {
+        $this->seed();
+
+        // Les 3 niveaux sont représentés.
+        $this->assertSame(3, Alerte::query()->distinct()->count('niveau'));
+
+        // Les 3 statuts dérivés sont représentés (via les scopes du modèle).
+        $this->assertGreaterThan(0, Alerte::actives()->count());
+        $this->assertGreaterThan(0, Alerte::programmees()->count());
+        $this->assertGreaterThan(0, Alerte::terminees()->count());
+
+        // Un brouillon non validé et une alerte géolocalisée sans quartier.
+        $this->assertGreaterThan(0, Alerte::where('validee', false)->count());
+        $this->assertGreaterThan(0, Alerte::whereNotNull('latitude')->doesntHave('quartiers')->count());
+
+        // Une alerte multi-quartiers (héritée, sans cercle).
+        $this->assertGreaterThan(0, Alerte::has('quartiers', '>=', 2)->count());
     }
 }
