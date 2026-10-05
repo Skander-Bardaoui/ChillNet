@@ -120,13 +120,19 @@ class WeatherService
     }
 
     /**
-     * Prévision horaire pour les prochaines heures (par défaut 24 h).
+     * Prévision horaire pour les prochaines heures (par défaut 24 h, jusqu'à 48 h).
      * Toute erreur renvoie un tableau vide : la timeline de l'espace habitant
      * bascule alors sur un état vide, sans jamais lever d'exception.
      *
+     * `$jours` est déduit de `$heures` (au moins 2 : la fenêtre franchit
+     * minuit) et peut être forcé si l'appelant a besoin d'une fenêtre précise.
+     *
+     * Seuls les succès sont mémorisés (comme `actuelCache`) : une panne
+     * transitoire n'est jamais figée, l'appel suivant retente.
+     *
      * @return array<int, MeteoHoraire>
      */
-    public function previsions(?float $latitude, ?float $longitude, int $heures = 24): array
+    public function previsions(?float $latitude, ?float $longitude, int $heures = 24, ?int $jours = null): array
     {
         $key = config('services.weather.key');
         $baseUrl = rtrim((string) config('services.weather.base_url', 'https://api.weatherapi.com/v1'), '/');
@@ -135,17 +141,25 @@ class WeatherService
             return [];
         }
 
-        $cacheKey = sprintf('weather:forecast:%s:%s:%d', round($latitude, 3), round($longitude, 3), $heures);
+        $jours ??= max(2, (int) ceil($heures / 24) + 1);
 
-        return Cache::remember($cacheKey, now()->addMinutes(30), function () use ($baseUrl, $key, $latitude, $longitude, $heures): array {
+        $cacheKey = sprintf('weather:forecast:%s:%s:%d:%d', round($latitude, 3), round($longitude, 3), $heures, $jours);
+
+        $memoire = Cache::get($cacheKey);
+
+        if (is_array($memoire)) {
+            return $memoire;
+        }
+
+        $previsions = (function () use ($baseUrl, $key, $latitude, $longitude, $heures, $jours): array {
             try {
                 $response = Http::timeout(6)
                     ->retry(1, 300)
                     ->get($baseUrl.'/forecast.json', [
                         'key' => $key,
                         'q' => $latitude.','.$longitude,
-                        // 2 jours : la fenêtre de 24 h franchit minuit.
-                        'days' => 2,
+                        // Assez de jours pour couvrir la fenêtre demandée.
+                        'days' => $jours,
                         'lang' => 'fr',
                         'aqi' => 'no',
                         'tz' => 'auto',
@@ -200,6 +214,12 @@ class WeatherService
             ksort($points);
 
             return array_slice(array_values($points), 0, $heures);
-        });
+        })();
+
+        if ($previsions !== []) {
+            Cache::put($cacheKey, $previsions, now()->addMinutes(30));
+        }
+
+        return $previsions;
     }
 }

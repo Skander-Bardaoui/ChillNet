@@ -19,6 +19,7 @@
 @if (session('error'))
 <div role="alert" class="rounded-xl bg-error-container text-on-error-container px-space-md py-space-sm flex items-center gap-2"><span class="material-symbols-outlined">warning</span><span>{{ session('error') }}</span></div>
 @endif
+<x-errors-banner />
 {{ $slot }}
 </div>
 </main>

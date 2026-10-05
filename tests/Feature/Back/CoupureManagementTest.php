@@ -135,4 +135,45 @@ class CoupureManagementTest extends TestCase
             ->assertSee('carte-coupure-form')
             ->assertSee('Point sur la carte');
     }
+
+    public function test_the_edit_form_renders_for_a_coupure_linked_to_a_quartier(): void
+    {
+        $admin = $this->userWithRole(Role::Admin);
+        $quartier = $this->quartier('Centre-Ville', 36.8008, 10.1800);
+
+        $coupure = Coupure::create([
+            'quartier_id' => $quartier->id,
+            'type' => 'panne',
+            'statut' => 'en_cours',
+            'debut' => now(),
+            'latitude' => 36.8012,
+            'longitude' => 10.1815,
+            'lieu' => 'rue des Lilas',
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('back.coupures.edit', $coupure))
+            ->assertOk()
+            ->assertSee('Centre-Ville')
+            ->assertSee('rue des Lilas');
+    }
+
+    public function test_the_edit_form_renders_for_a_point_only_coupure_without_a_quartier(): void
+    {
+        $admin = $this->userWithRole(Role::Admin);
+
+        $coupure = Coupure::create([
+            'quartier_id' => null,
+            'type' => 'panne',
+            'statut' => 'en_cours',
+            'debut' => now(),
+            'latitude' => 36.8012,
+            'longitude' => 10.1815,
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('back.coupures.edit', $coupure))
+            ->assertOk()
+            ->assertSee('Point sur la carte');
+    }
 }

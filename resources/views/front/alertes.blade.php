@@ -82,6 +82,139 @@ Du {{ $alertePrincipale->debut?->format('d/m/Y à H:i') }} au {{ $alertePrincipa
 </section>
 @endif
 
+@if ($courbe)
+@php
+    // Bornes de la zone tracée + libellés formatés une seule fois.
+    $cxG = $courbe['insetGauche'];
+    $cxD = $courbe['largeur'] - $courbe['insetDroit'];
+    $basTrace = $courbe['hauteur'] - 32;
+    $basAxe = $courbe['hauteur'] - 12;
+    $seuilTexte = rtrim(rtrim(number_format($courbe['seuil'], 1, ',', ''), '0'), ',');
+@endphp
+{{-- Courbe de température des prochaines 48 h : situer l'alerte dans le temps --}}
+<section class="relative overflow-hidden rounded-2xl bg-surface-container-low border border-outline-variant/20 shadow-md p-space-md md:p-space-lg flex flex-col gap-space-md">
+<div class="pointer-events-none absolute -top-24 -right-20 w-72 h-72 rounded-full bg-primary-container/10 blur-3xl"></div>
+
+<div class="relative flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+<div class="flex items-start gap-3">
+<div class="flex items-center justify-center w-10 h-10 rounded-xl bg-primary-container/15 text-primary shrink-0"><span class="material-symbols-outlined text-[22px]">show_chart</span></div>
+<div>
+<span class="font-label-sm text-label-sm text-primary uppercase tracking-wider font-semibold">Tendance thermique</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Courbe de température</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Prochaines 48 h · {{ count($courbe['points']) }} points de prévision</p>
+</div>
+</div>
+<div class="flex items-center gap-2 flex-wrap">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">
+<span class="w-2.5 h-2.5 rounded-full" style="background: linear-gradient(135deg, rgb(var(--md-primary)), rgb(var(--md-primary-container)));"></span>Température
+</span>
+@if ($courbe['seuilY'] !== null)
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-error-container/60 text-on-error-container font-label-sm text-label-sm">
+<span class="w-4 border-t-2 border-dashed border-error"></span>Seuil {{ $seuilTexte }}°C
+</span>
+@endif
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-error-container/60 text-on-error-container font-label-sm text-label-sm">
+<span class="w-2.5 h-2.5 rounded-full bg-error"></span>Pic canicule
+</span>
+</div>
+</div>
+
+<div class="relative" x-data="{ actif: null, serie: {{ \Illuminate\Support\Js::from($courbe['serie']) }} }">
+<svg viewBox="0 0 {{ $courbe['largeur'] }} {{ $courbe['hauteur'] }}" class="w-full h-auto" role="img"
+aria-label="Courbe des températures des prochaines 48 heures, minimum {{ $courbe['min'] }} degrés et maximum {{ $courbe['max'] }} degrés">
+<defs>
+<linearGradient id="courbeTempStroke" x1="0" y1="0" x2="1" y2="0">
+<stop offset="0%" stop-color="rgb(var(--md-primary))" />
+<stop offset="100%" stop-color="rgb(var(--md-primary-container))" />
+</linearGradient>
+<linearGradient id="courbeTempFill" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0%" stop-color="rgb(var(--md-primary-container))" stop-opacity="0.32" />
+<stop offset="55%" stop-color="rgb(var(--md-primary-container))" stop-opacity="0.12" />
+<stop offset="100%" stop-color="rgb(var(--md-primary-container))" stop-opacity="0" />
+</linearGradient>
+</defs>
+
+{{-- Grille horizontale + échelle de température --}}
+<g>
+@foreach ($courbe['grille'] as $ligne)
+<line x1="{{ $cxG }}" y1="{{ $ligne['y'] }}" x2="{{ $cxD }}" y2="{{ $ligne['y'] }}" stroke="rgb(var(--md-outline-variant))" stroke-opacity="0.45" stroke-width="1" stroke-dasharray="2 6" />
+<text x="8" y="{{ $ligne['y'] + 4 }}" class="fill-on-surface-variant" font-size="11" opacity="0.85">{{ $ligne['valeur'] }}°</text>
+@endforeach
+</g>
+
+{{-- Séparateurs de jour --}}
+<g>
+@foreach ($courbe['jours'] as $jour)
+<line x1="{{ $jour['x'] }}" y1="22" x2="{{ $jour['x'] }}" y2="{{ $basTrace }}" stroke="rgb(var(--md-outline-variant))" stroke-opacity="0.35" stroke-width="1" stroke-dasharray="3 5" />
+<text x="{{ $jour['x'] + 4 }}" y="15" class="fill-on-surface-variant" font-size="11" font-weight="600" opacity="0.9">{{ $jour['label'] }}</text>
+@endforeach
+</g>
+
+{{-- Aire + courbe lissées --}}
+<path d="{{ $courbe['aire'] }}" fill="url(#courbeTempFill)" />
+<path d="{{ $courbe['chemin'] }}" fill="none" stroke="url(#courbeTempStroke)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" />
+
+{{-- Seuil canicule --}}
+@if ($courbe['seuilY'] !== null)
+<line x1="{{ $cxG }}" y1="{{ $courbe['seuilY'] }}" x2="{{ $cxD }}" y2="{{ $courbe['seuilY'] }}" stroke="rgb(var(--md-error))" stroke-width="1.5" stroke-dasharray="7 5" />
+<text x="{{ $cxD }}" y="{{ $courbe['seuilY'] - 7 }}" text-anchor="end" class="fill-error" font-size="11" font-weight="600">Seuil {{ $seuilTexte }}°C</text>
+@endif
+
+{{-- Repère « maintenant » (premier point = heure en cours) --}}
+<line x1="{{ $courbe['maintenant']['x'] }}" y1="22" x2="{{ $courbe['maintenant']['x'] }}" y2="{{ $basTrace }}" stroke="rgb(var(--md-primary))" stroke-opacity="0.45" stroke-width="1.5" />
+<circle cx="{{ $courbe['maintenant']['x'] }}" cy="{{ $courbe['maintenant']['y'] }}" r="4.5" fill="rgb(var(--md-primary))" stroke="rgb(var(--md-surface-container-low))" stroke-width="2" />
+
+{{-- Marqueurs de pic canicule --}}
+@foreach ($courbe['points'] as $pt)
+@if ($pt['pic'])
+<circle cx="{{ $pt['x'] }}" cy="{{ $pt['y'] }}" r="5.5" fill="rgb(var(--md-error))" stroke="rgb(var(--md-surface-container-low))" stroke-width="2" />
+@endif
+@endforeach
+
+{{-- Axe horaire --}}
+<g class="fill-on-surface-variant" font-size="11" opacity="0.9">
+@foreach ($courbe['labels'] as $label)
+<text x="{{ $label['x'] }}" y="{{ $basAxe }}" text-anchor="middle">{{ $label['texte'] }}</text>
+@endforeach
+</g>
+
+{{-- Zones de survol (une colonne par point) --}}
+@foreach ($courbe['points'] as $i => $pt)
+<rect x="{{ $pt['x'] - 8 }}" y="22" width="16" height="{{ $basTrace - 22 }}" fill="transparent" class="cursor-crosshair" @mouseenter="actif = {{ $i }}" @mouseleave="actif = null" />
+@endforeach
+
+{{-- Curseur vertical + point mis en évidence --}}
+<line x-show="actif !== null" x-cloak y1="22" y2="{{ $basTrace }}" x1="0" x2="0"
+:x1="actif !== null ? serie[actif].x : 0" :x2="actif !== null ? serie[actif].x : 0"
+stroke="rgb(var(--md-primary-container))" stroke-width="1.2" stroke-opacity="0.7" />
+<circle x-show="actif !== null" x-cloak r="7" fill="none" :cx="actif !== null ? serie[actif].x : 0" :cy="actif !== null ? serie[actif].y : 0"
+stroke="rgb(var(--md-primary-container))" stroke-width="2" stroke-opacity="0.9" />
+
+{{-- Infobulle flottante --}}
+<g x-show="actif !== null" x-cloak
+:transform="actif !== null ? 'translate(' + serie[actif].x + ',' + (serie[actif].bas ? (serie[actif].y + 18) : (serie[actif].y - 54)) + ')' : ''">
+<rect x="-42" y="0" width="84" height="42" rx="11" fill="rgb(var(--md-surface-container-highest))" stroke="rgb(var(--md-outline-variant))" stroke-width="1" />
+<text x="0" y="17" text-anchor="middle" class="fill-on-surface-variant" font-size="10" x-text="actif !== null ? serie[actif].j + ' ' + serie[actif].h : ''"></text>
+<text x="0" y="34" text-anchor="middle" class="fill-on-surface" font-size="14" font-weight="700" x-text="actif !== null ? String(serie[actif].t).replace('.', ',') + '°C' : ''"></text>
+</g>
+</svg>
+<p class="sr-only">Utilisez la prévision détaillée ci-dessous pour connaître les températures heure par heure.</p>
+</div>
+
+<div class="relative flex items-center justify-between gap-3 flex-wrap">
+<span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface-container-high/70 text-on-surface font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[16px] text-primary">south</span>Min {{ number_format($courbe['min'], 0) }}°C
+</span>
+<span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface-container-high/70 text-on-surface-variant font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[16px]">schedule</span>Fenêtre {{ count($courbe['points']) }} h
+</span>
+<span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface-container-high/70 text-on-surface font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[16px] text-error">north</span>Max {{ number_format($courbe['max'], 0) }}°C
+</span>
+</div>
+</section>
+@endif
+
 @if ($messagePersonnalise)
 {{-- Message personnalisé par l'IA selon le profil du foyer --}}
 <section class="rounded-xl bg-primary-container/10 border border-primary-container/30 p-space-md md:p-space-lg shadow-md">

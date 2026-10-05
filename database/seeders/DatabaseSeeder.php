@@ -65,7 +65,7 @@ class DatabaseSeeder extends Seeder
             ],
         );
 
-        Residence::updateOrCreate(
+        $lacView = Residence::updateOrCreate(
             ['nom' => 'Résidence Lac View', 'quartier_id' => $bergesDuLac->id],
             [
                 'adresse' => '20 Rue du Lac Léman',
@@ -101,9 +101,12 @@ class DatabaseSeeder extends Seeder
             );
         }
 
+        // Deux gestionnaires sur DEUX zones distinctes : permet de vérifier
+        // l'isolation par zone (chacun ne voit que son quartier).
         $comptes = [
             ['name' => 'Admin ChillNet', 'email' => 'admin@chillnet.test', 'role' => Role::Admin, 'residence_id' => null],
             ['name' => 'Gestionnaire Oliviers', 'email' => 'gestionnaire@chillnet.test', 'role' => Role::Gestionnaire, 'residence_id' => $oliviers->id],
+            ['name' => 'Gestionnaire Berges', 'email' => 'gestionnaire.berges@chillnet.test', 'role' => Role::Gestionnaire, 'residence_id' => $lacView->id],
             ['name' => 'Habitant Test', 'email' => 'habitant@chillnet.test', 'role' => Role::Habitant, 'residence_id' => $oliviers->id, 'profil_vulnerabilites' => ['personne_agee']],
         ];
 
@@ -121,6 +124,11 @@ class DatabaseSeeder extends Seeder
         $habitant = User::where('email', 'habitant@chillnet.test')->first();
 
         if ($habitant) {
+            // Deux lieux du foyer : le sélecteur « Mes lieux » et la carte
+            // (périmètre 800 m) disposent ainsi de deux points à comparer.
+            // `quartier_id` est fixé explicitement : ce seeder tourne sous
+            // WithoutModelEvents, donc le hook d'auto-assignation du modèle
+            // Lieu n'est pas déclenché.
             $habitant->lieux()->updateOrCreate(
                 ['nom' => 'Domicile'],
                 [
@@ -128,7 +136,20 @@ class DatabaseSeeder extends Seeder
                     'adresse' => '12 Avenue Habib Bourguiba',
                     'latitude' => 36.8008,
                     'longitude' => 10.1800,
+                    'quartier_id' => Quartier::plusProche(36.8008, 10.1800)?->id,
                     'est_principal' => true,
+                ],
+            );
+
+            $habitant->lieux()->updateOrCreate(
+                ['nom' => 'Travail'],
+                [
+                    'type' => LieuType::Travail,
+                    'adresse' => '20 Rue du Lac Léman',
+                    'latitude' => 36.8325,
+                    'longitude' => 10.2800,
+                    'quartier_id' => Quartier::plusProche(36.8325, 10.2800)?->id,
+                    'est_principal' => false,
                 ],
             );
         }

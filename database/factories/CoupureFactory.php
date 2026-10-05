@@ -6,6 +6,7 @@ use App\Enums\StatutCoupure;
 use App\Enums\TypeCoupure;
 use App\Models\Coupure;
 use App\Models\Quartier;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -51,9 +52,83 @@ class CoupureFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'statut' => StatutCoupure::Prevue->value,
-            'type' => $this->faker->randomElement([TypeCoupure::Maintenance, TypeCoupure::Delestage])->value,
             'debut' => now()->addDay(),
             'fin' => now()->addDay()->addHours(4),
         ]);
+    }
+
+    public function resolue(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'statut' => StatutCoupure::Resolue->value,
+            'debut' => now()->subDays(2),
+            'fin' => now()->subDays(2)->addHours(2),
+        ]);
+    }
+
+    public function delestage(): static
+    {
+        return $this->type(TypeCoupure::Delestage);
+    }
+
+    public function surcharge(): static
+    {
+        return $this->type(TypeCoupure::Surcharge);
+    }
+
+    public function panne(): static
+    {
+        return $this->type(TypeCoupure::Panne);
+    }
+
+    public function maintenance(): static
+    {
+        return $this->type(TypeCoupure::Maintenance);
+    }
+
+    /**
+     * Ciblage libre : point posé sur la carte (carte front/back plus précise).
+     */
+    public function geo(float $latitude, float $longitude): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'latitude' => $latitude,
+            'longitude' => $longitude,
+        ]);
+    }
+
+    /**
+     * Coupure sans zone interne : la carte s'appuie alors sur le seul point.
+     */
+    public function sansQuartier(): static
+    {
+        return $this->state(fn (array $attributes) => ['quartier_id' => null]);
+    }
+
+    public function dansQuartier(Quartier|int $quartier): static
+    {
+        $id = $quartier instanceof Quartier ? $quartier->id : $quartier;
+
+        return $this->state(fn (array $attributes) => ['quartier_id' => $id]);
+    }
+
+    public function rue(string $lieu): static
+    {
+        return $this->state(fn (array $attributes) => ['lieu' => $lieu]);
+    }
+
+    public function confirmee(int $nombre = 3): static
+    {
+        return $this->state(fn (array $attributes) => ['confirmations' => $nombre]);
+    }
+
+    public function signaleePar(?User $user): static
+    {
+        return $this->state(fn (array $attributes) => ['user_id' => $user?->id]);
+    }
+
+    private function type(TypeCoupure $type): static
+    {
+        return $this->state(fn (array $attributes) => ['type' => $type->value]);
     }
 }

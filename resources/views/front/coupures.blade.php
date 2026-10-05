@@ -20,7 +20,11 @@
 </div>
 <div class="flex flex-wrap gap-2 shrink-0">
 @auth
+@if (auth()->user()->isHabitant())
 <a href="{{ route('coupures.create') }}" class="px-space-md py-2.5 rounded-xl bg-primary-container text-on-primary-container font-label-md text-label-md font-semibold hover:opacity-95 shadow inline-flex items-center gap-2"><span class="material-symbols-outlined text-[18px]">report</span>Signaler une coupure</a>
+@else
+<a href="{{ route('back.coupures.index') }}" class="px-space-md py-2.5 rounded-xl bg-surface-container-high text-on-surface font-label-md text-label-md hover:bg-surface-variant inline-flex items-center gap-2"><span class="material-symbols-outlined text-[18px]">dashboard</span>Espace de gestion</a>
+@endif
 @else
 <a href="{{ route('login') }}" class="px-space-md py-2.5 rounded-xl bg-primary-container text-on-primary-container font-label-md text-label-md font-semibold hover:opacity-95 shadow inline-flex items-center gap-2"><span class="material-symbols-outlined text-[18px]">login</span>Se connecter pour signaler</a>
 @endauth
@@ -40,9 +44,49 @@
 </div>
 <div class="rounded-xl bg-surface-container-low border border-outline-variant/20 p-space-md flex items-center gap-3">
 <span class="material-symbols-outlined text-primary text-[28px]">location_on</span>
-<div><p class="font-headline-sm text-headline-sm text-on-surface font-bold">{{ count($quartiers) }}</p><p class="font-body-sm text-body-sm text-on-surface-variant">zone(s) suivie(s)</p></div>
+<div><p class="font-headline-sm text-headline-sm text-on-surface font-bold">{{ $nbZones }}</p><p class="font-body-sm text-body-sm text-on-surface-variant">zone(s) touchée(s)</p></div>
 </div>
 </div>
+
+{{-- Anomalie IA : afflux de signalements = possible incident majeur non déclaré. --}}
+@if ($anomalies->isNotEmpty())
+<section class="rounded-2xl bg-red-50 border border-red-300 p-space-md flex items-start gap-3" role="alert">
+<span class="material-symbols-outlined text-red-700 text-[28px] shrink-0">crisis_alert</span>
+<div>
+<p class="font-title-md text-title-md text-red-900 font-semibold">Anomalie détectée par l'IA</p>
+<ul class="mt-1 flex flex-col gap-1">
+@foreach ($anomalies as $anomalie)
+<li class="font-body-sm text-body-sm text-red-800 flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">bolt</span>{{ $anomalie['message'] }}</li>
+@endforeach
+</ul>
+</div>
+</section>
+@endif
+
+{{-- Score de risque IA par zone : historique des coupures corrélé à la canicule. --}}
+@if ($risques->isNotEmpty())
+<section class="flex flex-col gap-space-sm">
+<h2 class="font-title-lg text-title-lg text-on-surface font-semibold px-1 flex items-center gap-2">Risque de coupure par zone <span class="font-body-sm text-body-sm text-primary font-normal inline-flex items-center gap-1"><span class="material-symbols-outlined text-[18px]">auto_awesome</span>IA · historique + canicule</span></h2>
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-space-sm">
+@foreach ($risques->take(6) as $risque)
+@php $nr = $risque['niveau']; @endphp
+<article class="rounded-xl bg-surface-container-low border border-outline-variant/20 p-space-md shadow-sm flex flex-col gap-2">
+<div class="flex items-center justify-between gap-2">
+<span class="font-title-md text-title-md text-on-surface font-semibold inline-flex items-center gap-1"><span class="material-symbols-outlined text-[18px]" style="color: {{ $nr->couleurHex() }};">{{ $nr->icone() }}</span>{{ $risque['quartier']->nom }}</span>
+<span class="px-2.5 py-0.5 rounded-full {{ $nr->badgeClasses() }} font-label-sm text-label-sm font-semibold whitespace-nowrap">{{ $nr->label() }}</span>
+</div>
+<div class="h-2 w-full rounded-full bg-surface-container-high overflow-hidden" role="img" aria-label="Score de risque {{ $risque['score'] }} sur 100">
+<div class="h-full rounded-full" style="width: {{ $risque['score'] }}%; background: {{ $nr->couleurHex() }};"></div>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Score {{ $risque['score'] }}/100 · {{ $risque['raison'] }}</p>
+@if (! empty($risque['facteurs']))
+<p class="font-label-sm text-label-sm text-on-surface-variant">{{ implode(' · ', $risque['facteurs']) }}</p>
+@endif
+</article>
+@endforeach
+</div>
+</section>
+@endif
 
 {{-- Carte + filtre côte à côte --}}
 <section class="grid grid-cols-1 lg:grid-cols-3 gap-space-sm">
@@ -114,12 +158,16 @@
 <div class="shrink-0 flex flex-col gap-2">
 <a href="tel:0800066666" class="inline-flex items-center gap-2 px-space-md py-2.5 rounded-xl bg-surface-container-high text-on-surface font-label-md text-label-md hover:bg-surface-variant"><span class="material-symbols-outlined text-[18px] text-primary">call</span>0800 06 66 66</a>
 @auth
+@if (auth()->user()->isHabitant())
 @if (session()->get('coupure_confirmee_'.$coupure->id))
 <span class="inline-flex items-center justify-center gap-1 px-space-md py-2.5 rounded-xl bg-green-100 text-green-800 font-label-md text-label-md font-semibold"><span class="material-symbols-outlined text-[18px]">check_circle</span>Confirmé</span>
 @elseif ($coupure->user_id && (int) $coupure->user_id === (int) auth()->id())
 <span class="inline-flex items-center justify-center px-space-md py-2.5 rounded-xl bg-surface-container-high text-on-surface-variant font-label-md text-label-md" title="Ce sont vos voisins qui confirment">Votre signalement</span>
 @else
 <form method="POST" action="{{ route('coupures.confirm', $coupure->id) }}">@csrf<button type="submit" class="w-full inline-flex items-center justify-center gap-1 px-space-md py-2.5 rounded-xl bg-red-700 text-white font-label-md text-label-md font-semibold hover:bg-red-800"><span class="material-symbols-outlined text-[18px]">thumb_up</span>Je confirme aussi</button></form>
+@endif
+@else
+<a href="{{ route('back.coupures.index') }}" class="inline-flex items-center justify-center px-space-md py-2.5 rounded-xl bg-surface-container-high text-on-surface font-label-md text-label-md hover:bg-surface-variant">Gérer dans le back office</a>
 @endif
 @else
 <a href="{{ route('login') }}" class="inline-flex items-center justify-center px-space-md py-2.5 rounded-xl bg-surface-container-high text-on-surface font-label-md text-label-md hover:bg-surface-variant">Connectez-vous pour confirmer</a>

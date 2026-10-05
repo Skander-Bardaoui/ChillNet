@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreCoupureRequest;
 use App\Models\Coupure;
 use App\Models\Quartier;
+use App\Services\CoupureRiskAiService;
 
 /**
  * Back office des coupures (module 2).
@@ -15,9 +16,14 @@ use App\Models\Quartier;
  *  - Gestionnaire : SA zone uniquement (le quartier de sa résidence).
  *                   Il publie surtout des coupures PRÉVUES
  *                   (maintenance, délestage programmé).
+ *
+ * Le score de risque IA par zone et les anomalies (afflux de signalements)
+ * sont affichés sur le tableau de bord, dans le périmètre du gestionnaire.
  */
 class CoupureController extends Controller
 {
+    public function __construct(private CoupureRiskAiService $risk) {}
+
     public function index()
     {
         $user = request()->user();
@@ -87,7 +93,18 @@ class CoupureController extends Controller
 
         $centre = $this->centreCarte();
 
-        return view('back.coupures.index', compact('coupures', 'tri', 'stats', 'marqueurs', 'centre'));
+        // Brique IA : risque de coupure par zone (historique + canicule) et
+        // anomalies — restreints au périmètre du gestionnaire.
+        $risques = $this->risk->scoresPourQuartiers($this->quartiersAccessibles());
+        $anomalies = $this->risk->detecterAnomalies();
+
+        if ($user && $user->isGestionnaire()) {
+            $anomalies = $anomalies
+                ->filter(fn (array $a): bool => (int) $a['quartier']->id === (int) $quartierId)
+                ->values();
+        }
+
+        return view('back.coupures.index', compact('coupures', 'tri', 'stats', 'marqueurs', 'centre', 'risques', 'anomalies'));
     }
 
     public function create()
@@ -219,12 +236,8 @@ class CoupureController extends Controller
             )?->id;
         }
 
-        // Le statut résolu/en cours/prevue est modifiable ici (back office),
+        // Le statut résolu/en cours/prevue est saisi ici (back office),
         // contrairement au front où l'habitant ne crée que du "en cours".
-        if (! isset($data['statut'])) {
-            $data['statut'] = StatutCoupure::Prevue->value;
-        }
-
         return $data;
     }
 }

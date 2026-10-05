@@ -97,12 +97,13 @@ class VigilanceAiService
     }
 
     /**
-     * Historique récent pour un quartier (input "historique" de niveauPour).
-     * 100 % base de données, aucun appel externe.
+     * Historique récent pour un ou plusieurs quartiers (input "historique" de
+     * niveauPour). 100 % base de données, aucun appel externe.
      *
+     * @param  int|array<int>  $quartierId
      * @return array{jours_surchauffe: int, temp_max: float|null}
      */
-    public function historiquePourQuartier(int $quartierId, int $jours = 3): array
+    public function historiquePourQuartier(int|array $quartierId, int $jours = 3): array
     {
         $depuis = Carbon::now()->subDays($jours);
 
