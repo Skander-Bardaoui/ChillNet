@@ -123,8 +123,9 @@
 @if (! $alerte->validee)
 <form method="POST" action="{{ route('back.alertes.valider', $alerte->id) }}" class="inline">@csrf @method('PATCH')<button type="submit" class="inline-flex items-center gap-1 text-green-700 hover:underline font-label-md text-label-md"><span class="material-symbols-outlined text-[16px]">check_circle</span>Valider</button></form>
 @endif
-<a href="{{ route('back.alertes.edit', $alerte->id) }}" class="inline-flex items-center gap-1 text-primary hover:underline font-label-md text-label-md"><span class="material-symbols-outlined text-[16px]">edit</span>Modifier</a>
-<form method="POST" action="{{ route('back.alertes.destroy', $alerte->id) }}" class="inline" onsubmit="return confirm('Supprimer cette alerte ?');">@csrf @method('DELETE')<button type="submit" class="inline-flex items-center gap-1 text-error hover:underline font-label-md text-label-md"><span class="material-symbols-outlined text-[16px]">delete</span>Supprimer</button></form>
+<a href="{{ route('back.alertes.show', $alerte->id) }}" title="Voir" aria-label="Voir" class="inline-flex items-center justify-center h-9 w-9 rounded-lg text-on-surface-variant hover:bg-surface-container-high"><span class="material-symbols-outlined text-[18px]">visibility</span></a>
+<a href="{{ route('back.alertes.edit', $alerte->id) }}" title="Modifier" aria-label="Modifier" class="inline-flex items-center justify-center h-9 w-9 rounded-lg text-primary hover:bg-primary-container/20"><span class="material-symbols-outlined text-[18px]">edit</span></a>
+<form method="POST" action="{{ route('back.alertes.destroy', $alerte->id) }}" class="inline" onsubmit="return confirm('Supprimer cette alerte ?');">@csrf @method('DELETE')<button type="submit" title="Supprimer" aria-label="Supprimer" class="inline-flex items-center justify-center h-9 w-9 rounded-lg text-error hover:bg-error-container/40"><span class="material-symbols-outlined text-[18px]">delete</span></button></form>
 </td>
 </tr>
 @empty

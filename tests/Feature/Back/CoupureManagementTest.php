@@ -176,4 +176,49 @@ class CoupureManagementTest extends TestCase
             ->assertOk()
             ->assertSee('Point sur la carte');
     }
+
+    public function test_the_show_page_renders_the_coupure_detail(): void
+    {
+        $admin = $this->userWithRole(Role::Admin);
+        $quartier = $this->quartier('Centre-Ville', 36.8008, 10.1800);
+
+        $coupure = Coupure::create([
+            'quartier_id' => $quartier->id,
+            'type' => 'panne',
+            'statut' => 'en_cours',
+            'debut' => now(),
+            'latitude' => 36.8012,
+            'longitude' => 10.1815,
+            'lieu' => 'rue des Lilas',
+            'description' => 'Message de test détail.',
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('back.coupures.show', $coupure))
+            ->assertOk()
+            ->assertSee('Centre-Ville')
+            ->assertSee('rue des Lilas')
+            ->assertSee('Message de test détail.');
+    }
+
+    public function test_a_gestionnaire_cannot_view_a_coupure_outside_his_zone(): void
+    {
+        $sien = $this->quartier('Ma Zone', 36.8008, 10.1800);
+        $autre = $this->quartier('Ailleurs', 36.9000, 10.3000);
+        $residence = Residence::create([
+            'nom' => 'Résidence gestionnaire',
+            'quartier_id' => $sien->id,
+            'adresse' => '1 rue de la Zone',
+        ]);
+        $gestionnaire = $this->userWithRole(Role::Gestionnaire, $residence->id);
+
+        $coupureAilleurs = Coupure::create([
+            'quartier_id' => $autre->id,
+            'type' => 'panne',
+            'statut' => 'en_cours',
+            'debut' => now(),
+        ]);
+
+        $this->actingAs($gestionnaire)->get(route('back.coupures.show', $coupureAilleurs->id))->assertForbidden();
+    }
 }

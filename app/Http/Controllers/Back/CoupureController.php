@@ -116,6 +116,15 @@ class CoupureController extends Controller
         return view('back.coupures.create', compact('quartiers', 'coupure', 'centre'));
     }
 
+    public function show(int $id)
+    {
+        $this->authorizeCoupure($id);
+
+        $coupure = Coupure::with(['quartier', 'user'])->findOrFail($id);
+
+        return view('back.coupures.show', compact('coupure'));
+    }
+
     public function store(StoreCoupureRequest $request)
     {
         $data = $this->attributes($request);

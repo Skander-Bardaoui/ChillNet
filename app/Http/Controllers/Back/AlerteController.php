@@ -151,6 +151,15 @@ class AlerteController extends Controller
         return view('back.alertes.create', compact('quartiers', 'alerte', 'niveaux', 'meteo', 'meteoLieu'));
     }
 
+    public function show(int $id)
+    {
+        $this->authorizeAlerte($id);
+
+        $alerte = Alerte::with(['quartiers', 'user', 'validateur'])->findOrFail($id);
+
+        return view('back.alertes.show', compact('alerte'));
+    }
+
     public function store(StoreAlerteRequest $request)
     {
         $data = $this->donnees($request);
