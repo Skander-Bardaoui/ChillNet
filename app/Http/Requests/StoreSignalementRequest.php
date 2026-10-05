@@ -15,6 +15,9 @@ class StoreSignalementRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'residence_id' => $this->isMethod('POST')
+                ? ['required', 'integer', Rule::exists('residences', 'id')]
+                : ['prohibited'],
             'categorie' => ['required', Rule::in(['fuite', 'panne_locale', 'personne_vulnerable', 'autre'])],
             'categorie_autre' => ['required_if:categorie,autre', 'nullable', 'string', 'max:100'],
             'urgence' => ['required', Rule::in(['normale', 'prioritaire', 'vitale'])],

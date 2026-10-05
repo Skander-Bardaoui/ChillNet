@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Front;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreSignalementRequest;
+use App\Models\Residence;
 use App\Models\Signalement;
 use App\Notifications\SignalementNotification;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -15,15 +16,15 @@ class SignalementController extends Controller
 {
     public function index(): View
     {
-        $signalements = Signalement::with('residence')
+        $signalements = Signalement::with(['residence', 'residence.quartier'])
             ->where('user_id', auth()->id())
             ->latest()
             ->get();
         $notifications = auth()->user()->notifications()->latest()->get();
         $unreadNotificationsCount = auth()->user()->unreadNotifications()->count();
-        $residence = auth()->user()->residence;
+        $residences = Residence::with('quartier')->orderBy('nom')->get();
 
-        return view('front.signalements', compact('signalements', 'notifications', 'unreadNotificationsCount', 'residence'));
+        return view('front.signalements', compact('signalements', 'notifications', 'unreadNotificationsCount', 'residences'));
     }
 
     public function store(StoreSignalementRequest $request): RedirectResponse
@@ -31,17 +32,12 @@ class SignalementController extends Controller
         $user = $request->user();
         $today = now()->toDateString();
 
-        if (! $user->residence_id) {
-            return back()->withErrors(['signalement' => 'Votre compte doit être rattaché à une résidence.']);
-        }
-
         $data = $request->validated();
         $data['user_id'] = $user->id;
-        $data['residence_id'] = $user->residence_id;
         $data['date_signalement'] = $today;
 
         if (Signalement::where('user_id', $user->id)
-            ->where('residence_id', $user->residence_id)
+            ->where('residence_id', $data['residence_id'])
             ->where('categorie', $data['categorie'])
             ->whereDate('date_signalement', $today)
             ->exists()) {
