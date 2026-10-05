@@ -130,8 +130,9 @@
 <td class="px-6 py-4 text-on-surface-variant whitespace-nowrap"><span class="inline-flex items-center gap-1" title="{{ $coupure->confirmations }} habitant(s) confirment"><span class="material-symbols-outlined text-[16px]">groups</span>{{ $coupure->confirmations }}</span></td>
 <td class="px-6 py-4 text-on-surface-variant whitespace-nowrap font-body-sm text-body-sm">{{ $coupure->debut?->format('d/m/Y H:i') }}<br /><span class="text-on-surface-variant/80">→ {{ $coupure->fin?->format('d/m/Y H:i') ?? '—' }}</span></td>
 <td class="px-6 py-4 text-right space-x-3 whitespace-nowrap">
-<a href="{{ route('back.coupures.edit', $coupure->id) }}" class="inline-flex items-center gap-1 text-primary hover:underline font-label-md text-label-md"><span class="material-symbols-outlined text-[16px]">edit</span>Modifier</a>
-<form method="POST" action="{{ route('back.coupures.destroy', $coupure->id) }}" class="inline" onsubmit="return confirm('Supprimer cette coupure ?');">@csrf @method('DELETE')<button type="submit" class="inline-flex items-center gap-1 text-error hover:underline font-label-md text-label-md"><span class="material-symbols-outlined text-[16px]">delete</span>Supprimer</button></form>
+<a href="{{ route('back.coupures.show', $coupure->id) }}" title="Voir" aria-label="Voir" class="inline-flex items-center justify-center h-9 w-9 rounded-lg text-on-surface-variant hover:bg-surface-container-high"><span class="material-symbols-outlined text-[18px]">visibility</span></a>
+<a href="{{ route('back.coupures.edit', $coupure->id) }}" title="Modifier" aria-label="Modifier" class="inline-flex items-center justify-center h-9 w-9 rounded-lg text-primary hover:bg-primary-container/20"><span class="material-symbols-outlined text-[18px]">edit</span></a>
+<form method="POST" action="{{ route('back.coupures.destroy', $coupure->id) }}" class="inline" onsubmit="return confirm('Supprimer cette coupure ?');">@csrf @method('DELETE')<button type="submit" title="Supprimer" aria-label="Supprimer" class="inline-flex items-center justify-center h-9 w-9 rounded-lg text-error hover:bg-error-container/40"><span class="material-symbols-outlined text-[18px]">delete</span></button></form>
 </td>
 </tr>
 @empty

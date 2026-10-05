@@ -128,12 +128,12 @@ Route::prefix('admin')->name('back.')->middleware(['auth', 'role:admin,gestionna
     Route::resource('residences', ResidenceController::class)->except(['show']);
 
     // Module 2 : back office coupures (gestionnaire = sa zone, admin = tout).
-    Route::resource('coupures', BackCoupureController::class)->except(['show']);
+    Route::resource('coupures', BackCoupureController::class);
 
     // Module 1 : back office alertes canicule (CRUD + validation + IA).
     Route::post('/alertes/prefill', [BackAlerteController::class, 'prefill'])->name('alertes.prefill');
     Route::patch('/alertes/{alerte}/valider', [BackAlerteController::class, 'valider'])->name('alertes.valider');
-    Route::resource('alertes', BackAlerteController::class)->except(['show']);
+    Route::resource('alertes', BackAlerteController::class);
 
     /*
     |----------------------------------------------------------------------

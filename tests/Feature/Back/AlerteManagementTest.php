@@ -283,6 +283,7 @@ class AlerteManagementTest extends TestCase
         $alerteAilleurs = Alerte::factory()->create();
         $alerteAilleurs->quartiers()->sync([$autre->id]);
 
+        $this->actingAs($gestionnaire)->get(route('back.alertes.show', $alerteAilleurs->id))->assertForbidden();
         $this->actingAs($gestionnaire)->get(route('back.alertes.edit', $alerteAilleurs->id))->assertForbidden();
         $this->actingAs($gestionnaire)->delete(route('back.alertes.destroy', $alerteAilleurs->id))->assertForbidden();
         $this->actingAs($gestionnaire)->patch(route('back.alertes.valider', $alerteAilleurs->id))->assertForbidden();
@@ -314,6 +315,7 @@ class AlerteManagementTest extends TestCase
         $this->actingAs($admin)->get(route('back.alertes.index'))->assertOk()->assertSee('Alerte écran');
         $this->actingAs($admin)->get(route('back.alertes.create'))->assertOk()->assertSee('Assistant IA canicule');
         $this->actingAs($admin)->get(route('back.alertes.edit', $alerte->id))->assertOk()->assertSee('Alerte écran');
+        $this->actingAs($admin)->get(route('back.alertes.show', $alerte->id))->assertOk()->assertSee('Alerte écran')->assertSee('Centre-Ville');
 
         // Chaque mode de tri doit rendre sans erreur.
         foreach (['recent', 'ancien', 'niveau', 'statut', 'zone'] as $tri) {
