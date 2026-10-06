@@ -7,6 +7,7 @@ use App\Enums\Role;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Models\Equipement;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -79,6 +80,16 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
     public function lieux(): HasMany
     {
         return $this->hasMany(Lieu::class, 'user_id');
+    }
+
+    /**
+     * Équipements sensibles déclarés par le foyer (module 4).
+     *
+     * @return HasMany<Equipement, $this>
+     */
+    public function equipements(): HasMany
+    {
+        return $this->hasMany(Equipement::class, 'user_id');
     }
 
     /**

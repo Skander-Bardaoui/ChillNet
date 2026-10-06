@@ -11,6 +11,7 @@
         ['href' => route('back.coupures.index'), 'label' => 'Coupures', 'active' => request()->routeIs('back.coupures.*')],
         ['href' => route('back.points.index'), 'label' => 'Points de fraîcheur', 'active' => request()->routeIs('back.points.*')],
         ['href' => route('back.conseils.index'), 'label' => 'Conseils', 'active' => request()->routeIs('back.conseils.*')],
+        $estAdmin ? ['href' => route('back.equipement-types.index'), 'label' => 'Types d\'équipements', 'active' => request()->routeIs('back.equipement-types.*')] : null,
         ['href' => route('back.signalements.index'), 'label' => 'Signalements', 'active' => request()->routeIs('back.signalements.*')],
     ]));
 @endphp
