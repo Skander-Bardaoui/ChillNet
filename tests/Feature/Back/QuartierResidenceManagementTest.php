@@ -5,7 +5,9 @@ namespace Tests\Feature\Back;
 use App\Enums\Role;
 use App\Enums\StatutCoupure;
 use App\Models\Alerte;
+use App\Models\Avis;
 use App\Models\Coupure;
+use App\Models\PointFraicheur;
 use App\Models\Quartier;
 use App\Models\Residence;
 use App\Models\User;
@@ -205,7 +207,7 @@ class QuartierResidenceManagementTest extends TestCase
         // Rejouer le seeder ne doit jamais dupliquer le réseau…
         $this->assertSame(2, Quartier::count());
         $this->assertSame(7, Residence::count());
-        $this->assertSame(4, User::count());
+        $this->assertSame(12, User::count()); // 4 comptes du réseau + 8 voisins de démo (module 3)
         $this->assertSame(6, Residence::pointFraicheur()->count());
         $this->assertSame(1, User::where('role', Role::Admin->value)->count());
         $this->assertSame(2, User::where('role', Role::Gestionnaire->value)->count());
@@ -213,6 +215,10 @@ class QuartierResidenceManagementTest extends TestCase
         // …ni les données de démo des deux modules.
         $this->assertSame(8, Alerte::count());
         $this->assertSame(9, Coupure::count());
+
+        // …ni celles du module 3 (points de fraîcheur + avis).
+        $this->assertSame(17, PointFraicheur::count());
+        $this->assertSame(47, Avis::count());
     }
 
     public function test_the_seeded_coupures_cover_every_status_and_trigger_an_anomaly(): void
