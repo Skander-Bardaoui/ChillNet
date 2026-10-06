@@ -73,26 +73,41 @@
                 @csrf
 
                 <div class="flex flex-col gap-2">
+                    <label for="residence_id" class="font-label-md text-label-md text-on-surface">Résidence concernée</label>
+                    <select id="residence_id" name="residence_id" required @disabled($residences->isEmpty()) class="rounded-2xl border border-outline-variant/50 bg-surface-container px-space-sm py-3 text-on-surface shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-60">
+                        <option value="">Sélectionnez une résidence</option>
+                        @foreach ($residences as $residenceOption)
+                            <option value="{{ $residenceOption->id }}" @selected((string) old('residence_id', auth()->user()->residence_id) === (string) $residenceOption->id)>
+                                {{ $residenceOption->nom }}{{ $residenceOption->quartier ? ' — '.$residenceOption->quartier->nom : '' }}
+                            </option>
+                        @endforeach
+                    </select>
+                    @if ($residences->isEmpty())
+                        <p class="font-body-sm text-body-sm text-on-surface-variant">Aucune résidence n’est encore disponible. Contactez un gestionnaire pour qu’il en ajoute une.</p>
+                    @endif
+                </div>
+
+                <div class="flex flex-col gap-2">
                     <label for="categorie" class="font-label-md text-label-md text-on-surface">Catégorie</label>
                     <select id="categorie" name="categorie" required class="rounded-2xl border border-outline-variant/50 bg-surface-container px-space-sm py-3 text-on-surface shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20">
-                        <option value="fuite">Fuite</option>
-                        <option value="panne_locale">Panne locale</option>
-                        <option value="personne_vulnerable">Personne vulnérable isolée</option>
-                        <option value="autre">Autre</option>
+                        <option value="fuite" @selected(old('categorie', 'fuite') === 'fuite')>Fuite</option>
+                        <option value="panne_locale" @selected(old('categorie') === 'panne_locale')>Panne locale</option>
+                        <option value="personne_vulnerable" @selected(old('categorie') === 'personne_vulnerable')>Personne vulnérable isolée</option>
+                        <option value="autre" @selected(old('categorie') === 'autre')>Autre</option>
                     </select>
                 </div>
 
                 <div id="categorie-autre-wrapper" class="hidden flex-col gap-2">
                     <label for="categorie_autre" class="font-label-md text-label-md text-on-surface">Précisez le problème</label>
-                    <input id="categorie_autre" name="categorie_autre" type="text" maxlength="100" placeholder="Écrivez la catégorie du problème" class="rounded-2xl border border-outline-variant/50 bg-surface-container px-space-sm py-3 text-on-surface placeholder:text-on-surface-variant/80 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" />
+                    <input id="categorie_autre" name="categorie_autre" type="text" value="{{ old('categorie_autre') }}" maxlength="100" placeholder="Écrivez la catégorie du problème" class="rounded-2xl border border-outline-variant/50 bg-surface-container px-space-sm py-3 text-on-surface placeholder:text-on-surface-variant/80 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" />
                 </div>
 
                 <div class="flex flex-col gap-2">
                     <label for="urgence" class="font-label-md text-label-md text-on-surface">Niveau d’urgence</label>
                     <select id="urgence" name="urgence" required class="rounded-2xl border border-outline-variant/50 bg-surface-container px-space-sm py-3 text-on-surface shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20">
-                        <option value="normale">Normale</option>
-                        <option value="prioritaire">Prioritaire</option>
-                        <option value="vitale">Vitale</option>
+                        <option value="normale" @selected(old('urgence', 'normale') === 'normale')>Normale</option>
+                        <option value="prioritaire" @selected(old('urgence') === 'prioritaire')>Prioritaire</option>
+                        <option value="vitale" @selected(old('urgence') === 'vitale')>Vitale</option>
                     </select>
                 </div>
 
@@ -145,7 +160,7 @@
             <div class="mb-space-md flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h2 class="font-title-md text-title-md text-on-surface">Mes signalements</h2>
-                    <p class="mt-1 font-body-sm text-body-sm text-on-surface-variant">Résidence associée : <strong class="text-on-surface">{{ $residence?->nom ?? 'Aucune résidence associée' }}</strong></p>
+                    <p class="mt-1 font-body-sm text-body-sm text-on-surface-variant">Chaque signalement est associé à la résidence que vous sélectionnez.</p>
                 </div>
                 <span class="inline-flex items-center gap-2 rounded-full border border-outline-variant/40 bg-surface-container px-3 py-1.5 text-xs font-medium uppercase tracking-[0.12em] text-on-surface-variant">
                     <span class="material-symbols-outlined text-[16px] text-primary">location_home</span>
@@ -155,10 +170,11 @@
 
             <div class="overflow-hidden rounded-2xl border border-outline-variant/30 bg-surface-container">
                 <div class="overflow-x-auto">
-                    <table class="min-w-[820px] w-full border-collapse text-left">
+                    <table class="min-w-[960px] w-full border-collapse text-left">
                         <thead class="bg-surface-container-high/80">
                             <tr class="border-b border-outline-variant/25 text-on-surface-variant">
                                 <th class="px-4 py-3 font-label-sm text-label-sm uppercase tracking-[0.12em]">Catégorie</th>
+                                <th class="px-4 py-3 font-label-sm text-label-sm uppercase tracking-[0.12em]">Résidence</th>
                                 <th class="px-4 py-3 font-label-sm text-label-sm uppercase tracking-[0.12em]">Urgence</th>
                                 <th class="px-4 py-3 font-label-sm text-label-sm uppercase tracking-[0.12em]">Description</th>
                                 <th class="px-4 py-3 font-label-sm text-label-sm uppercase tracking-[0.12em]">Statut</th>
@@ -183,6 +199,9 @@
                                 <tr class="border-b border-outline-variant/20 transition hover:bg-surface-container-high/40">
                                     <td class="px-4 py-3 font-body-sm text-body-sm text-on-surface">
                                         {{ $signalement->categorie === 'autre' ? $signalement->categorie_autre : str_replace('_', ' ', ucfirst($signalement->categorie)) }}
+                                    </td>
+                                    <td class="px-4 py-3 font-body-sm text-body-sm text-on-surface">
+                                        {{ $signalement->residence?->nom ?? 'Résidence supprimée' }}
                                     </td>
                                     <td class="px-4 py-3">
                                         <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold {{ $badgeUrgence }}">
@@ -214,7 +233,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="6" class="px-4 py-8 text-center font-body-sm text-body-sm text-on-surface-variant">
+                                    <td colspan="7" class="px-4 py-8 text-center font-body-sm text-body-sm text-on-surface-variant">
                                         Aucun signalement envoyé.
                                     </td>
                                 </tr>

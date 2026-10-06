@@ -162,5 +162,7 @@ class DatabaseSeeder extends Seeder
 
         // Module 3 (points de fraîcheur / avis) : après les quartiers géolocalisés et les comptes.
         $this->call(PointFraicheurSeeder::class);
+        // Module signalements : exemples visibles dans l'espace habitant et le back-office.
+        $this->call(SignalementSeeder::class);
     }
 }

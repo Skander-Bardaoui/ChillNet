@@ -173,7 +173,12 @@ Route::prefix('admin')->name('back.')->middleware(['auth', 'role:admin,gestionna
     Route::get('/avis', [BackAvisController::class, 'index'])->name('avis.index');
     Route::delete('/avis/{avis}', [BackAvisController::class, 'destroy'])->name('avis.destroy');
     Route::get('/signalements', [BackSignalementController::class, 'index'])->name('signalements.index');
-    Route::patch('/signalements/{signalement}', [BackSignalementController::class, 'update'])->name('signalements.update');
+    Route::get('/signalements/creer', [BackSignalementController::class, 'create'])->name('signalements.create');
+    Route::post('/signalements', [BackSignalementController::class, 'store'])->name('signalements.store');
+    Route::get('/signalements/{signalement}/modifier', [BackSignalementController::class, 'edit'])->name('signalements.edit');
+    Route::put('/signalements/{signalement}', [BackSignalementController::class, 'update'])->name('signalements.update');
+    Route::delete('/signalements/{signalement}', [BackSignalementController::class, 'destroy'])->name('signalements.destroy');
+    Route::patch('/signalements/{signalement}/traitement', [BackSignalementController::class, 'updateTreatment'])->name('signalements.treatment');
 });
 
 require __DIR__.'/auth.php';
