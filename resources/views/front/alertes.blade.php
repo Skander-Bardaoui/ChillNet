@@ -2,9 +2,12 @@
 <x-slot name="header">
 <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
 <div>
-<p class="font-label-sm text-label-sm text-primary uppercase tracking-wider font-semibold">Module canicule — Alertes de mes lieux</p>
-<h1 class="font-headline-lg text-headline-lg text-on-surface">Alertes &amp; vigilance</h1>
+<p class="font-label-sm text-label-sm text-primary uppercase tracking-wider font-semibold">{{ $vue === 'general' ? 'Module canicule — Alertes générales' : 'Module canicule — Alertes de mes lieux' }}</p>
+<h1 class="font-headline-lg text-headline-lg text-on-surface">{{ $vue === 'general' ? 'Alertes générales' : 'Alertes & vigilance' }}</h1>
 <p class="font-body-sm text-body-sm text-on-surface-variant mt-1">
+@if ($vue === 'general')
+Toutes les alertes publiées par votre ville, toutes zones confondues — restez vigilant même hors de vos lieux.
+@else
 @if ($lieuFiltre)
 {{ $lieuFiltre->nom }}@if ($lieuFiltre->adresse) — {{ $lieuFiltre->adresse }}@endif
 @else
@@ -13,12 +16,111 @@
 @foreach (auth()->user()->profilsVulnerabilite() as $profil)
 <span class="ml-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-surface-variant text-on-surface-variant font-label-sm text-label-sm"><span class="material-symbols-outlined text-[14px]">{{ $profil->icone() }}</span>{{ $profil->label() }}</span>
 @endforeach
+@endif
 </p>
 </div>
-<a href="{{ route('conseils') }}" class="shrink-0 inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-surface-variant text-on-surface font-label-md text-label-md hover:bg-surface-bright transition-colors"><span class="material-symbols-outlined text-[18px]">health_and_safety</span>Les réflexes canicule</a>
+<div class="shrink-0 flex flex-wrap items-center gap-2">
+@if ($vue === 'general')
+<a href="{{ route('alertes.index') }}" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-surface-variant text-on-surface font-label-md text-label-md hover:bg-surface-bright transition-colors"><span class="material-symbols-outlined text-[18px]">arrow_back</span>Mes lieux</a>
+@else
+<a href="{{ route('alertes.index', ['vue' => 'general']) }}" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-primary-container/15 text-primary font-label-md text-label-md hover:bg-primary-container/25 transition-colors"><span class="material-symbols-outlined text-[18px]">campaign</span>Alertes générales</a>
+@endif
+<a href="{{ route('conseils') }}" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-surface-variant text-on-surface font-label-md text-label-md hover:bg-surface-bright transition-colors"><span class="material-symbols-outlined text-[18px]">health_and_safety</span>Les réflexes canicule</a>
+</div>
 </div>
 </x-slot>
 
+@if ($vue === 'general')
+{{-- Vue « alertes générales » : toutes les alertes publiées, toutes zones. --}}
+@if ($generalesActives->isNotEmpty())
+<section class="flex flex-col gap-space-sm">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[22px] text-error">notifications_active</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Alertes en cours ({{ $generalesActives->count() }})</h2>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-space-md">
+@foreach ($generalesActives as $alerte)
+@php $ng = $alerte->niveau; @endphp
+<a href="{{ route('alertes.show', $alerte->id) }}" class="block rounded-xl bg-surface-container-low p-space-md shadow-md flex flex-col gap-space-sm border border-outline-variant/20 hover:border-primary-container/50 hover:shadow-lg transition-all">
+<div class="flex items-center justify-between">
+<span class="px-2 py-0.5 rounded-full {{ $ng->badgeClasses() }} font-label-sm text-label-sm uppercase tracking-wider font-semibold flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">{{ $ng->icone() }}</span>{{ $ng->label() }}</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Seuil {{ rtrim(rtrim(number_format((float) $alerte->seuil_temperature, 1, ',', ''), '0'), ',') }}°C</span>
+</div>
+<h3 class="font-title-md text-title-md text-on-surface">{{ $alerte->titre }}</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Du {{ $alerte->debut?->format('d/m/Y H:i') }} au {{ $alerte->fin?->format('d/m/Y H:i') }}</p>
+@if ($alerte->quartiers->isNotEmpty())
+<p class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">location_on</span>{{ $alerte->quartiers->pluck('nom')->implode(', ') }}</p>
+@elseif ($alerte->hasCoordinates())
+<p class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">location_on</span>Zone ciblée · rayon {{ rtrim(rtrim(number_format($alerte->rayonMetres() / 1000, 1, ',', ''), '0'), ',') }} km</p>
+@endif
+@if ($alerte->message)
+<p class="font-body-sm text-body-sm text-on-surface-variant">{{ \Illuminate\Support\Str::limit($alerte->message, 160) }}</p>
+@endif
+<span class="mt-auto pt-1 inline-flex items-center gap-1 font-label-sm text-label-sm text-primary">Voir le détail<span class="material-symbols-outlined text-[16px]">chevron_right</span></span>
+</a>
+@endforeach
+</div>
+</section>
+@endif
+
+@if ($generalesProgrammees->isNotEmpty())
+<section class="flex flex-col gap-space-sm">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[22px] text-primary">event_upcoming</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Alertes programmées ({{ $generalesProgrammees->count() }})</h2>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-space-md">
+@foreach ($generalesProgrammees as $alerte)
+@php $np = $alerte->niveau; @endphp
+<a href="{{ route('alertes.show', $alerte->id) }}" class="block rounded-xl bg-surface-container-low p-space-md shadow-sm flex items-start gap-space-sm border border-outline-variant/20 hover:border-primary-container/50 hover:shadow-md transition-all">
+<span class="material-symbols-outlined text-[22px]" @style(['color: '.$np->couleurHex()])>event_upcoming</span>
+<div class="flex-1">
+<div class="flex items-center gap-2 flex-wrap">
+<p class="font-title-md text-title-md text-on-surface">{{ $alerte->titre }}</p>
+<span class="px-2 py-0.5 rounded-full {{ $np->badgeClasses() }} font-label-sm text-label-sm font-semibold">{{ $np->label() }}</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Début le {{ $alerte->debut?->format('d/m/Y à H:i') }}@if ($alerte->quartiers->isNotEmpty()) · {{ $alerte->quartiers->pluck('nom')->implode(', ') }}@endif</p>
+</div>
+<span class="material-symbols-outlined text-[20px] text-on-surface-variant self-center">chevron_right</span>
+</a>
+@endforeach
+</div>
+</section>
+@endif
+
+@if ($generalesTerminees->isNotEmpty())
+<section class="flex flex-col gap-space-sm">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[22px] text-on-surface-variant">history</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Récemment terminées (7 derniers jours)</h2>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-space-md opacity-80">
+@foreach ($generalesTerminees as $alerte)
+@php $nt = $alerte->niveau; @endphp
+<a href="{{ route('alertes.show', $alerte->id) }}" class="block rounded-xl bg-surface-container-low p-space-md shadow-sm flex flex-col gap-1 border border-outline-variant/20 hover:border-primary-container/50 hover:shadow-md transition-all">
+<div class="flex items-center justify-between">
+<span class="px-2 py-0.5 rounded-full {{ $nt->badgeClasses() }} font-label-sm text-label-sm font-semibold">{{ $nt->label() }}</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Terminée</span>
+</div>
+<p class="font-title-md text-title-md text-on-surface">{{ $alerte->titre }}</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Fin le {{ $alerte->fin?->format('d/m/Y à H:i') }}</p>
+<span class="mt-auto pt-1 inline-flex items-center gap-1 font-label-sm text-label-sm text-primary">Voir le détail<span class="material-symbols-outlined text-[16px]">chevron_right</span></span>
+</a>
+@endforeach
+</div>
+</section>
+@endif
+
+@if ($generalesActives->isEmpty() && $generalesProgrammees->isEmpty() && $generalesTerminees->isEmpty())
+<section class="rounded-xl bg-surface-container-low p-space-md md:p-space-lg shadow-md flex items-start gap-space-md border border-outline-variant/20">
+<div class="flex items-center justify-center w-12 h-12 rounded-xl bg-primary-container/15 text-primary shrink-0"><span class="material-symbols-outlined text-[26px]">check_circle</span></div>
+<div>
+<p class="font-title-md text-title-md text-on-surface">Aucune alerte publiée</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Aucune alerte générale n'est publiée pour le moment. Les alertes publiées par votre ville apparaîtront ici automatiquement.</p>
+</div>
+</section>
+@endif
+@else
 {{-- Filtre par lieu du foyer (Domicile, Travail…) --}}
 <form method="GET" action="{{ route('alertes.index') }}" class="flex flex-wrap items-center gap-2">
 <label for="lieu_id" class="font-label-md text-label-md text-on-surface-variant">Mes lieux :</label>
@@ -45,12 +147,12 @@ Météo locale :{{ rtrim(rtrim(number_format($meteo->temperature, 1, ',', ''), '
 {{-- Bandeau principal : alerte validée la plus grave --}}
 @php $n = $alertePrincipale->niveau; @endphp
 <section class="relative overflow-hidden rounded-xl bg-surface-container-low p-space-md md:p-space-lg shadow-xl border border-outline-variant/20">
-<div class="absolute inset-y-0 left-0 w-2" style="background: linear-gradient(to bottom, {{ $n->couleurHex() }}, {{ $n->couleurHex() }}cc);"></div>
+<div class="absolute inset-y-0 left-0 w-2" @style(['background: linear-gradient(to bottom, '.$n->couleurHex().', '.$n->couleurHex().'cc)'])></div>
 <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-space-md pl-space-sm">
 <div class="flex items-start gap-space-md">
-<div class="relative flex items-center justify-center w-12 h-12 rounded-xl shrink-0" style="background: {{ $n->couleurHex() }}22; color: {{ $n->couleurHex() }};">
+<div class="relative flex items-center justify-center w-12 h-12 rounded-xl shrink-0" @style(['background: '.$n->couleurHex().'22', 'color: '.$n->couleurHex()])>
 <span class="material-symbols-outlined text-[26px]">{{ $n->icone() }}</span>
-<span class="absolute -top-1 -right-1 flex h-3 w-3"><span class="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style="background: {{ $n->couleurHex() }};"></span><span class="relative inline-flex rounded-full h-3 w-3" style="background: {{ $n->couleurHex() }};"></span></span>
+<span class="absolute -top-1 -right-1 flex h-3 w-3"><span class="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" @style(['background: '.$n->couleurHex()])></span><span class="relative inline-flex rounded-full h-3 w-3" @style(['background: '.$n->couleurHex()])></span></span>
 </div>
 <div class="flex flex-col gap-1">
 <div class="flex items-center gap-2 flex-wrap">
@@ -235,7 +337,7 @@ stroke="rgb(var(--md-primary-container))" stroke-width="2" stroke-opacity="0.9" 
 <div class="grid grid-cols-1 md:grid-cols-3 gap-space-md">
 @foreach ($actives->skip(1) as $alerte)
 @php $na = $alerte->niveau; @endphp
-<article class="rounded-xl bg-surface-container-low p-space-md shadow-md flex flex-col gap-space-sm border border-outline-variant/20">
+<a href="{{ route('alertes.show', $alerte->id) }}" class="block rounded-xl bg-surface-container-low p-space-md shadow-md flex flex-col gap-space-sm border border-outline-variant/20 hover:border-primary-container/50 hover:shadow-lg transition-all">
 <div class="flex items-center justify-between">
 <span class="px-2 py-0.5 rounded-full {{ $na->badgeClasses() }} font-label-sm text-label-sm uppercase tracking-wider font-semibold flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">{{ $na->icone() }}</span>{{ $na->label() }}</span>
 <span class="font-label-sm text-label-sm text-on-surface-variant">Seuil {{ rtrim(rtrim(number_format((float) $alerte->seuil_temperature, 1, ',', ''), '0'), ',') }}°C</span>
@@ -245,7 +347,8 @@ stroke="rgb(var(--md-primary-container))" stroke-width="2" stroke-opacity="0.9" 
 @if ($alerte->message)
 <p class="font-body-sm text-body-sm text-on-surface-variant">{{ \Illuminate\Support\Str::limit($alerte->message, 160) }}</p>
 @endif
-</article>
+<span class="mt-auto pt-1 inline-flex items-center gap-1 font-label-sm text-label-sm text-primary">Voir le détail<span class="material-symbols-outlined text-[16px]">chevron_right</span></span>
+</a>
 @endforeach
 </div>
 </section>
@@ -258,16 +361,18 @@ stroke="rgb(var(--md-primary-container))" stroke-width="2" stroke-opacity="0.9" 
 <div class="grid grid-cols-1 md:grid-cols-2 gap-space-md">
 @foreach ($aVenir as $alerte)
 @php $np = $alerte->niveau; @endphp
-<article class="rounded-xl bg-surface-container-low p-space-md shadow-sm flex items-start gap-space-sm border border-outline-variant/20">
-<span class="material-symbols-outlined text-[22px]" style="color: {{ $np->couleurHex() }};">event_upcoming</span>
-<div>
+<a href="{{ route('alertes.show', $alerte->id) }}" class="block rounded-xl bg-surface-container-low p-space-md shadow-sm flex items-start gap-space-sm border border-outline-variant/20 hover:border-primary-container/50 hover:shadow-md transition-all">
+<span class="material-symbols-outlined text-[22px]" @style(['color: '.$np->couleurHex()])>event_upcoming</span>
+<div class="flex-1">
 <p class="font-title-md text-title-md text-on-surface">{{ $alerte->titre }}</p>
 <p class="font-body-sm text-body-sm text-on-surface-variant">Début le {{ $alerte->debut?->format('d/m/Y à H:i') }} · {{ $np->label() }}</p>
 </div>
-</article>
+<span class="material-symbols-outlined text-[20px] text-on-surface-variant self-center">chevron_right</span>
+</a>
 @endforeach
 </div>
 </section>
+@endif
 @endif
 
 {{-- Rappel numéros (conservé) --}}

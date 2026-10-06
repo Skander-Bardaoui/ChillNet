@@ -19,8 +19,14 @@ class ProfileController extends Controller
      */
     public function edit(Request $request): View
     {
-        return view('profile.edit', [
-            'user' => $request->user(),
+        $user = $request->user();
+
+        // Les gestionnaires (admin / gestionnaire) restent dans leur espace de gestion
+        // (barre latérale back office) ; les habitants utilisent l'espace citoyen.
+        $vue = $user->canManageResidences() ? 'back.profil' : 'profile.edit';
+
+        return view($vue, [
+            'user' => $user,
         ]);
     }
 

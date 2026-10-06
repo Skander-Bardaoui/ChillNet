@@ -13,6 +13,7 @@
         ['href' => route('back.conseils.index'), 'label' => 'Conseils', 'active' => request()->routeIs('back.conseils.*')],
         $estAdmin ? ['href' => route('back.equipement-types.index'), 'label' => 'Types d\'équipements', 'active' => request()->routeIs('back.equipement-types.*')] : null,
         ['href' => route('back.signalements.index'), 'label' => 'Signalements', 'active' => request()->routeIs('back.signalements.*')],
+        ['href' => route('profile.edit'), 'label' => 'Mon profil', 'active' => request()->routeIs('profile.*')],
     ]));
 @endphp
 <!DOCTYPE html>

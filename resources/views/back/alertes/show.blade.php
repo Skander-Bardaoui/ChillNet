@@ -4,7 +4,7 @@
 {{-- En-tête : niveau, statut, validation + actions --}}
 <div class="rounded-2xl bg-surface-container-low shadow-sm border border-outline-variant/20 p-space-md flex flex-col lg:flex-row lg:items-center gap-4">
 <div class="flex items-start gap-3 flex-1">
-<div class="p-3 rounded-xl shrink-0" style="background: {{ $alerte->niveau?->couleurHex() }}22; color: {{ $alerte->niveau?->couleurHex() }};"><span class="material-symbols-outlined text-[28px]">{{ $alerte->niveau?->icone() }}</span></div>
+<div class="p-3 rounded-xl shrink-0" @style(['background: '.$alerte->niveau?->couleurHex().'22', 'color: '.$alerte->niveau?->couleurHex()])><span class="material-symbols-outlined text-[28px]">{{ $alerte->niveau?->icone() }}</span></div>
 <div class="flex flex-col gap-2">
 <p class="font-label-sm text-label-sm uppercase tracking-widest text-on-surface-variant font-semibold">Module 1 · Alerte canicule</p>
 <h1 class="font-headline-md text-headline-md text-on-surface font-bold">{{ $alerte->titre }}</h1>
@@ -77,7 +77,7 @@ Aucun cercle posé
 </div>
 </div>
 @if ($alerte->hasCoordinates())
-<div id="carte-alerte-show" class="mt-3 w-full h-64 rounded-xl overflow-hidden z-0 border border-outline-variant/30"></div>
+<div id="carte-alerte-show" data-lat="{{ (float) $alerte->latitude }}" data-lng="{{ (float) $alerte->longitude }}" data-rayon="{{ $alerte->rayonMetres() }}" data-couleur="{{ json_encode($alerte->niveau?->couleurHex() ?? '#1b77ba') }}" class="mt-3 w-full h-64 rounded-xl overflow-hidden z-0 border border-outline-variant/30"></div>
 @endif
 </section>
 
@@ -110,11 +110,12 @@ Aucun cercle posé
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
+const el = document.getElementById('carte-alerte-show');
 const ALERTE_SHOW = {
-    lat: {{ (float) $alerte->latitude }},
-    lng: {{ (float) $alerte->longitude }},
-    rayon: {{ $alerte->rayonMetres() }},
-    couleur: @json($alerte->niveau?->couleurHex() ?? '#1b77ba'),
+    lat: parseFloat(el.dataset.lat),
+    lng: parseFloat(el.dataset.lng),
+    rayon: parseFloat(el.dataset.rayon),
+    couleur: JSON.parse(el.dataset.couleur),
 };
 const carteShow = L.map('carte-alerte-show').setView([ALERTE_SHOW.lat, ALERTE_SHOW.lng], 13);
 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap' }).addTo(carteShow);

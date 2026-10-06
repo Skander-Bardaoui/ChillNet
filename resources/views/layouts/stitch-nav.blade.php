@@ -18,6 +18,7 @@
         ['href' => route('conseils'), 'label' => 'Conseils', 'active' => request()->routeIs('conseils')],
         ['href' => route('signalements.index'), 'label' => 'Signalements', 'active' => request()->routeIs('signalements.*')],
         ['href' => route('equipements.index'), 'label' => 'Équipements', 'active' => request()->routeIs('equipements.*')],
+        ['href' => route('profile.edit'), 'label' => 'Profil', 'active' => request()->routeIs('profile.*')],
     ];
     $managerLinks = array_filter([
         ['href' => route('back.dashboard'), 'label' => 'Gestion', 'active' => request()->routeIs('back.dashboard')],
@@ -93,7 +94,6 @@
 <div class="h-px bg-outline-variant/20 my-1"></div>
 @endif
 @auth
-<a href="{{ route('profile.edit') }}" class="px-3 py-2 rounded-lg font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface">Mon profil</a>
 <form method="POST" action="{{ route('logout') }}">@csrf<button type="submit" class="w-full text-left px-3 py-2 rounded-lg font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface">Déconnexion</button></form>
 @else
 <a href="{{ route('login') }}" class="px-3 py-2 rounded-lg font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface">Connexion</a>

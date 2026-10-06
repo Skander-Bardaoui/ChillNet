@@ -40,7 +40,7 @@
 <span class="font-label-md text-label-md text-on-surface font-semibold">Carte du périmètre</span>
 <span class="ml-auto hidden md:inline font-body-sm text-body-sm text-on-surface-variant">🟡 jaune · 🟠 orange · 🔴 rouge — cercle = zone couverte (rayon)</span>
 </div>
-<div id="carte-back-alertes" class="w-full h-72 md:h-80 z-0"></div>
+<div id="carte-back-alertes" data-centre="{{ json_encode($centre ?? [36.8065, 10.1815]) }}" data-marqueurs="{{ json_encode($marqueurs ?? []) }}" class="w-full h-72 md:h-80 z-0"></div>
 </div>
 
 {{-- Filtres --}}
@@ -145,8 +145,9 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-const CENTRE_BACK_ALERTES = @json($centre ?? [36.8065, 10.1815]);
-const MARQUEURS_BACK_ALERTES = @json($marqueurs ?? []);
+const carteBackAlertesEl = document.getElementById('carte-back-alertes');
+const CENTRE_BACK_ALERTES = JSON.parse(carteBackAlertesEl.dataset.centre);
+const MARQUEURS_BACK_ALERTES = JSON.parse(carteBackAlertesEl.dataset.marqueurs);
 
 const carteBackAlertes = L.map('carte-back-alertes').setView(CENTRE_BACK_ALERTES, 12);
 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {

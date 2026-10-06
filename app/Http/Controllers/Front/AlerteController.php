@@ -32,6 +32,15 @@ class AlerteController extends Controller
 
     public function index(Request $request)
     {
+        // Deux vues sur la même page : « mes lieux » (défaut, filtré sur le
+        // foyer) et « alertes générales » (toutes les alertes publiées, toutes
+        // zones confondues). Le mode est porté par le bouton bascule.
+        $vue = $request->input('vue') === 'general' ? 'general' : 'lieux';
+
+        if ($vue === 'general') {
+            return $this->vueGenerale();
+        }
+
         $user = $request->user();
 
         // Les lieux du foyer remplacent le quartier dans toute l'interface.
@@ -117,7 +126,123 @@ class AlerteController extends Controller
             'messagePersonnalise',
             'meteo',
             'courbe',
-        ));
+        ) + [
+            'vue' => 'lieux',
+            'generalesActives' => collect(),
+            'generalesProgrammees' => collect(),
+            'generalesTerminees' => collect(),
+        ]);
+    }
+
+    /**
+     * Détail d'une alerte validée pour l'habitant : créneau, mesure et météo
+     * live de la zone, ciblage géographique (carte) et message. Toute alerte
+     * validée est consultable (y compris hors des lieux du foyer, cohérent avec
+     * la vue « alertes générales ») ; un brouillon n'est jamais visible (404).
+     */
+    public function show(int $id)
+    {
+        $alerte = Alerte::with('quartiers')->validees()->findOrFail($id);
+
+        // Message personnalisé mis en cache pour le profil du foyer.
+        $messagePersonnalise = $this->messagePour($alerte, request());
+
+        // Point de référence de la zone : cercle de l'alerte, sinon barycentre
+        // des quartiers géolocalisés (même logique que le back office).
+        $latitude = $alerte->hasCoordinates() ? (float) $alerte->latitude : null;
+        $longitude = $alerte->hasCoordinates() ? (float) $alerte->longitude : null;
+
+        if ($latitude === null) {
+            $geo = $alerte->quartiers->filter(fn (Quartier $quartier): bool => $quartier->hasCoordinates());
+
+            if ($geo->isNotEmpty()) {
+                $latitude = (float) $geo->avg('latitude');
+                $longitude = (float) $geo->avg('longitude');
+            }
+        }
+
+        $meteo = $latitude !== null && $longitude !== null
+            ? $this->meteo->actuelCache($latitude, $longitude)
+            : null;
+
+        // Marqueurs de la carte : cercle de l'alerte, sinon un point par quartier géolocalisé.
+        $marqueurs = [];
+
+        if ($alerte->hasCoordinates()) {
+            $marqueurs[] = [
+                'lat' => (float) $alerte->latitude,
+                'lng' => (float) $alerte->longitude,
+                'rayon' => $alerte->rayonMetres(),
+                'label' => $alerte->titre,
+                'zone' => "Zone d'alerte",
+            ];
+        } else {
+            foreach ($alerte->quartiers as $quartier) {
+                if ($quartier->hasCoordinates()) {
+                    $marqueurs[] = [
+                        'lat' => (float) $quartier->latitude,
+                        'lng' => (float) $quartier->longitude,
+                        'rayon' => null,
+                        'label' => $quartier->nom,
+                        'zone' => $quartier->ville,
+                    ];
+                }
+            }
+        }
+
+        $centre = $marqueurs !== []
+            ? [$marqueurs[0]['lat'], $marqueurs[0]['lng']]
+            : null;
+
+        return view('front.alertes-show', compact('alerte', 'messagePersonnalise', 'meteo', 'marqueurs', 'centre'));
+    }
+
+    /**
+     * Vue « alertes générales » : toutes les alertes publiées (validées), toutes
+     * zones et tous créateurs confondus, pour informer l'habitant. Les alertes
+     * terminées depuis plus de 7 jours ne sont plus affichées. Aucun appel
+     * météo/IA : la vue est purement informative.
+     */
+    private function vueGenerale()
+    {
+        $generales = Alerte::with('quartiers')
+            ->validees()
+            ->where('fin', '>=', now()->subDays(7))
+            ->orderByDesc('debut')
+            ->get();
+
+        $generalesActives = $generales
+            ->filter(fn (Alerte $alerte): bool => $alerte->estActive())
+            ->sortByDesc(fn (Alerte $alerte): int => $alerte->niveau->gravite())
+            ->values();
+
+        $generalesProgrammees = $generales
+            ->filter(fn (Alerte $alerte): bool => $alerte->estProgrammee())
+            ->sortBy(fn (Alerte $alerte) => $alerte->debut)
+            ->values();
+
+        $generalesTerminees = $generales
+            ->filter(fn (Alerte $alerte): bool => $alerte->estTerminee())
+            ->sortByDesc(fn (Alerte $alerte) => $alerte->fin)
+            ->values();
+
+        return view('front.alertes', [
+            'vue' => 'general',
+            'generalesActives' => $generalesActives,
+            'generalesProgrammees' => $generalesProgrammees,
+            'generalesTerminees' => $generalesTerminees,
+            // Variables du mode « mes lieux » neutralisées : la vue ne les rend pas ici.
+            'lieux' => collect(),
+            'lieuFiltre' => null,
+            'filtreId' => null,
+            'actives' => collect(),
+            'aVenir' => collect(),
+            'stats' => ['actives' => 0, 'rouge' => 0, 'orange' => 0, 'jaune' => 0],
+            'alertePrincipale' => null,
+            'messagePersonnalise' => null,
+            'meteo' => null,
+            'courbe' => null,
+        ]);
     }
 
     /**

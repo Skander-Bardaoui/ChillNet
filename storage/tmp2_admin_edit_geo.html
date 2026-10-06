@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html class="light" lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="csrf-token" content="drXQ0AUZsalH6n1s6HmIGjL8f8Y4tSWNHaXKJ2xV" />
+<title>ChillNet — Gestion · Modifier l&#039;alerte</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+<script>
+(function () {
+    var root = document.documentElement;
+    // Thème global : défaut = clair (white mode blanc sale). Persisté en localStorage.
+    // Plus de restriction à la landing : toutes les pages peuvent basculer.
+    try {
+        var stored = localStorage.getItem('chillnet-theme');
+        if (stored === 'dark') {
+            root.classList.remove('light');
+            root.classList.add('dark');
+        } else {
+            root.classList.remove('dark');
+            root.classList.add('light');
+        }
+    } catch (e) {
+        root.classList.remove('dark');
+        root.classList.add('light');
+    }
+})();
+function chillnetToggleTheme(btn) {
+    var root = document.documentElement;
+    var toLight = root.classList.contains('dark');
+    root.classList.toggle('light', toLight);
+    root.classList.toggle('dark', !toLight);
+    try { localStorage.setItem('chillnet-theme', toLight ? 'light' : 'dark'); } catch (e) {}
+    // Met à jour toutes les icônes de toggle présentes sur la page
+    document.querySelectorAll('[data-theme-icon]').forEach(function (el) {
+        el.textContent = toLight ? 'dark_mode' : 'light_mode';
+    });
+}
+// WCAG : les icônes Material Symbols sont décoratives (boutons déjà labellisés,
+// texte adjacent redondant) → masquées aux technologies d'assistance (SC 1.1.1).
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.material-symbols-outlined').forEach(function (el) {
+        if (!el.hasAttribute('aria-hidden')) el.setAttribute('aria-hidden', 'true');
+    });
+});
+</script>
+<style>
+:root, html.dark {
+    --md-surface: 15 19 29;
+    --md-background: 15 19 29;
+    --md-surface-container-lowest: 10 14 24;
+    --md-nav: 17 26 44;
+    --md-surface-container-low: 23 27 38;
+    --md-surface-container: 28 31 42;
+    --md-surface-container-high: 38 42 53;
+    --md-surface-container-highest: 49 53 64;
+    --md-on-surface: 223 226 241;
+    --md-on-surface-variant: 186 201 204;
+    --md-on-background: 223 226 241;
+    --md-outline: 132 147 150;
+    --md-outline-variant: 59 73 76;
+    --md-primary: 150 210 235;
+    --md-primary-container: 56 165 220;
+    --md-on-primary-container: 255 255 255;
+    --md-on-primary: 8 30 42;
+    --md-surface-tint: 56 165 220;
+    --md-tertiary-fixed: 255 222 172;
+    --md-tertiary-fixed-dim: 255 186 56;
+    --md-tertiary-container: 255 199 105;
+    --md-error-container: 147 0 10;
+    --md-on-error-container: 255 218 214;
+}
+/* ── WHITE MODE : blanc sale chaud, jamais de blanc pur en fond ──
+   Fond = lin sale #F2F0E9 / #EFEDE5, cartes = blanc cassé #FDFCF9 → vrai blanc #FFFFFF
+   pour que chaque card ressorte avec bordure + ombre douce. */
+html.light {
+    --md-surface: 245 244 241;
+    --md-background: 239 238 234;
+    --md-surface-container-lowest: 255 255 255;
+    --md-nav: 252 252 250;
+    --md-surface-container-low: 252 252 250;
+    --md-surface-container: 247 246 243;
+    --md-surface-container-high: 233 231 226;
+    --md-surface-container-highest: 221 219 212;
+    --md-on-surface: 24 30 42;
+    --md-on-surface-variant: 88 99 117;
+    --md-on-background: 24 30 42;
+    --md-outline: 148 158 172;
+    --md-outline-variant: 218 216 208;
+    /* Bleu pro assombri : azure acier #1B77BA, texte blanc dessus */
+    --md-primary: 27 119 186;
+    --md-primary-container: 27 119 186;
+    --md-on-primary-container: 255 255 255;
+    --md-on-primary: 255 255 255;
+    --md-surface-tint: 27 119 186;
+    --md-tertiary-fixed: 154 66 8;
+    --md-tertiary-fixed-dim: 202 101 14;
+    --md-tertiary-container: 234 149 36;
+    --md-error-container: 253 232 230;
+    --md-on-error-container: 154 22 22;
+}
+/* Navbar */
+header.fixed {
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.06),
+        0 18px 40px -20px rgba(2, 6, 23, 0.9) !important;
+}
+html.light header.fixed {
+    border: 1px solid rgb(26 32 44 / 0.08);
+    background: rgb(var(--md-nav) / 0.92) !important;
+    box-shadow: 0 1px 2px rgba(26,32,44,0.05), 0 12px 28px -14px rgba(26,32,44,0.22) !important;
+}
+html.light footer { box-shadow: 0 -1px 12px rgba(26, 32, 44, 0.07) !important; }
+/* ── Neutralisation des glows néon cyan en mode clair ── */
+html.light [class*="rgba(0,229,255"],
+html.light [class*="rgba(0,218,243"],
+html.light [class*="0,229,255"],
+html.light [class*="#00e5ff"],
+html.light [class*="#00E5FF"] {
+    box-shadow: 0 1px 2px rgba(26,32,44,0.06), 0 8px 20px -10px rgba(27,119,186,0.35) !important;
+}
+/* Boutons bleus en clair : dégradé pro + relief, hover foncé, plus de glow */
+html.light .bg-primary-container {
+    background: linear-gradient(180deg, rgb(33 130 198), rgb(22 104 163)) !important;
+    color: #fff !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), 0 1px 2px rgba(24,30,42,0.18), 0 8px 18px -10px rgba(27,119,186,0.55) !important;
+}
+html.light a.bg-primary-container:hover,
+html.light button.bg-primary-container:hover {
+    background: linear-gradient(180deg, rgb(27 119 186), rgb(18 90 142)) !important;
+}
+html.light .bg-primary-container:focus-visible,
+html.light button.bg-primary-container:focus-visible,
+html.light a.bg-primary-container:focus-visible {
+    outline: 2px solid rgb(27 119 186 / 0.55);
+    outline-offset: 2px;
+}
+html.light .text-primary { color: rgb(22 104 163) !important; }
+html.light .text-primary-container { color: rgb(22 104 163) !important; }
+/* Textes bleu pâle pensés pour le sombre → bleu profond lisible en clair */
+html.light .text-primary-fixed-dim { color: rgb(14 92 140) !important; }
+html.light .text-primary-fixed { color: rgb(14 92 140) !important; }
+html.light .text-secondary { color: rgb(47 91 179) !important; }
+html.light .bg-secondary\/10 { background-color: rgb(5 102 217 / 0.1) !important; }
+/* Pastille bleue pleine (ex. badge température) : texte blanc, pas noir */
+html.light .text-on-primary-fixed { color: #fff !important; }
+/* Badges gris sombre codés en dur (#313540) → pastille claire en white mode */
+html.light .bg-surface-variant { background-color: rgb(228 234 242) !important; }
+html.light .bg-surface-bright { background-color: rgb(233 231 226) !important; }
+html.light .hover\:bg-surface-bright:hover { background-color: rgb(229 227 220) !important; }
+html.light .hover\:bg-surface-variant:hover { background-color: rgb(219 226 235) !important; }
+/* Pastilles / badges bleutés en clair : fond bleu très pâle + texte bleu foncé */
+html.light .bg-primary-container\/10 { background-color: rgb(27 119 186 / 0.09) !important; }
+html.light .bg-primary-container\/15 { background-color: rgb(27 119 186 / 0.12) !important; }
+html.light .bg-primary-container\/20 { background-color: rgb(27 119 186 / 0.14) !important; }
+/* ── Badges : le texte ne doit JAMAIS être du même ton que le fond ──
+   Bandes teintées (bleu pâle / gris) → texte encre marine bien distinct. */
+html.light [class*="bg-primary-container/"].text-primary,
+html.light [class*="bg-primary-container/"].text-primary-container,
+html.light [class*="bg-primary/"].text-primary,
+html.light [class*="bg-primary/"].text-primary-container,
+html.light .bg-surface-variant.text-primary,
+html.light .bg-surface-variant.text-primary-container,
+html.light [class*="bg-surface-container-high"].text-primary,
+html.light [class*="bg-surface-container-high"].text-primary-container,
+html.light [class*="bg-surface-container-highest"].text-primary,
+html.light [class*="bg-surface-container-highest"].text-primary-container {
+    color: rgb(11 59 88) !important;
+}
+html.dark [class*="bg-primary-container/"].text-primary,
+html.dark [class*="bg-primary-container/"].text-primary-container,
+html.dark [class*="bg-primary/"].text-primary,
+html.dark [class*="bg-primary/"].text-primary-container {
+    color: rgb(224 243 253) !important;
+}
+/* ── Badges sémantiques rouge / orange : texte soutenu, distinct du fond teinté ── */
+html.light [class*="bg-error/"].text-error { color: rgb(127 29 29) !important; }
+html.light [class*="bg-tertiary-container/"].text-tertiary,
+html.light [class*="bg-tertiary/"].text-tertiary { color: rgb(146 64 14) !important; }
+/* Boutons rouge plein : texte blanc, jamais de marron sur rouge */
+.bg-error.text-on-error { color: #fff !important; }
+.hover\:bg-error:hover { color: #fff !important; }
+html.light .hover\:text-on-error:hover { color: #fff !important; }
+html.dark .hover\:text-on-error:hover { color: #fff !important; }
+html.dark [class*="bg-error/"].text-error { color: rgb(252 165 165) !important; }
+html.dark [class*="bg-tertiary-container/"].text-tertiary { color: rgb(253 230 138) !important; }
+html.dark [class*="bg-tertiary-container/"].text-tertiary-fixed { color: rgb(255 237 213) !important; }
+/* ── Cards & conteneurs en clair : vraies cartes blanches détachées du fond sale ── */
+html.light .bg-surface-container-low,
+html.light .bg-surface-container-lowest\/80,
+html.light main .rounded-xl,
+html.light main .rounded-2xl {
+    border-color: rgb(26 32 44 / 0.08);
+}
+html.light main .rounded-xl.bg-surface-container-low,
+html.light main .rounded-xl.bg-surface-container,
+html.light main .rounded-2xl {
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), 0 1px 2px rgba(24,30,42,0.06), 0 14px 30px -20px rgba(24,30,42,0.28);
+}
+/* Hiérarchie : titres bien ancrés, libellés secondaires adoucis */
+html.light main h1 { color: rgb(24 30 42); letter-spacing: -0.01em; }
+html.light main h2 { color: rgb(24 30 42); letter-spacing: -0.008em; }
+html.light .border-primary-container\/30,
+html.light .border-primary-container\/40 {
+    border-color: rgb(27 119 186 / 0.28) !important;
+}
+html.light .focus\:border-primary-container:focus { border-color: rgb(27 119 186) !important; }
+/* Champs de formulaire en clair */
+html.light input:not([type="checkbox"]):not([type="radio"]),
+html.light select,
+html.light textarea {
+    background-color: #fff !important;
+    border-color: rgb(26 32 44 / 0.14) !important;
+    color: rgb(26 32 44) !important;
+}
+html.light input::placeholder,
+html.light textarea::placeholder { color: rgb(99 110 125) !important; }
+/* Sidebar back-office en clair */
+html.light aside { background: rgb(253 252 249 / 0.95) !important; }
+/* Footer en clair */
+html.light footer.bg-surface-container-lowest { background: rgb(253 252 249) !important; }
+/* ── Accessibilité WCAG 2.2 AA ── */
+/* Lien d'évitement : invisible jusqu'au focus clavier */
+.skip-link {
+    position: fixed; top: -100px; left: 1rem; z-index: 100;
+    padding: 0.625rem 1rem; border-radius: 0.5rem;
+    background: rgb(27 119 186); color: #fff;
+    font-size: 0.8125rem; font-weight: 600; text-decoration: none;
+    transition: top 0.15s ease-in-out;
+}
+.skip-link:focus { top: 1rem; color: #fff; }
+html.dark .skip-link { background: rgb(56 165 220); color: rgb(8 30 42); }
+html.dark .skip-link:focus { color: rgb(8 30 42); }
+/* Indicateur de focus visible, identique partout (SC 2.4.7 / 2.4.13) */
+:focus-visible {
+    outline: 3px solid rgb(27 119 186) !important;
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+html.dark :focus-visible { outline-color: rgb(125 200 235) !important; }
+/* Cartes-radio (inscription) : l'input est visuellement masqué → le focus
+   clavier est reporté sur la carte visible (SC 2.4.7). */
+label:has(> input.sr-only:focus-visible) {
+    outline: 3px solid rgb(27 119 186);
+    outline-offset: 2px;
+}
+html.dark label:has(> input.sr-only:focus-visible) { outline-color: rgb(125 200 235); }
+/* Respect des préférences de mouvement (SC 2.3.3) */
+@media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+/* ── Correctifs de contraste AA ── */
+/* Rouge sémantique fixe trop sombre sur fond sombre */
+html.dark .text-error { color: rgb(248 113 113) !important; }
+@layer base{html,body{margin:0;padding:0;}html{scroll-behavior:smooth;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}[x-cloak]{display:none!important;}
+</style>
+<script src="https://cdn.tailwindcss.com"></script>
+<script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"surface-variant":"#313540","on-tertiary-fixed-variant":"#604100","on-surface":"rgb(var(--md-on-surface) / <alpha-value>)","surface-bright":"#353944","surface-dim":"#0f131d","background":"rgb(var(--md-background) / <alpha-value>)","nav-surface":"rgb(var(--md-nav) / <alpha-value>)","on-error":"#690005","on-primary-container":"rgb(var(--md-on-primary-container) / <alpha-value>)","tertiary":"#ffe9cd","inverse-surface":"#dfe2f1","primary-fixed":"#9cf0ff","inverse-on-surface":"#2c303b","primary-container":"rgb(var(--md-primary-container) / <alpha-value>)","secondary-container":"#0566d9","on-primary-fixed":"#001f24","on-tertiary":"#432c00","surface-container":"rgb(var(--md-surface-container) / <alpha-value>)","surface":"rgb(var(--md-surface) / <alpha-value>)","primary-fixed-dim":"#7cc6e8","on-background":"rgb(var(--md-on-background) / <alpha-value>)","secondary-fixed":"#d8e2ff","on-secondary":"#002e6a","outline-variant":"rgb(var(--md-outline-variant) / <alpha-value>)","surface-container-highest":"rgb(var(--md-surface-container-highest) / <alpha-value>)","inverse-primary":"#006875","on-tertiary-container":"#775200","on-surface-variant":"rgb(var(--md-on-surface-variant) / <alpha-value>)","tertiary-container":"rgb(var(--md-tertiary-container) / <alpha-value>)","secondary-fixed-dim":"#adc6ff","on-primary":"rgb(var(--md-on-primary) / <alpha-value>)","surface-container-low":"rgb(var(--md-surface-container-low) / <alpha-value>)","secondary":"#adc6ff","on-secondary-container":"#e6ecff","on-tertiary-fixed":"#281900","surface-tint":"rgb(var(--md-surface-tint) / <alpha-value>)","surface-container-high":"rgb(var(--md-surface-container-high) / <alpha-value>)","surface-container-lowest":"rgb(var(--md-surface-container-lowest) / <alpha-value>)","error-container":"rgb(var(--md-error-container) / <alpha-value>)","on-error-container":"rgb(var(--md-on-error-container) / <alpha-value>)","outline":"rgb(var(--md-outline) / <alpha-value>)","primary":"rgb(var(--md-primary) / <alpha-value>)","on-tertiary":"#432c00","tertiary-fixed":"rgb(var(--md-tertiary-fixed) / <alpha-value>)","tertiary-fixed-dim":"rgb(var(--md-tertiary-fixed-dim) / <alpha-value>)","error":"#ba1a1a","surface-tint2":"#00e5ff"},fontFamily:{"display":["Space Grotesk","Inter","sans-serif"],"body-md":["Inter","sans-serif"]},fontSize:{"display-lg":["3.5rem",{lineHeight:"1.05"}],"headline-lg":["1.75rem",{lineHeight:"2.1rem"}],"headline-sm":["1.375rem",{lineHeight:"1.75rem"}],"title-md":["1rem",{lineHeight:"1.4rem"}],"title-sm":["0.875rem",{lineHeight:"1.25rem"}],"body-md":["0.9375rem",{lineHeight:"1.5rem"}],"body-sm":["0.8125rem",{lineHeight:"1.3rem"}],"label-md":["0.8125rem",{lineHeight:"1.2rem"}],"label-sm":["0.6875rem",{lineHeight:"1rem"}]},spacing:{"margin":"1rem","margin-lg":"2rem","space-xs":"0.5rem","space-sm":"0.75rem","space-md":"1rem","space-lg":"1.5rem","space-xl":"2.5rem"}}}};</script>
+<script type="module" src="http://[::1]:5173/@vite/client"></script><link rel="stylesheet" href="http://[::1]:5173/resources/css/app.css" /><script type="module" src="http://[::1]:5173/resources/js/app.js"></script></head>
+<body class="bg-background font-body-md text-body-md text-on-surface antialiased min-h-screen">
+<a href="#contenu" class="skip-link">Aller au contenu</a>
+<div class="min-h-screen flex flex-col md:flex-row">
+
+
+<aside class="flex items-center md:items-stretch md:flex-col gap-space-xs md:w-64 md:shrink-0 px-margin py-space-sm md:py-space-md border-b md:border-b-0 md:border-r border-outline-variant/20 bg-surface-container-lowest/80 backdrop-blur-xl overflow-x-auto md:sticky md:top-0 md:h-screen md:overflow-x-hidden md:overflow-y-auto">
+
+<div class="hidden md:flex flex-col gap-space-sm pb-space-sm mb-space-xs border-b border-outline-variant/20">
+<a href="http://localhost/admin" class="flex items-center gap-space-sm">
+<span class="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-container"><span class="material-symbols-outlined text-primary-container text-[24px]">ac_unit</span></span>
+<span class="flex flex-col">
+<span class="font-title-md text-title-md text-primary font-semibold">ChillNet</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Espace de gestion</span>
+</span>
+</a>
+<span class="font-label-sm text-label-sm text-on-surface-variant truncate">Tressie Wolf · Administrateur</span>
+</div>
+
+<a href="http://localhost/admin"  class="whitespace-nowrap px-3 py-2 rounded-lg font-label-md text-label-md transition-colors text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface">Tableau de bord</a>
+<a href="http://localhost/admin/quartiers"  class="whitespace-nowrap px-3 py-2 rounded-lg font-label-md text-label-md transition-colors text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface">Quartiers</a>
+<a href="http://localhost/admin/residences"  class="whitespace-nowrap px-3 py-2 rounded-lg font-label-md text-label-md transition-colors text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface">Résidences</a>
+<a href="http://localhost/admin/alertes"  aria-current="page"  class="whitespace-nowrap px-3 py-2 rounded-lg font-label-md text-label-md transition-colors bg-primary-container text-on-primary-container font-semibold">Alertes</a>
+<a href="http://localhost/admin/coupures"  class="whitespace-nowrap px-3 py-2 rounded-lg font-label-md text-label-md transition-colors text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface">Coupures</a>
+<a href="http://localhost/admin/points-fraicheur"  class="whitespace-nowrap px-3 py-2 rounded-lg font-label-md text-label-md transition-colors text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface">Points de fraîcheur</a>
+<a href="http://localhost/admin/conseils"  class="whitespace-nowrap px-3 py-2 rounded-lg font-label-md text-label-md transition-colors text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface">Conseils</a>
+<a href="http://localhost/admin/equipement-types"  class="whitespace-nowrap px-3 py-2 rounded-lg font-label-md text-label-md transition-colors text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface">Types d&#039;équipements</a>
+<a href="http://localhost/admin/signalements"  class="whitespace-nowrap px-3 py-2 rounded-lg font-label-md text-label-md transition-colors text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface">Signalements</a>
+
+<div class="flex items-center gap-space-xs shrink-0 md:mt-auto md:pt-space-sm md:border-t md:border-outline-variant/20">
+<button type="button" onclick="chillnetToggleTheme(this)" class="whitespace-nowrap px-3 py-2 rounded-lg font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface" aria-label="Basculer le thème"><span class="material-symbols-outlined text-[20px] align-middle" data-theme-icon>dark_mode</span></button>
+<a href="http://localhost" class="whitespace-nowrap px-3 py-2 rounded-lg font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface">&larr; Site</a>
+<form method="POST" action="http://localhost/logout" class="shrink-0"><input type="hidden" name="_token" value="drXQ0AUZsalH6n1s6HmIGjL8f8Y4tSWNHaXKJ2xV" autocomplete="off"><button type="submit" class="whitespace-nowrap px-3 py-2 rounded-lg font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface">Déconnexion</button></form>
+</div>
+</aside>
+
+<main id="contenu" tabindex="-1" class="flex-1 w-full max-w-[1440px] mx-auto px-margin md:px-margin-lg py-space-md flex flex-col gap-space-lg">
+<div class="flex items-center justify-between gap-space-md">
+<h1 class="font-headline-lg text-headline-lg text-on-surface">Modifier l&#039;alerte</h1>
+<span class="md:hidden font-label-sm text-label-sm text-on-surface-variant truncate">Tressie Wolf · Administrateur</span>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-space-lg max-w-6xl">
+        <div class="lg:col-span-2 rounded-xl bg-surface-container-low/80 backdrop-blur-xl shadow-xl p-space-lg">
+            <form method="POST" action="http://localhost/admin/alertes/1">
+                <input type="hidden" name="_token" value="drXQ0AUZsalH6n1s6HmIGjL8f8Y4tSWNHaXKJ2xV" autocomplete="off">    <input type="hidden" name="_method" value="PUT">
+<div x-data="alerteForm()" data-prefill-url="http://localhost/admin/alertes/prefill" class="flex flex-col gap-4">
+
+
+<div class="rounded-xl border border-primary-container/30 bg-primary-container/5 p-4 flex flex-col gap-3">
+<div class="flex items-start gap-3">
+<span class="material-symbols-outlined text-primary text-[24px] shrink-0">auto_awesome</span>
+<div class="flex-1">
+<p class="font-title-md text-title-md text-on-surface font-semibold">Assistant IA canicule</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Récupère la météo du quartier, classe le niveau de vigilance par règles puis rédige un message. Laissez la température vide pour utiliser la météo live (WeatherAPI).</p>
+</div>
+</div>
+<div class="flex flex-wrap gap-2">
+<button type="button" @click="prefill(false)" :disabled="chargement" class="px-3 py-2 rounded-lg bg-surface-container text-on-surface font-label-md text-label-md hover:bg-surface-bright inline-flex items-center gap-2 disabled:opacity-50"><span class="material-symbols-outlined text-[18px]">cloud_sync</span><span x-text="chargement ? 'Analyse…' : 'Météo + niveau'"></span></button>
+<button type="button" @click="prefill(true)" :disabled="chargement" class="px-3 py-2 rounded-lg bg-primary-container text-on-primary-container font-label-md text-label-md font-semibold hover:opacity-95 inline-flex items-center gap-2 disabled:opacity-50"><span class="material-symbols-outlined text-[18px]">edit_note</span>Météo + niveau + message</button>
+</div>
+<template x-if="retour">
+<div class="text-body-sm font-body-sm rounded-lg px-3 py-2" :class="retour.ok ? 'bg-surface-container text-on-surface' : 'bg-error-container text-on-error-container'">
+<template x-if="retour.ok">
+<p><strong x-text="retour.niveau_label"></strong> — <span x-text="retour.raison"></span></p>
+</template>
+<template x-if="!retour.ok"><p x-text="retour.raison"></p></template>
+</div>
+</template>
+</div>
+
+
+<fieldset class="rounded-xl border border-outline-variant/30 p-4">
+<legend class="px-2 font-title-md text-title-md text-on-surface font-semibold flex items-center gap-2"><span class="material-symbols-outlined text-primary text-[20px]">warning</span>Identification</legend>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+<div class="flex flex-col gap-1 sm:col-span-2">
+<label for="titre" class="font-label-md text-label-md text-on-surface font-medium">Titre de l'alerte <span class="text-error">*</span></label>
+<input type="text" id="titre" name="titre" value="Alerte geo centre" required maxlength="150" placeholder="Ex. : Vigilance forte chaleur" class="w-full rounded-xl bg-surface-container border border-outline-variant/40 px-3 py-2.5 text-on-surface placeholder:text-outline focus:border-primary-container focus:outline-none " />
+</div>
+<div class="flex flex-col gap-1">
+<label for="niveau" class="font-label-md text-label-md text-on-surface font-medium">Niveau de vigilance <span class="text-error">*</span></label>
+<select id="niveau" name="niveau" required class="w-full rounded-xl bg-surface-container border border-outline-variant/40 px-3 py-2.5 text-on-surface focus:border-primary-container focus:outline-none ">
+<option value="jaune" >Vigilance jaune</option>
+<option value="orange" >Vigilance orange</option>
+<option value="rouge" selected>Vigilance rouge</option>
+</select>
+</div>
+<div class="flex flex-col gap-1">
+<label for="seuil_temperature" class="font-label-md text-label-md text-on-surface font-medium">Seuil de température (°C) <span class="text-error">*</span></label>
+<input type="number" step="0.5" min="30" max="55" id="seuil_temperature" name="seuil_temperature" value="34.5" required class="w-full rounded-xl bg-surface-container border border-outline-variant/40 px-3 py-2.5 text-on-surface focus:border-primary-container focus:outline-none " />
+</div>
+</div>
+</fieldset>
+
+
+<fieldset class="rounded-xl border border-outline-variant/30 p-4">
+<legend class="px-2 font-title-md text-title-md text-on-surface font-semibold flex items-center gap-2"><span class="material-symbols-outlined text-primary text-[20px]">location_on</span>Rattachement aux quartiers <span class="font-body-sm text-body-sm text-on-surface-variant font-normal">(facultatif)</span></legend>
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+<label class="flex items-center gap-2 rounded-lg bg-surface-container border border-outline-variant/30 px-3 py-2 cursor-pointer hover:bg-surface-container-high transition-colors">
+<input type="checkbox" name="quartier_ids[]" value="1" checked class="h-4 w-4 rounded accent-primary-container" />
+<span class="font-body-md text-body-md text-on-surface">Centre-Ville <span class="font-body-sm text-body-sm text-on-surface-variant">(Tunis)</span></span>
+</label>
+</div>
+<p class="mt-2 font-body-sm text-body-sm text-on-surface-variant">Optionnel : un ou plusieurs quartiers. La cible principale est le cercle ci-dessous.</p>
+</fieldset>
+
+
+<fieldset class="rounded-xl border border-outline-variant/30 p-4">
+<legend class="px-2 font-title-md text-title-md text-on-surface font-semibold flex items-center gap-2"><span class="material-symbols-outlined text-primary text-[20px]">map</span>Zone géographique (carte)</legend>
+<p class="mb-2 font-body-sm text-body-sm text-on-surface-variant">Cliquez sur la carte pour poser le centre de la zone (ou cochez un quartier pour le centrer), puis ajustez le rayon. Une alerte peut cibler un ou plusieurs quartiers, un cercle, ou les deux.</p>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<div id="carte-alerte-form" data-quartiers-geo="[{&quot;id&quot;:1,&quot;nom&quot;:&quot;Centre-Ville&quot;,&quot;lat&quot;:36.8008,&quot;lng&quot;:10.18}]" class="w-full h-72 rounded-xl overflow-hidden z-0 border border-outline-variant/30"></div>
+<input type="hidden" id="latitude" name="latitude" value="36.8008" />
+<input type="hidden" id="longitude" name="longitude" value="10.18" />
+<div class="mt-3 flex flex-wrap items-end gap-3">
+<div class="flex flex-col gap-1">
+<label for="rayon_metres" class="font-label-md text-label-md text-on-surface font-medium">Rayon (mètres)</label>
+<input type="number" id="rayon_metres" name="rayon_metres" min="100" max="50000" step="50" value="1200" class="w-40 rounded-xl bg-surface-container border border-outline-variant/40 px-3 py-2.5 text-on-surface focus:border-primary-container focus:outline-none " />
+</div>
+<button type="button" id="btn-localiser-alerte" class="px-3 py-2.5 rounded-lg bg-surface-container text-on-surface font-label-md text-label-md hover:bg-surface-bright inline-flex items-center gap-2"><span class="material-symbols-outlined text-[18px]">my_location</span>Me localiser</button>
+<button type="button" id="btn-effacer-alerte" class="px-3 py-2.5 rounded-lg bg-surface-container text-on-surface-variant font-label-md text-label-md hover:bg-surface-bright inline-flex items-center gap-2"><span class="material-symbols-outlined text-[18px]">close</span>Effacer le point</button>
+</div>
+</fieldset>
+
+
+<fieldset class="rounded-xl border border-outline-variant/30 p-4">
+<legend class="px-2 font-title-md text-title-md text-on-surface font-semibold flex items-center gap-2"><span class="material-symbols-outlined text-primary text-[20px]">schedule</span>Créneau de vigilance</legend>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+<div class="flex flex-col gap-1">
+<label for="debut" class="font-label-md text-label-md text-on-surface font-medium">Début <span class="text-error">*</span></label>
+<input type="datetime-local" id="debut" name="debut" value="2026-10-07T04:02" required class="w-full rounded-xl bg-surface-container border border-outline-variant/40 px-3 py-2.5 text-on-surface focus:border-primary-container focus:outline-none " />
+</div>
+<div class="flex flex-col gap-1">
+<label for="fin" class="font-label-md text-label-md text-on-surface font-medium">Fin <span class="text-error">*</span></label>
+<input type="datetime-local" id="fin" name="fin" value="2026-10-07T12:02" required class="w-full rounded-xl bg-surface-container border border-outline-variant/40 px-3 py-2.5 text-on-surface focus:border-primary-container focus:outline-none " />
+</div>
+</div>
+<p class="mt-2 font-body-sm text-body-sm text-on-surface-variant">La fin doit être postérieure au début. Le statut (Programmée / Active / Terminée) est calculé automatiquement.</p>
+</fieldset>
+
+
+<fieldset class="rounded-xl border border-outline-variant/30 p-4">
+<legend class="px-2 font-title-md text-title-md text-on-surface font-semibold flex items-center gap-2"><span class="material-symbols-outlined text-primary text-[20px]">thermostat</span>Mesure météo</legend>
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+<div class="flex flex-col gap-1">
+<label for="temperature_actuelle" class="font-label-md text-label-md text-on-surface font-medium">Température (°C)</label>
+<input type="number" step="0.1" min="-10" max="60" id="temperature_actuelle" name="temperature_actuelle" value="41.5" placeholder="Météo live si vide" class="w-full rounded-xl bg-surface-container border border-outline-variant/40 px-3 py-2.5 text-on-surface placeholder:text-outline focus:border-primary-container focus:outline-none " />
+</div>
+<div class="flex flex-col gap-1">
+<label for="temperature_ressentie" class="font-label-md text-label-md text-on-surface font-medium">Ressentie (°C)</label>
+<input type="number" step="0.1" min="-10" max="70" id="temperature_ressentie" name="temperature_ressentie" value="45" class="w-full rounded-xl bg-surface-container border border-outline-variant/40 px-3 py-2.5 text-on-surface focus:border-primary-container focus:outline-none " />
+</div>
+<div class="flex flex-col gap-1">
+<label for="humidite" class="font-label-md text-label-md text-on-surface font-medium">Humidité (%)</label>
+<input type="number" step="1" min="0" max="100" id="humidite" name="humidite" value="60" class="w-full rounded-xl bg-surface-container border border-outline-variant/40 px-3 py-2.5 text-on-surface focus:border-primary-container focus:outline-none " />
+</div>
+</div>
+<input type="hidden" name="source_meteo" value="weatherapi" />
+</fieldset>
+
+
+<fieldset class="rounded-xl border border-outline-variant/30 p-4">
+<legend class="px-2 font-title-md text-title-md text-on-surface font-semibold flex items-center gap-2"><span class="material-symbols-outlined text-primary text-[20px]">message</span>Message aux habitants</legend>
+<div class="flex flex-col gap-1">
+<label for="message" class="sr-only">Message aux habitants</label>
+<textarea id="message" name="message" rows="4" maxlength="2000" placeholder="Ex. : restez hydratés, évitez les sorties entre 11h et 17h…" class="w-full rounded-xl bg-surface-container border border-outline-variant/40 px-3 py-2.5 text-on-surface placeholder:text-outline focus:border-primary-container focus:outline-none ">Mollitia doloremque labore praesentium deserunt non voluptas culpa repellendus pariatur nam quis autem nostrum quisquam aperiam dolorum soluta nisi.</textarea>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Ce message est le texte de référence ; côté habitant, l'IA peut en générer une variante personnalisée selon son profil.</p>
+</div>
+</fieldset>
+
+<div class="flex flex-col sm:flex-row sm:justify-end gap-3">
+<a href="http://localhost/admin/alertes" class="px-4 py-2.5 rounded-xl font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-high inline-flex items-center justify-center gap-2"><span class="material-symbols-outlined text-[18px]">arrow_back</span>Retour à la liste</a>
+<button type="submit" class="px-6 py-2.5 rounded-xl bg-primary-container text-on-primary-container font-label-md text-label-md font-semibold hover:opacity-95 shadow">Enregistrer</button>
+</div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const QUARTIERS_GEO = JSON.parse(document.getElementById('carte-alerte-form').dataset.quartiersGeo);
+const CENTRE_DEFAUT_ALERTE = [36.8065, 10.1815];
+
+function alerteForm() {
+    return {
+        chargement: false,
+        retour: null,
+        carte: null,
+        init() {
+            const form = this.$root;
+            const latInput = form.querySelector('[name="latitude"]');
+            const lngInput = form.querySelector('[name="longitude"]');
+            const rayonInput = form.querySelector('[name="rayon_metres"]');
+            if (! latInput || ! lngInput || ! rayonInput || typeof L === 'undefined') {
+                return;
+            }
+
+            const depart = (latInput.value && lngInput.value)
+                ? [parseFloat(latInput.value), parseFloat(lngInput.value)]
+                : (QUARTIERS_GEO.length ? [QUARTIERS_GEO[0].lat, QUARTIERS_GEO[0].lng] : CENTRE_DEFAUT_ALERTE);
+
+            this.carte = L.map('carte-alerte-form').setView(depart, 13);
+            L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; OpenStreetMap',
+            }).addTo(this.carte);
+
+            let cercle = null;
+            let marqueur = null;
+            const rayon = () => Math.max(100, parseInt(rayonInput.value || '1000', 10) || 1000);
+
+            const majCercle = () => {
+                if (latInput.value === '' || lngInput.value === '') {
+                    return;
+                }
+                const pos = [parseFloat(latInput.value), parseFloat(lngInput.value)];
+                if (cercle) {
+                    cercle.setLatLng(pos).setRadius(rayon());
+                } else {
+                    cercle = L.circle(pos, { radius: rayon(), color: '#1b77ba', fillColor: '#1b77ba', fillOpacity: 0.15, weight: 2 }).addTo(this.carte);
+                }
+                if (marqueur) {
+                    marqueur.setLatLng(pos);
+                } else {
+                    marqueur = L.circleMarker(pos, { radius: 7, color: '#1b77ba', fillColor: '#1b77ba', fillOpacity: 1, weight: 3 }).addTo(this.carte);
+                }
+            };
+
+            const poser = (lat, lng) => {
+                latInput.value = lat.toFixed(7);
+                lngInput.value = lng.toFixed(7);
+                majCercle();
+            };
+
+            this.carte.on('click', (e) => poser(e.latlng.lat, e.latlng.lng));
+            rayonInput.addEventListener('input', majCercle);
+            majCercle();
+
+            const btnLoc = document.getElementById('btn-localiser-alerte');
+            if (btnLoc && navigator.geolocation) {
+                btnLoc.addEventListener('click', () => {
+                    btnLoc.disabled = true;
+                    navigator.geolocation.getCurrentPosition((p) => {
+                        this.carte.setView([p.coords.latitude, p.coords.longitude], 15);
+                        poser(p.coords.latitude, p.coords.longitude);
+                        btnLoc.disabled = false;
+                    }, () => { btnLoc.disabled = false; });
+                });
+            }
+
+            const btnClear = document.getElementById('btn-effacer-alerte');
+            if (btnClear) {
+                btnClear.addEventListener('click', () => {
+                    latInput.value = '';
+                    lngInput.value = '';
+                    if (cercle) { this.carte.removeLayer(cercle); cercle = null; }
+                    if (marqueur) { this.carte.removeLayer(marqueur); marqueur = null; }
+                });
+            }
+
+            // Cocher un quartier géolocalisé recentre la carte et pose le point.
+            form.querySelectorAll('input[name="quartier_ids[]"]').forEach((cb) => {
+                cb.addEventListener('change', () => {
+                    if (! cb.checked) {
+                        return;
+                    }
+                    const q = QUARTIERS_GEO.find((x) => String(x.id) === String(cb.value));
+                    if (! q) {
+                        return;
+                    }
+                    this.carte.setView([q.lat, q.lng], 14);
+                    poser(q.lat, q.lng);
+                });
+            });
+        },
+        async prefill(avecMessage) {
+            const form = this.$root;
+            const ids = Array.from(form.querySelectorAll('input[name="quartier_ids[]"]:checked')).map((i) => i.value);
+            const lat = form.querySelector('[name="latitude"]').value || null;
+            const lng = form.querySelector('[name="longitude"]').value || null;
+            if (ids.length === 0 && (! lat || ! lng)) {
+                this.retour = { ok: false, raison: 'Sélectionnez un quartier ou posez un point sur la carte avant de lancer l\'IA.' };
+                return;
+            }
+            this.chargement = true;
+            this.retour = null;
+            try {
+                const res = await fetch(form.dataset.prefillUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    },
+                    body: JSON.stringify({
+                        quartier_ids: ids,
+                        latitude: lat,
+                        longitude: lng,
+                        seuil_temperature: form.querySelector('[name="seuil_temperature"]').value || null,
+                        temperature_actuelle: form.querySelector('[name="temperature_actuelle"]').value || null,
+                        humidite: form.querySelector('[name="humidite"]').value || null,
+                        avec_message: avecMessage,
+                    }),
+                });
+                const data = await res.json();
+                this.retour = data;
+                if (data.ok) {
+                    form.querySelector('[name="niveau"]').value = data.niveau;
+                    form.querySelector('[name="temperature_actuelle"]').value = data.temperature;
+                    form.querySelector('[name="source_meteo"]').value = data.source;
+                    if (data.humidite !== null && data.humidite !== undefined) {
+                        form.querySelector('[name="humidite"]').value = data.humidite;
+                    }
+                    if (data.message) {
+                        form.querySelector('[name="message"]').value = data.message;
+                    }
+                }
+            } catch (e) {
+                this.retour = { ok: false, raison: 'Erreur réseau. Réessayez ou saisissez la température manuellement.' };
+            } finally {
+                this.chargement = false;
+            }
+        },
+    };
+}
+</script>
+            </form>
+        </div>
+        <aside class="lg:col-span-1 lg:self-start">
+            <div class="rounded-xl bg-surface-container-low/80 backdrop-blur-xl shadow-xl p-space-lg flex flex-col gap-4 lg:sticky lg:top-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[24px]">partly_cloudy_day</span>
+<h2 class="font-title-md text-title-md text-on-surface font-semibold">Météo actuelle</h2>
+</div>
+
+<div class="flex items-start gap-2 rounded-lg bg-surface-container px-3 py-3">
+<span class="material-symbols-outlined text-on-surface-variant text-[20px] shrink-0">cloud_off</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Météo indisponible pour le moment (service injoignable ou clé absente). Vous pouvez saisir la température manuellement, ou utiliser « Météo + niveau ».</p>
+</div>
+</div>
+        </aside>
+    </div>
+</main>
+</div>
+</body>
+</html>

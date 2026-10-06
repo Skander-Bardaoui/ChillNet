@@ -20,6 +20,7 @@ use App\Http\Controllers\Front\EquipementController as FrontEquipementController
 use App\Http\Controllers\Front\HomeController;
 use App\Http\Controllers\Front\LieuController as FrontLieuController;
 use App\Http\Controllers\Front\SignalementController as FrontSignalementController;
+use App\Http\Controllers\GeocodingController;
 use App\Http\Controllers\ProfileController;
 use App\Models\Residence;
 use App\Support\AuthCookie;
@@ -58,6 +59,8 @@ Route::get('/points-fraicheur/{point}', [FrontPointFraicheurController::class, '
 Route::middleware(['auth', 'role:habitant'])->group(function () {
     // Module 1 — alertes canicule validées du quartier de l'habitant.
     Route::get('/alertes', [FrontAlerteController::class, 'index'])->name('alertes.index');
+    Route::get('/alertes/{alerte}', [FrontAlerteController::class, 'show'])
+        ->whereNumber('alerte')->name('alertes.show');
 
     // Module 2 — signalement coupure + confirmation.
     Route::get('/coupures/signaler', [FrontCoupureController::class, 'create'])->name('coupures.create');
@@ -123,6 +126,10 @@ Route::get('/dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
+    // Géocodage inverse (coordonnées → adresse) partagé par les cartes front
+    // (Mes lieux) et back office (points de fraîcheur).
+    Route::get('/geocodage/inverse', [GeocodingController::class, 'reverse'])->name('geocodage.inverse');
+
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
@@ -164,16 +171,7 @@ Route::prefix('admin')->name('back.')->middleware(['auth', 'role:admin,gestionna
 
     // Points de fraîcheur — vitrine statique.
     Route::get('/points-fraicheur', fn () => view('back.points.index'))->name('points.index');
-    /*
-    |----------------------------------------------------------------------
-    | Back office vitrine par module (TEMPLATE UNIQUEMENT).
-    |----------------------------------------------------------------------
-    */
-    foreach (['conseils'] as $module) {
-        Route::get("/{$module}", fn () => view("back.{$module}.index"))->name("{$module}.index");
-        Route::get("/{$module}/creer", fn () => view("back.{$module}.create"))->name("{$module}.create");
-        Route::get("/{$module}/{id}/modifier", fn (string $id) => view("back.{$module}.edit"))->name("{$module}.edit");
-    }
+
     // Module 3 : points de fraîcheur (CRUD) + modération admin + avis.
     Route::resource('points-fraicheur', BackPointFraicheurController::class)
         ->parameters(['points-fraicheur' => 'point'])

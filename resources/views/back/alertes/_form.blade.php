@@ -11,7 +11,7 @@
     @method('PUT')
 @endif
 
-<div x-data="alerteForm()" class="flex flex-col gap-4">
+<div x-data="alerteForm()" data-prefill-url="{{ route('back.alertes.prefill') }}" class="flex flex-col gap-4">
 
 {{-- Bandeau IA : pré-remplit la météo + classe le niveau + rédige le message --}}
 <div class="rounded-xl border border-primary-container/30 bg-primary-container/5 p-4 flex flex-col gap-3">
@@ -89,7 +89,7 @@
 <legend class="px-2 font-title-md text-title-md text-on-surface font-semibold flex items-center gap-2"><span class="material-symbols-outlined text-primary text-[20px]">map</span>Zone géographique (carte)</legend>
 <p class="mb-2 font-body-sm text-body-sm text-on-surface-variant">Cliquez sur la carte pour poser le centre de la zone (ou cochez un quartier pour le centrer), puis ajustez le rayon. Une alerte peut cibler un ou plusieurs quartiers, un cercle, ou les deux.</p>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<div id="carte-alerte-form" class="w-full h-72 rounded-xl overflow-hidden z-0 border border-outline-variant/30"></div>
+<div id="carte-alerte-form" data-quartiers-geo="{{ json_encode($quartiersGeo) }}" class="w-full h-72 rounded-xl overflow-hidden z-0 border border-outline-variant/30"></div>
 <input type="hidden" id="latitude" name="latitude" value="{{ old('latitude', $alerte?->latitude) }}" />
 <input type="hidden" id="longitude" name="longitude" value="{{ old('longitude', $alerte?->longitude) }}" />
 @error('latitude') <p class="mt-1 font-body-sm text-body-sm text-error flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">error</span>{{ $message }}</p> @enderror
@@ -165,7 +165,7 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-const QUARTIERS_GEO = @json($quartiersGeo);
+const QUARTIERS_GEO = JSON.parse(document.getElementById('carte-alerte-form').dataset.quartiersGeo);
 const CENTRE_DEFAUT_ALERTE = [36.8065, 10.1815];
 
 function alerteForm() {
@@ -272,7 +272,7 @@ function alerteForm() {
             this.chargement = true;
             this.retour = null;
             try {
-                const res = await fetch('{{ route('back.alertes.prefill') }}', {
+                const res = await fetch(form.dataset.prefillUrl, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

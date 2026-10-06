@@ -51,8 +51,12 @@
 <legend class="px-2 font-title-md text-title-md text-on-surface font-semibold flex items-center gap-2"><span class="material-symbols-outlined text-primary text-[20px]">location_on</span>Localisation</legend>
 <div class="flex flex-col gap-1">
 <label for="adresse" class="font-label-md text-label-md text-on-surface font-medium">Adresse <span class="text-error">*</span></label>
-<input type="text" id="adresse" name="adresse" value="{{ old('adresse', $point?->adresse) }}" maxlength="255" required placeholder="Ex. : Avenue de la République, Tunis" class="{{ $champ }}{{ $erreur('adresse') }}" />
+<div class="relative">
+<input type="text" id="adresse" name="adresse" value="{{ old('adresse', $point?->adresse) }}" maxlength="255" required placeholder="Ex. : Avenue de la République, Tunis" class="{{ $champ }}{{ $erreur('adresse') }} pr-10" />
+<span id="adresse-spinner" class="hidden absolute right-3 top-1/2 -translate-y-1/2 flex items-center pointer-events-none"><span class="material-symbols-outlined text-[18px] text-primary animate-spin">progress_activity</span></span>
+</div>
 @error('adresse') <p class="font-body-sm text-body-sm text-error flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">error</span>{{ $message }}</p> @enderror
+<p class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">location_on</span>Remplie automatiquement d'après le point choisi sur la carte — modifiable à tout moment.</p>
 </div>
 <div class="mt-3 flex flex-wrap items-center justify-between gap-2">
 <p class="font-body-sm text-body-sm text-on-surface-variant">Cliquez sur la carte ou déplacez le repère : les coordonnées GPS se remplissent automatiquement.</p>
@@ -169,6 +173,9 @@
 (function () {
     const latInput = document.getElementById('latitude');
     const lngInput = document.getElementById('longitude');
+    const adresseInput = document.getElementById('adresse');
+    const adresseSpinner = document.getElementById('adresse-spinner');
+    const adresseUrl = @json(route('geocodage.inverse'));
     const centre = @json($centre ?? [36.8065, 10.1815]);
     const depart = (parseFloat(latInput.value) && parseFloat(lngInput.value))
         ? [parseFloat(latInput.value), parseFloat(lngInput.value)]
@@ -178,28 +185,58 @@
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap' }).addTo(carte);
 
     let marqueur = null;
-    const poser = (lat, lng, recentrer) => {
+    let geoSeq = 0;
+
+    // Adresse du point choisi : remplit le champ pour la proposition comme pour
+    // la modification. Un compteur ignore les réponses arrivées en retard.
+    const chercherAdresse = async (lat, lng) => {
+        if (! adresseInput) return;
+
+        const seq = ++geoSeq;
+        if (adresseSpinner) adresseSpinner.classList.remove('hidden');
+
+        try {
+            const url = new URL(adresseUrl, window.location.origin);
+            url.searchParams.set('latitude', lat);
+            url.searchParams.set('longitude', lng);
+
+            const reponse = await fetch(url, { headers: { Accept: 'application/json' } });
+            if (! reponse.ok) return;
+
+            const donnees = await reponse.json();
+            if (seq !== geoSeq || ! donnees || ! donnees.adresse) return;
+
+            adresseInput.value = donnees.adresse;
+        } catch (e) {
+            // Silencieux : l'adresse reste saisissable à la main.
+        } finally {
+            if (seq === geoSeq && adresseSpinner) adresseSpinner.classList.add('hidden');
+        }
+    };
+
+    const poser = (lat, lng, recentrer, geocoder = false) => {
         latInput.value = lat.toFixed(7);
         lngInput.value = lng.toFixed(7);
         if (marqueur) {
             marqueur.setLatLng([lat, lng]);
         } else {
             marqueur = L.marker([lat, lng], { draggable: true }).addTo(carte);
-            marqueur.on('dragend', () => { const p = marqueur.getLatLng(); poser(p.lat, p.lng, false); });
+            marqueur.on('dragend', () => { const p = marqueur.getLatLng(); poser(p.lat, p.lng, false, true); });
         }
         if (recentrer) carte.setView([lat, lng], 16);
+        if (geocoder) chercherAdresse(lat, lng);
     };
 
     if (parseFloat(latInput.value) && parseFloat(lngInput.value)) {
         poser(parseFloat(latInput.value), parseFloat(lngInput.value), false);
     }
-    carte.on('click', (e) => poser(e.latlng.lat, e.latlng.lng, false));
+    carte.on('click', (e) => poser(e.latlng.lat, e.latlng.lng, false, true));
 
     // Saisie manuelle des coordonnées → le repère suit.
     [latInput, lngInput].forEach((el) => el.addEventListener('change', () => {
         const lat = parseFloat(latInput.value.replace(',', '.'));
         const lng = parseFloat(lngInput.value.replace(',', '.'));
-        if (! isNaN(lat) && ! isNaN(lng)) poser(lat, lng, true);
+        if (! isNaN(lat) && ! isNaN(lng)) poser(lat, lng, true, true);
     }));
 
     const btn = document.getElementById('btn-localiser-point');
@@ -207,7 +244,7 @@
         btn.addEventListener('click', () => {
             btn.disabled = true;
             navigator.geolocation.getCurrentPosition(
-                (p) => { poser(p.coords.latitude, p.coords.longitude, true); btn.disabled = false; },
+                (p) => { poser(p.coords.latitude, p.coords.longitude, true, true); btn.disabled = false; },
                 () => { btn.disabled = false; },
             );
         });

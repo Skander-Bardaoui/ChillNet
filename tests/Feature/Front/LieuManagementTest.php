@@ -214,4 +214,70 @@ class LieuManagementTest extends TestCase
 
         $this->assertSame($quartier->id, $lieu->quartier_id);
     }
+
+    public function test_the_lieux_screen_wires_the_address_auto_fill(): void
+    {
+        $habitant = $this->habitant();
+        $this->lieu($habitant);
+
+        $this->actingAs($habitant)
+            ->get(route('lieux.index'))
+            ->assertOk()
+            // Le composant Alpine appelle bien l'endpoint de géocodage inverse.
+            ->assertSee('chercherAdresse')
+            ->assertSee('config.urls.adresse');
+    }
+
+    public function test_the_address_lookup_returns_the_reverse_geocoded_address(): void
+    {
+        Http::fake([
+            'nominatim.openstreetmap.org/*' => Http::response([
+                'address' => [
+                    'house_number' => '12',
+                    'road' => 'Rue des Tilleuls',
+                    'postcode' => '1002',
+                    'city' => 'Tunis',
+                    'country' => 'Tunisie',
+                ],
+                'display_name' => '12, Rue des Tilleuls, 1002 Tunis, Tunisie',
+            ]),
+        ]);
+
+        $habitant = $this->habitant();
+
+        $this->actingAs($habitant)
+            ->getJson(route('lieux.adresse', ['latitude' => 36.8065, 'longitude' => 10.1815]))
+            ->assertOk()
+            ->assertJson(['adresse' => '12 Rue des Tilleuls, 1002 Tunis, Tunisie']);
+    }
+
+    public function test_the_address_lookup_returns_null_when_the_service_fails(): void
+    {
+        Http::fake([
+            'nominatim.openstreetmap.org/*' => Http::response('quota dépassé', 500),
+        ]);
+
+        $habitant = $this->habitant();
+
+        $this->actingAs($habitant)
+            ->getJson(route('lieux.adresse', ['latitude' => 36.8065, 'longitude' => 10.1815]))
+            ->assertOk()
+            ->assertJson(['adresse' => null]);
+    }
+
+    public function test_the_address_lookup_validates_coordinates(): void
+    {
+        $habitant = $this->habitant();
+
+        $this->actingAs($habitant)
+            ->getJson(route('lieux.adresse'))
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['latitude', 'longitude']);
+    }
+
+    public function test_the_address_lookup_requires_a_habitant(): void
+    {
+        $this->getJson(route('lieux.adresse', ['latitude' => 36.8, 'longitude' => 10.1]))
+            ->assertUnauthorized();
+    }
 }

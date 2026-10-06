@@ -59,4 +59,20 @@ return [
         'model' => env('GROQ_MODEL', 'openai/gpt-oss-120b'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Géocodage inverse (coordonnées → adresse) — « Mes lieux »
+    |--------------------------------------------------------------------------
+    |
+    | Nominatim (OpenStreetMap) remplit automatiquement le champ adresse quand
+    | l'habitant pose son point sur la carte. Aucune clé : la politique d'usage
+    | impose juste un User-Agent identifiable (voir GeocodingService).
+    |
+    */
+
+    'nominatim' => [
+        'base_url' => env('NOMINATIM_BASE_URL', 'https://nominatim.openstreetmap.org'),
+        'user_agent' => env('NOMINATIM_USER_AGENT', 'ChillNet/1.0 (+'.env('APP_URL', 'http://localhost').')'),
+    ],
+
 ];

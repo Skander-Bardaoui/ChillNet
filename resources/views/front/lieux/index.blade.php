@@ -60,9 +60,17 @@
                     </div>
 
                     <div class="flex flex-col gap-1.5">
-                        <label for="lieu-adresse" class="font-label-md text-label-md text-on-surface">Adresse <span class="text-on-surface-variant font-normal">(optionnel)</span></label>
-                        <input id="lieu-adresse" type="text" name="adresse" x-model="form.adresse" placeholder="Ex : 12 rue des Tilleuls"
-                            class="w-full rounded-lg bg-surface-container border border-outline-variant/40 px-3 py-2.5 text-on-surface focus:border-primary-container focus:outline-none" />
+                        <label for="lieu-adresse" class="font-label-md text-label-md text-on-surface">Adresse <span class="text-on-surface-variant font-normal">(remplie d'après le point)</span></label>
+                        <div class="relative">
+                            <input id="lieu-adresse" type="text" name="adresse" x-model="form.adresse" placeholder="Ex : 12 rue des Tilleuls"
+                                class="w-full rounded-lg bg-surface-container border border-outline-variant/40 px-3 py-2.5 pr-10 text-on-surface focus:border-primary-container focus:outline-none" />
+                            <span x-show="adresseEnCours" x-cloak class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center pointer-events-none">
+                                <span class="material-symbols-outlined text-[18px] text-primary animate-spin">progress_activity</span>
+                            </span>
+                        </div>
+                        <p class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[14px]">location_on</span>Se met à jour automatiquement quand vous posez le point — modifiable à tout moment.
+                        </p>
                         @error('adresse') <p class="font-body-sm text-body-sm text-error">{{ $message }}</p> @enderror
                     </div>
 
@@ -180,6 +188,8 @@
             carte: null,
             marqueurs: {},
             actif: null,
+            adresseEnCours: false,
+            geoSeq: 0,
 
             init() {
                 const el = document.getElementById('carte-lieux');
@@ -203,7 +213,7 @@
                     this.carte.fitBounds(this.lieux.map((l) => [l.lat, l.lng]), { maxZoom: 14, padding: [24, 24] });
                 }
 
-                this.carte.on('click', (e) => this.poserActif(e.latlng.lat, e.latlng.lng, false));
+                this.carte.on('click', (e) => this.poserActif(e.latlng.lat, e.latlng.lng, false, true));
 
                 // Reprise après une erreur de validation : le point saisi est replacé.
                 if (this.form.latitude && this.form.longitude) {
@@ -215,7 +225,7 @@
                     btn.addEventListener('click', () => {
                         btn.disabled = true;
                         navigator.geolocation.getCurrentPosition((p) => {
-                            this.poserActif(p.coords.latitude, p.coords.longitude, true);
+                            this.poserActif(p.coords.latitude, p.coords.longitude, true, true);
                             btn.disabled = false;
                         }, () => { btn.disabled = false; });
                     });
@@ -245,7 +255,7 @@
                 this.marqueurs[lieu.id] = marqueur;
             },
 
-            poserActif(lat, lng, recentrer) {
+            poserActif(lat, lng, recentrer, geocoder = false) {
                 this.form.latitude = lat.toFixed(7);
                 this.form.longitude = lng.toFixed(7);
 
@@ -257,11 +267,47 @@
                         const p = this.actif.getLatLng();
                         this.form.latitude = p.lat.toFixed(7);
                         this.form.longitude = p.lng.toFixed(7);
+                        this.chercherAdresse(p.lat, p.lng);
                     });
                 }
 
                 if (recentrer) {
                     this.carte.setView([lat, lng], 15);
+                }
+
+                if (geocoder) {
+                    this.chercherAdresse(lat, lng);
+                }
+            },
+
+            // Adresse du point choisi : remplit le champ pour l'ajout comme la
+            // modification. Un compteur ignore les réponses arrivées en retard.
+            async chercherAdresse(lat, lng) {
+                const seq = ++this.geoSeq;
+                this.adresseEnCours = true;
+
+                try {
+                    const url = new URL(config.urls.adresse, window.location.origin);
+                    url.searchParams.set('latitude', lat);
+                    url.searchParams.set('longitude', lng);
+
+                    const reponse = await fetch(url, { headers: { Accept: 'application/json' } });
+                    if (! reponse.ok) {
+                        return;
+                    }
+
+                    const donnees = await reponse.json();
+                    if (seq !== this.geoSeq || ! donnees || ! donnees.adresse) {
+                        return;
+                    }
+
+                    this.form.adresse = donnees.adresse;
+                } catch (e) {
+                    // Silencieux : l'adresse reste saisissable à la main.
+                } finally {
+                    if (seq === this.geoSeq) {
+                        this.adresseEnCours = false;
+                    }
                 }
             },
 
@@ -269,6 +315,9 @@
                 this.mode = 'create';
                 this.action = config.urls.store;
                 this.form = { nom: '', type: 'domicile', adresse: '', latitude: '', longitude: '' };
+                // Invalide une éventuelle recherche d'adresse encore en vol.
+                this.geoSeq++;
+                this.adresseEnCours = false;
                 if (this.actif) {
                     this.carte.removeLayer(this.actif);
                     this.actif = null;
