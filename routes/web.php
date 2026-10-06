@@ -2,6 +2,10 @@
 
 use App\Http\Controllers\Back\AlerteController as BackAlerteController;
 use App\Http\Controllers\Back\ConseilController as BackConseilController;
+use App\Http\Controllers\Back\AvisController as BackAvisController;
+use App\Http\Controllers\Back\PointFraicheurController as BackPointFraicheurController;
+use App\Http\Controllers\Front\AvisController as FrontAvisController;
+use App\Http\Controllers\Front\PointFraicheurController as FrontPointFraicheurController;
 use App\Http\Controllers\Back\CoupureController as BackCoupureController;
 use App\Http\Controllers\Back\DashboardController as BackDashboardController;
 use App\Http\Controllers\Back\EquipementTypeController as BackEquipementTypeController;
@@ -37,12 +41,13 @@ Route::get('/quartiers/{id}', [HomeController::class, 'quartier'])->name('quarti
 |--------------------------------------------------------------------------
 */
 Route::get('/coupures', [FrontCoupureController::class, 'index'])->name('coupures.index');
-Route::get('/points-fraicheur/{id}', fn (string $id) => view('front.point-show'))->name('points.show');
-Route::get('/refuges', function () {
-    $points = Residence::pointFraicheur()->with('quartier')->orderBy('nom')->get();
-
-    return view('front.refuges', compact('points'));
-})->name('refuges.index');
+/*
+| Module 3 (Dhia) : points de fraîcheur + avis — RÉEL (base de données).
+| Front public : points validés proches + recommandation IA, détail + avis.
+*/
+Route::get('/refuges', [FrontPointFraicheurController::class, 'index'])->name('refuges.index');
+Route::get('/points-fraicheur/{point}', [FrontPointFraicheurController::class, 'show'])
+    ->whereNumber('point')->name('points.show');
 
 /*
 |--------------------------------------------------------------------------
@@ -83,6 +88,18 @@ Route::middleware(['auth', 'role:habitant'])->group(function () {
     Route::patch('/mes-lieux/{lieu}/principal', [FrontLieuController::class, 'principal'])->name('lieux.principal');
     Route::patch('/mes-lieux/{lieu}', [FrontLieuController::class, 'update'])->name('lieux.update');
     Route::delete('/mes-lieux/{lieu}', [FrontLieuController::class, 'destroy'])->name('lieux.destroy');
+
+    // Module 3 : l'habitant propose un point (modéré) et gère ses avis.
+    Route::get('/points-fraicheur/proposer', [FrontPointFraicheurController::class, 'create'])->name('points.create');
+    Route::post('/points-fraicheur', [FrontPointFraicheurController::class, 'store'])->name('points.store');
+    Route::get('/points-fraicheur/mes-propositions', [FrontPointFraicheurController::class, 'mesPropositions'])->name('points.mine');
+    Route::get('/points-fraicheur/{point}/modifier', [FrontPointFraicheurController::class, 'edit'])->whereNumber('point')->name('points.edit');
+    Route::put('/points-fraicheur/{point}', [FrontPointFraicheurController::class, 'update'])->whereNumber('point')->name('points.update');
+    Route::delete('/points-fraicheur/{point}', [FrontPointFraicheurController::class, 'destroy'])->whereNumber('point')->name('points.destroy');
+    Route::post('/points-fraicheur/{point}/avis', [FrontAvisController::class, 'store'])->whereNumber('point')->name('points.avis.store');
+    Route::get('/avis/{avis}/modifier', [FrontAvisController::class, 'edit'])->name('avis.edit');
+    Route::put('/avis/{avis}', [FrontAvisController::class, 'update'])->name('avis.update');
+    Route::delete('/avis/{avis}', [FrontAvisController::class, 'destroy'])->name('avis.destroy');
 });
 
 /*
@@ -147,6 +164,33 @@ Route::prefix('admin')->name('back.')->middleware(['auth', 'role:admin,gestionna
 
     // Points de fraîcheur — vitrine statique.
     Route::get('/points-fraicheur', fn () => view('back.points.index'))->name('points.index');
+    /*
+    |----------------------------------------------------------------------
+    | Back office vitrine par module (TEMPLATE UNIQUEMENT).
+    |----------------------------------------------------------------------
+    */
+    foreach (['conseils'] as $module) {
+        Route::get("/{$module}", fn () => view("back.{$module}.index"))->name("{$module}.index");
+        Route::get("/{$module}/creer", fn () => view("back.{$module}.create"))->name("{$module}.create");
+        Route::get("/{$module}/{id}/modifier", fn (string $id) => view("back.{$module}.edit"))->name("{$module}.edit");
+    }
+    // Module 3 : points de fraîcheur (CRUD) + modération admin + avis.
+    Route::resource('points-fraicheur', BackPointFraicheurController::class)
+        ->parameters(['points-fraicheur' => 'point'])
+        ->names('points');
+    Route::middleware('role:admin')->group(function () {
+        Route::patch('/points-fraicheur/{point}/valider', [BackPointFraicheurController::class, 'valider'])->name('points.valider');
+        Route::patch('/points-fraicheur/{point}/refuser', [BackPointFraicheurController::class, 'refuser'])->name('points.refuser');
+    });
+    Route::get('/avis', [BackAvisController::class, 'index'])->name('avis.index');
+    Route::delete('/avis/{avis}', [BackAvisController::class, 'destroy'])->name('avis.destroy');
+    Route::get('/signalements', [BackSignalementController::class, 'index'])->name('signalements.index');
+    Route::get('/signalements/creer', [BackSignalementController::class, 'create'])->name('signalements.create');
+    Route::post('/signalements', [BackSignalementController::class, 'store'])->name('signalements.store');
+    Route::get('/signalements/{signalement}/modifier', [BackSignalementController::class, 'edit'])->name('signalements.edit');
+    Route::put('/signalements/{signalement}', [BackSignalementController::class, 'update'])->name('signalements.update');
+    Route::delete('/signalements/{signalement}', [BackSignalementController::class, 'destroy'])->name('signalements.destroy');
+    Route::patch('/signalements/{signalement}/traitement', [BackSignalementController::class, 'updateTreatment'])->name('signalements.treatment');
 });
 
 require __DIR__.'/auth.php';

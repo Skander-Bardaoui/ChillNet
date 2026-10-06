@@ -159,5 +159,10 @@ class DatabaseSeeder extends Seeder
 
         // Module 1 (alertes / vigilance) : après les quartiers et les comptes.
         $this->call(AlerteSeeder::class);
+
+        // Module 3 (points de fraîcheur / avis) : après les quartiers géolocalisés et les comptes.
+        $this->call(PointFraicheurSeeder::class);
+        // Module signalements : exemples visibles dans l'espace habitant et le back-office.
+        $this->call(SignalementSeeder::class);
     }
 }
