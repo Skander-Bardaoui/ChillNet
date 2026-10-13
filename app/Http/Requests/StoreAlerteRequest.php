@@ -88,6 +88,10 @@ class StoreAlerteRequest extends FormRequest
             'humidite' => ['nullable', 'integer', 'between:0,100'],
             'source_meteo' => ['nullable', Rule::in(['weatherapi', 'manuel'])],
             'message' => ['nullable', 'string', 'max:2000'],
+
+            // Trace IA (champ caché du formulaire) : identification de la
+            // prédiction à rattacher pour la boucle de retour d'expérience.
+            'ai_prediction_id' => ['nullable', 'integer', 'exists:ai_predictions,id'],
         ];
     }
 
@@ -112,7 +116,18 @@ class StoreAlerteRequest extends FormRequest
             }
 
             $quartiers = array_values(array_filter((array) $this->input('quartier_ids', [])));
-            $aGeo = $this->filled('latitude') && $this->filled('longitude');
+            $lat = $this->filled('latitude');
+            $lng = $this->filled('longitude');
+            $aGeo = $lat && $lng;
+
+            if ($lat !== $lng) {
+                $validator->errors()->add(
+                    $lat ? 'longitude' : 'latitude',
+                    'Un point sur la carte exige une latitude ET une longitude : complétez le second champ ou retirez le point.'
+                );
+
+                return;
+            }
 
             if ($quartiers === [] && ! $aGeo) {
                 $validator->errors()->add(

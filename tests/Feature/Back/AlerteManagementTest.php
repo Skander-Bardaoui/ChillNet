@@ -140,6 +140,55 @@ class AlerteManagementTest extends TestCase
         $this->assertSame(0, Alerte::count());
     }
 
+    public function test_a_map_point_requires_both_coordinates(): void
+    {
+        $admin = $this->userWithRole(Role::Admin);
+
+        // Latitude seule → erreur sur la longitude.
+        $this->actingAs($admin)
+            ->post(route('back.alertes.store'), $this->payload([
+                'quartier_ids' => [],
+                'latitude' => 36.8008,
+            ]))
+            ->assertSessionHasErrors('longitude');
+
+        // Longitude seule → erreur sur la latitude.
+        $this->actingAs($admin)
+            ->post(route('back.alertes.store'), $this->payload([
+                'quartier_ids' => [],
+                'longitude' => 10.1800,
+            ]))
+            ->assertSessionHasErrors('latitude');
+
+        // Coordonnées hors bornes → erreur.
+        $this->actingAs($admin)
+            ->post(route('back.alertes.store'), $this->payload([
+                'quartier_ids' => [],
+                'latitude' => 95,
+                'longitude' => 200,
+            ]))
+            ->assertSessionHasErrors(['latitude', 'longitude']);
+
+        $this->assertSame(0, Alerte::count());
+    }
+
+    public function test_prefill_requires_a_complete_target(): void
+    {
+        $admin = $this->userWithRole(Role::Admin);
+
+        // Latitude seule → erreur sur la longitude.
+        $this->actingAs($admin)
+            ->postJson(route('back.alertes.prefill'), ['latitude' => 36.8008])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('longitude');
+
+        // Ni quartier ni coordonnées → erreur.
+        $this->actingAs($admin)
+            ->postJson(route('back.alertes.prefill'), [])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('quartier_ids');
+    }
+
     public function test_an_alerte_can_be_created_with_only_a_map_point(): void
     {
         $admin = $this->userWithRole(Role::Admin);

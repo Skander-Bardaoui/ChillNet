@@ -19,8 +19,17 @@
 /storage/*.key
 /storage/pail
 /storage/proxies
+/storage/app/ai
 /vendor
 Homestead.json
 Homestead.yaml
 Thumbs.db
 opencode.json
+
+# --- Microservice IA canicule (Python) : caches uniquement ---
+# Les artefacts entraînés (ai-service/artifacts/*) et l'échantillon météo
+# committé (ai-service/data/weather_history_sample.csv) restent versionnés.
+__pycache__/
+*.py[cod]
+.pytest_cache/
+ai-service/.venv/

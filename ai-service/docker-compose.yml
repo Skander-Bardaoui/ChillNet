@@ -1,0 +1,16 @@
+services:
+  ai-service:
+    build:
+      context: .
+    image: chillnet-ai-service:latest
+    container_name: chillnet-ai-service
+    ports:
+      - "8001:8001"
+    environment:
+      # Doit correspondre à AI_SERVICE_TOKEN côté Laravel (en-tête X-AI-TOKEN).
+      AI_SERVICE_TOKEN: "${AI_SERVICE_TOKEN:-}"
+    volumes:
+      # Persiste les artefacts ré-entraînés et le CSV de corrections partagé.
+      - ./artifacts:/app/artifacts
+      - ./data:/app/data
+    restart: unless-stopped

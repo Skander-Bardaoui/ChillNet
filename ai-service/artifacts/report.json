@@ -1,0 +1,86 @@
+{
+  "version": "1.0.1",
+  "n_train": 856,
+  "n_test": 215,
+  "n_corrections": 0,
+  "classes": [
+    "jaune",
+    "normal",
+    "orange",
+    "rouge"
+  ],
+  "model": {
+    "accuracy": 0.9535,
+    "macro_f1": 0.7888,
+    "recall_par_classe": {
+      "normal": 0.0,
+      "jaune": 0.8,
+      "orange": 0.5556,
+      "rouge": 0.9751
+    },
+    "confusion": [
+      [
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        4,
+        1,
+        0
+      ],
+      [
+        0,
+        0,
+        5,
+        4
+      ],
+      [
+        0,
+        0,
+        5,
+        196
+      ]
+    ],
+    "n_test": 215
+  },
+  "rules": {
+    "accuracy": 0.8791,
+    "macro_f1": 0.4835,
+    "recall_par_classe": {
+      "normal": 0.0,
+      "jaune": 1.0,
+      "orange": 0.1111,
+      "rouge": 0.9104
+    },
+    "confusion": [
+      [
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        5,
+        0,
+        0
+      ],
+      [
+        0,
+        7,
+        1,
+        1
+      ],
+      [
+        0,
+        8,
+        10,
+        183
+      ]
+    ],
+    "n_test": 215
+  }
+}

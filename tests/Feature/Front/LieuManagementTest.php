@@ -246,7 +246,7 @@ class LieuManagementTest extends TestCase
         $habitant = $this->habitant();
 
         $this->actingAs($habitant)
-            ->getJson(route('lieux.adresse', ['latitude' => 36.8065, 'longitude' => 10.1815]))
+            ->getJson(route('geocodage.inverse', ['latitude' => 36.8065, 'longitude' => 10.1815]))
             ->assertOk()
             ->assertJson(['adresse' => '12 Rue des Tilleuls, 1002 Tunis, Tunisie']);
     }
@@ -260,7 +260,7 @@ class LieuManagementTest extends TestCase
         $habitant = $this->habitant();
 
         $this->actingAs($habitant)
-            ->getJson(route('lieux.adresse', ['latitude' => 36.8065, 'longitude' => 10.1815]))
+            ->getJson(route('geocodage.inverse', ['latitude' => 36.8065, 'longitude' => 10.1815]))
             ->assertOk()
             ->assertJson(['adresse' => null]);
     }
@@ -270,14 +270,14 @@ class LieuManagementTest extends TestCase
         $habitant = $this->habitant();
 
         $this->actingAs($habitant)
-            ->getJson(route('lieux.adresse'))
+            ->getJson(route('geocodage.inverse'))
             ->assertStatus(422)
             ->assertJsonValidationErrors(['latitude', 'longitude']);
     }
 
     public function test_the_address_lookup_requires_a_habitant(): void
     {
-        $this->getJson(route('lieux.adresse', ['latitude' => 36.8, 'longitude' => 10.1]))
+        $this->getJson(route('geocodage.inverse', ['latitude' => 36.8, 'longitude' => 10.1]))
             ->assertUnauthorized();
     }
 }

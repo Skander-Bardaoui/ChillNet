@@ -222,4 +222,24 @@ class WeatherService
 
         return $previsions;
     }
+
+    /**
+     * Prévision horaire unique pour une cible multi-quartiers : on moyenne les
+     * coordonnées des quartiers géolocalisés (comme `actuelPourQuartiers`).
+     * Renvoie un tableau vide si aucun quartier n'a de coordonnées.
+     *
+     * @param  iterable<Quartier>  $quartiers
+     * @return array<int, MeteoHoraire>
+     */
+    public function previsionsPourQuartiers(iterable $quartiers, int $heures = 48): array
+    {
+        $geo = collect($quartiers)
+            ->filter(fn ($quartier): bool => $quartier instanceof Quartier && $quartier->hasCoordinates());
+
+        if ($geo->isEmpty()) {
+            return [];
+        }
+
+        return $this->previsions((float) $geo->avg('latitude'), (float) $geo->avg('longitude'), $heures);
+    }
 }

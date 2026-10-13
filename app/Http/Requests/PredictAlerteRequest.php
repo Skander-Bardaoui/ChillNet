@@ -5,6 +5,7 @@ namespace App\Http\Requests;
 use App\Enums\ProfilVulnerabilite;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 /**
  * Requête du bouton « Pré-remplir météo + IA » : ciblage par quartier(s)
@@ -57,6 +58,40 @@ class PredictAlerteRequest extends FormRequest
             'avec_message' => ['nullable', 'boolean'],
             'profil' => ['nullable', Rule::in(ProfilVulnerabilite::persistables())],
         ];
+    }
+
+    /**
+     * Le point doit être complet (latitude ET longitude) et la cible
+     * obligatoire (quartier(s) ou point), comme au moment de l'enregistrement.
+     */
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator): void {
+            if ($validator->errors()->hasAny(['latitude', 'longitude'])) {
+                return;
+            }
+
+            $lat = $this->filled('latitude');
+            $lng = $this->filled('longitude');
+
+            if ($lat !== $lng) {
+                $validator->errors()->add(
+                    $lat ? 'longitude' : 'latitude',
+                    'Un point sur la carte exige une latitude ET une longitude : complétez le second champ ou retirez le point.'
+                );
+
+                return;
+            }
+
+            $quartiers = array_values(array_filter((array) $this->input('quartier_ids', [])));
+
+            if ($quartiers === [] && ! ($lat && $lng)) {
+                $validator->errors()->add(
+                    'quartier_ids',
+                    'Ciblez l\'alerte : cochez au moins un quartier ou posez un point sur la carte.'
+                );
+            }
+        });
     }
 
     /**

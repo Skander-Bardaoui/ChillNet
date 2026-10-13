@@ -1,0 +1,115 @@
+{
+  "version": "1.0.1",
+  "date": "2026-10-13",
+  "trained_at": "2026-10-13",
+  "features": [
+    "temp",
+    "ressentie",
+    "humidite",
+    "heat_index",
+    "temp_minus_seuil",
+    "max_24h",
+    "max_48h",
+    "nuit_tropicale",
+    "jours_chauds_consecutifs",
+    "mois",
+    "heure_pic"
+  ],
+  "classes": [
+    "jaune",
+    "normal",
+    "orange",
+    "rouge"
+  ],
+  "n_samples": 856,
+  "n_corrections": 0,
+  "data_hash": "34792d9e807a96e9",
+  "medians": {
+    "temp": 35.5,
+    "ressentie": 35.75,
+    "humidite": 52.0,
+    "heat_index": 42.4418,
+    "temp_minus_seuil": 0.5,
+    "max_24h": 35.5,
+    "max_48h": 35.5,
+    "nuit_tropicale": 0.0,
+    "jours_chauds_consecutifs": 1.0,
+    "mois": 7.0,
+    "heure_pic": 15.0
+  },
+  "metrics": {
+    "accuracy": 0.9535,
+    "macro_f1": 0.7888,
+    "recall_par_classe": {
+      "normal": 0.0,
+      "jaune": 0.8,
+      "orange": 0.5556,
+      "rouge": 0.9751
+    },
+    "confusion": [
+      [
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        4,
+        1,
+        0
+      ],
+      [
+        0,
+        0,
+        5,
+        4
+      ],
+      [
+        0,
+        0,
+        5,
+        196
+      ]
+    ],
+    "n_test": 215
+  },
+  "metrics_regles": {
+    "accuracy": 0.8791,
+    "macro_f1": 0.4835,
+    "recall_par_classe": {
+      "normal": 0.0,
+      "jaune": 1.0,
+      "orange": 0.1111,
+      "rouge": 0.9104
+    },
+    "confusion": [
+      [
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        5,
+        0,
+        0
+      ],
+      [
+        0,
+        7,
+        1,
+        1
+      ],
+      [
+        0,
+        8,
+        10,
+        183
+      ]
+    ],
+    "n_test": 215
+  },
+  "seuil": 35.0
+}

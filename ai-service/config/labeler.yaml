@@ -1,0 +1,28 @@
+# Source de vérité des règles de labellisation « expert » (voir app/labeler.py).
+#
+# Température effective = max(temp_max, indice de chaleur, ressentie), aggravée
+# par les jours chauds consécutifs et les nuits tropicales, puis bruit gaussien
+# léger (graine fixe) pour éviter une frontière de décision trop nette.
+#
+# Seuils relatifs au seuil de canicule (35 °C par défaut) :
+#   normal : effective <  seuil - normal_marge
+#   jaune  : seuil - normal_marge <= effective < seuil + orange_offset
+#   orange : seuil + orange_offset <= effective < seuil + rouge_offset
+#   rouge  : effective >= seuil + rouge_offset
+
+seuil: 35.0
+normal_marge: 2.0
+orange_offset: 3.0
+rouge_offset: 6.0
+
+jours_chauds_seuil: 3
+penalite_jours_chauds: 2.0
+
+nuit_tropicale_min: 25.0
+penalite_nuit_tropicale: 1.0
+
+noise_sigma: 0.6
+seed: 42
+
+# Pondération des corrections gestionnaire réinjectées (cf. scripts/train.py).
+corrections_weight: 5.0
