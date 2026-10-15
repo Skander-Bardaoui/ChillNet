@@ -1,0 +1,45 @@
+# Appliqué HORS kustomize par le pipeline (objet immuable) :
+#   kubectl -n chillnet delete job chillnet-migrate --ignore-not-found
+#   kubectl -n chillnet apply -f k8s/base/laravel/laravel-migrate-job.yaml
+#   kubectl -n chillnet wait --for=condition=complete job/chillnet-migrate --timeout=180s
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: chillnet-migrate
+  namespace: chillnet
+spec:
+  backoffLimit: 3
+  ttlSecondsAfterFinished: 600
+  template:
+    metadata:
+      labels:
+        app: chillnet-migrate
+    spec:
+      restartPolicy: OnFailure
+      initContainers:
+        - name: wait-for-mysql
+          image: mysql:8.0
+          command:
+            - sh
+            - -c
+            - until mysqladmin ping -h mysql -u"$DB_USERNAME" -p"$DB_PASSWORD" --silent; do echo "attente de MySQL..."; sleep 3; done
+          env:
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: chillnet-secrets
+                  key: DB_USERNAME
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: chillnet-secrets
+                  key: DB_PASSWORD
+      containers:
+        - name: migrate
+          image: 192.168.56.12:5000/chillnet-app:latest
+          command: ["php", "artisan", "migrate", "--force"]
+          envFrom:
+            - configMapRef:
+                name: chillnet-config
+            - secretRef:
+                name: chillnet-secrets

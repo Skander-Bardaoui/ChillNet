@@ -1,0 +1,6 @@
+# Plugins à ajouter à l'installation Jenkins (les autres sont déjà présents :
+# git, junit, pipeline-*, sonar, docker-workflow).
+kubernetes
+nodejs
+configuration-as-code
+ws-cleanup

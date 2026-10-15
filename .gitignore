@@ -33,3 +33,11 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 ai-service/.venv/
+
+# --- DevOps / CI-CD ---
+/build
+.scannerwork
+ai-service/coverage.xml
+ai-service/.coverage
+# Secrets Kubernetes réels (le modèle versionné est k8s/base/.env.example).
+k8s/base/.env

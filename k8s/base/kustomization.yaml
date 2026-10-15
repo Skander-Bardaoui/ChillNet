@@ -1,0 +1,34 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: chillnet
+
+generatorOptions:
+  disableNameSuffixHash: true
+
+# Lit k8s/base/.env (non versionné) et produit le Secret « chillnet-secrets ».
+secretGenerator:
+  - name: chillnet-secrets
+    envs:
+      - .env
+
+resources:
+  - namespace.yaml
+  - configmap.yaml
+  - mysql/mysql-pvc.yaml
+  - mysql/mysql-service.yaml
+  - mysql/mysql-deployment.yaml
+  - ai-service/ai-service-service.yaml
+  - ai-service/ai-service-deployment.yaml
+  - laravel/laravel-service.yaml
+  - laravel/laravel-deployment.yaml
+  - ingress.yaml
+  # Le Job de migration est appliqué séparément par le pipeline (il est immuable
+  # et doit être supprimé/recréé à chaque déploiement) : voir laravel/laravel-migrate-job.yaml.
+
+# Tags par défaut ; le pipeline les remplace via `kubectl set image`.
+images:
+  - name: 192.168.56.12:5000/chillnet-app
+    newTag: latest
+  - name: 192.168.56.12:5000/chillnet-ai-service
+    newTag: latest
