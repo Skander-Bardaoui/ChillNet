@@ -69,7 +69,7 @@
 <h2 class="font-title-lg text-title-lg text-on-surface font-semibold px-1 flex items-center gap-2">Risque de coupure par zone <span class="font-body-sm text-body-sm text-primary font-normal inline-flex items-center gap-1"><span class="material-symbols-outlined text-[18px]">auto_awesome</span>IA · historique + canicule</span></h2>
 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-space-sm">
 @foreach ($risques->take(6) as $risque)
-@php $nr = $risque['niveau']; @endphp
+@php $nr = $risque['niveau']; $p24 = $risque['p24'] ?? null; $p48 = $risque['p48'] ?? null; @endphp
 <article class="rounded-xl bg-surface-container-low border border-outline-variant/20 p-space-md shadow-sm flex flex-col gap-2">
 <div class="flex items-center justify-between gap-2">
 <span class="font-title-md text-title-md text-on-surface font-semibold inline-flex items-center gap-1"><span class="material-symbols-outlined text-[18px]" style="color: {{ $nr->couleurHex() }};">{{ $nr->icone() }}</span>{{ $risque['quartier']->nom }}</span>
@@ -78,9 +78,24 @@
 <div class="h-2 w-full rounded-full bg-surface-container-high overflow-hidden" role="img" aria-label="Score de risque {{ $risque['score'] }} sur 100">
 <div class="h-full rounded-full" style="width: {{ $risque['score'] }}%; background: {{ $nr->couleurHex() }};"></div>
 </div>
+@if ($p24 !== null || $p48 !== null)
+<div class="grid grid-cols-2 gap-2">
+<div>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Sous 24 h · {{ $p24 !== null ? round($p24 * 100) : '—' }} %</p>
+<div class="h-1.5 w-full rounded-full bg-surface-container-high overflow-hidden"><div class="h-full rounded-full" style="width: {{ $p24 !== null ? round($p24 * 100) : 0 }}%; background: {{ $nr->couleurHex() }};"></div></div>
+</div>
+<div>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Sous 48 h · {{ $p48 !== null ? round($p48 * 100) : '—' }} %</p>
+<div class="h-1.5 w-full rounded-full bg-surface-container-high overflow-hidden"><div class="h-full rounded-full" style="width: {{ $p48 !== null ? round($p48 * 100) : 0 }}%; background: {{ $nr->couleurHex() }};"></div></div>
+</div>
+</div>
+@endif
+@if (! empty($risque['desaccord']))
+<span class="self-start px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 font-label-sm text-label-sm font-semibold inline-flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">compare_arrows</span>IA et règles en désaccord</span>
+@endif
 <p class="font-body-sm text-body-sm text-on-surface-variant">Score {{ $risque['score'] }}/100 · {{ $risque['raison'] }}</p>
 @if (! empty($risque['facteurs']))
-<p class="font-label-sm text-label-sm text-on-surface-variant">{{ implode(' · ', $risque['facteurs']) }}</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant">{{ implode(' · ', array_slice($risque['facteurs'], 0, 3)) }}</p>
 @endif
 </article>
 @endforeach
@@ -150,6 +165,10 @@
 <span class="inline-flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">schedule</span>De {{ $coupure->debut?->format('d/m/Y H:i') }} à {{ $coupure->fin?->format('d/m/Y H:i') ?? 'heure inconnue' }}</span>
 <span class="inline-flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">location_on</span>{{ $coupure->quartier?->ville }}</span>
 </p>
+@php $etrCoupure = $etr[$coupure->id] ?? null; @endphp
+@if ($etrCoupure && ! empty($etrCoupure['label']))
+<p class="font-body-sm text-body-sm text-primary mt-1 inline-flex items-center gap-1" title="Temps de rétablissement estimé par l'IA"><span class="material-symbols-outlined text-[16px]">build</span>{{ $etrCoupure['label'] }}</p>
+@endif
 @if ($coupure->description)
 <p class="font-body-md text-body-md text-on-surface mt-2">{{ $coupure->description }}</p>
 @endif
@@ -203,12 +222,25 @@
 </div>
 </section>
 
+@php
+    // Incidents IA géolocalisés (centroïde + rayon) pour la carte Leaflet.
+    $incidentsJs = collect($anomalies)
+        ->map(fn ($a) => [
+            'centroid' => $a['centroid'] ?? null,
+            'radius_m' => $a['radius_m'] ?? 300,
+            'logements' => $a['logements_estimes'] ?? 0,
+            'message' => $a['message'] ?? '',
+        ])
+        ->filter(fn ($a) => is_array($a['centroid']) && count($a['centroid']) === 2)
+        ->values();
+@endphp
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 // Données préparées côté contrôleur (voir Front\CoupureController@index).
 const CENTRE = @json($centre);
 const QUARTIERS = @json($quartiersCoords ?? []);
 const MARQUEURS = @json($marqueurs ?? []);
+const INCIDENTS = @json($incidentsJs ?? []);
 
 const carte = L.map('carte-coupures').setView(CENTRE, 12);
 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -229,6 +261,16 @@ MARQUEURS.forEach((m) => {
     L.circleMarker([m.lat, m.lng], {
         radius: 10, color: couleur, fillColor: couleur, fillOpacity: 0.7, weight: 2,
     }).addTo(carte).bindPopup('<strong>' + echapper(m.titre) + '</strong><br>' + echapper(m.detail));
+});
+
+// Incidents suspects (IA) : cercle de rayon autour du centroïde + logements estimés.
+INCIDENTS.forEach((inc) => {
+    L.circle([inc.centroid[0], inc.centroid[1]], {
+        radius: inc.radius_m, color: '#7c3aed', fillColor: '#7c3aed', fillOpacity: 0.12, weight: 2, dashArray: '6 4',
+    }).addTo(carte).bindPopup(
+        '<strong>Incident suspect (IA)</strong><br>' + echapper(inc.message) +
+        (inc.logements ? '<br>~' + inc.logements + ' logements concernés' : '')
+    );
 });
 
 // Filtre synchro : changer la zone recentre la carte sans attendre le submit.

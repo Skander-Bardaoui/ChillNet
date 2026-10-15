@@ -24,6 +24,20 @@
 <p class="font-body-sm text-body-sm text-on-surface-variant mt-2">Modèle indisponible : démarrez le microservice IA puis lancez <code>php artisan ai:retrain</code>. En attendant, la classification retombe sur les règles déterministes.</p>
 @endif
 </section>
+
+{{-- Performance du modèle IA coupures (module 2) : métriques du hold-out. --}}
+@if ($iaCoupures)
+<section class="rounded-xl bg-surface-container/70 backdrop-blur-md p-space-md shadow-md border border-outline-variant/20">
+<div class="flex items-center justify-between text-on-surface-variant"><span class="font-label-md text-label-md uppercase tracking-wider">Performance IA — Coupures</span><span class="material-symbols-outlined text-orange-600">bolt</span></div>
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-3">
+<div><p class="font-body-sm text-body-sm text-on-surface-variant">ROC-AUC (modèle)</p><p class="font-headline-sm text-headline-sm text-on-surface">{{ $iaCoupures['auc'] !== null ? number_format((float) $iaCoupures['auc'], 3, ',', '') : '—' }}</p></div>
+<div><p class="font-body-sm text-body-sm text-on-surface-variant">ROC-AUC (règles)</p><p class="font-headline-sm text-headline-sm text-on-surface">{{ $iaCoupures['auc_regles'] !== null ? number_format((float) $iaCoupures['auc_regles'], 3, ',', '') : '—' }}</p></div>
+<div><p class="font-body-sm text-body-sm text-on-surface-variant">Snapshots réels labellisés</p><p class="font-headline-sm text-headline-sm text-on-surface">{{ number_format((int) $iaCoupures['snapshots'], 0, ',', ' ') }}</p></div>
+<div><p class="font-body-sm text-body-sm text-on-surface-variant">Version du modèle</p><p class="font-headline-sm text-headline-sm text-on-surface">{{ $iaCoupures['version'] ?? 'indisponible' }}</p></div>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-2">Modèle scikit-learn du module 2 (risque de coupure par zone) entraîné sur simulateur + observations réelles (pondérées). Dernier entraînement : {{ $iaCoupures['trained_at'] ? \Illuminate\Support\Carbon::parse($iaCoupures['trained_at'])->format('d/m/Y') : '—' }}. Ré-entraînement : <code>php artisan ai:retrain-coupures</code>.</p>
+</section>
+@endif
 @else
 {{-- GESTIONNAIRE : périmètre = sa résidence uniquement --}}
 @php

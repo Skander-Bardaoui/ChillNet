@@ -1,0 +1,649 @@
+{
+  "version": "1.0.7",
+  "date": "2026-10-15",
+  "trained_at": "2026-10-15",
+  "features": [
+    "coupures_7j",
+    "coupures_14j",
+    "part_chaleur_14j",
+    "heures_depuis_derniere",
+    "en_cours",
+    "confirmations_total",
+    "temp",
+    "ressentie",
+    "heat_index",
+    "max_24h",
+    "max_48h",
+    "canicule_niveau",
+    "jours_chauds_consecutifs",
+    "heure",
+    "jour_semaine",
+    "nb_logements_zone",
+    "nb_residences"
+  ],
+  "monotonic_features": [
+    "temp",
+    "heat_index",
+    "max_24h",
+    "max_48h",
+    "canicule_niveau"
+  ],
+  "medians": {
+    "coupures_7j": 0.0,
+    "coupures_14j": 0.0,
+    "part_chaleur_14j": 0.0,
+    "heures_depuis_derniere": 336.0,
+    "en_cours": 0.0,
+    "confirmations_total": 0.0,
+    "temp": 18.17,
+    "ressentie": 18.17,
+    "heat_index": 18.17,
+    "max_24h": 25.64,
+    "max_48h": 26.13,
+    "canicule_niveau": 0.0,
+    "jours_chauds_consecutifs": 0.0,
+    "heure": 11.5,
+    "jour_semaine": 3.0,
+    "nb_logements_zone": 2050.0,
+    "nb_residences": 27.0
+  },
+  "n_samples": 104832,
+  "n_train": 52416,
+  "n_test": 52416,
+  "n_reel": 0,
+  "reel_weight": 5.0,
+  "classes": [
+    0,
+    1
+  ],
+  "calibration": {
+    "model24": "isotonic",
+    "model48": "isotonic"
+  },
+  "metrics": {
+    "model24": {
+      "log_loss": 0.21712,
+      "brier": 0.05588,
+      "roc_auc": 0.69487
+    },
+    "model48": {
+      "log_loss": 0.32425,
+      "brier": 0.09043,
+      "roc_auc": 0.68882
+    }
+  },
+  "partial_dependence": [
+    {
+      "temp": 20.0,
+      "p24": 0.0557,
+      "p48": 0.1012
+    },
+    {
+      "temp": 24.0,
+      "p24": 0.0576,
+      "p48": 0.1067
+    },
+    {
+      "temp": 28.0,
+      "p24": 0.0581,
+      "p48": 0.1086
+    },
+    {
+      "temp": 30.0,
+      "p24": 0.0583,
+      "p48": 0.1102
+    },
+    {
+      "temp": 32.0,
+      "p24": 0.058,
+      "p48": 0.112
+    },
+    {
+      "temp": 34.0,
+      "p24": 0.0585,
+      "p48": 0.1128
+    },
+    {
+      "temp": 35.0,
+      "p24": 0.0801,
+      "p48": 0.1412
+    },
+    {
+      "temp": 36.0,
+      "p24": 0.0803,
+      "p48": 0.1431
+    },
+    {
+      "temp": 37.0,
+      "p24": 0.0829,
+      "p48": 0.1475
+    },
+    {
+      "temp": 38.0,
+      "p24": 0.0852,
+      "p48": 0.1486
+    },
+    {
+      "temp": 39.0,
+      "p24": 0.0859,
+      "p48": 0.1489
+    },
+    {
+      "temp": 40.0,
+      "p24": 0.0861,
+      "p48": 0.1491
+    },
+    {
+      "temp": 42.0,
+      "p24": 0.0883,
+      "p48": 0.1522
+    }
+  ],
+  "importances": [
+    {
+      "feature": "max_24h",
+      "importance": 0.0038
+    },
+    {
+      "feature": "max_48h",
+      "importance": 0.00313
+    },
+    {
+      "feature": "jours_chauds_consecutifs",
+      "importance": 0.00174
+    },
+    {
+      "feature": "temp",
+      "importance": 0.0017
+    },
+    {
+      "feature": "confirmations_total",
+      "importance": 0.00118
+    },
+    {
+      "feature": "coupures_14j",
+      "importance": 0.00048
+    },
+    {
+      "feature": "part_chaleur_14j",
+      "importance": 0.00033
+    },
+    {
+      "feature": "jour_semaine",
+      "importance": 8e-05
+    },
+    {
+      "feature": "en_cours",
+      "importance": 1e-05
+    },
+    {
+      "feature": "heat_index",
+      "importance": 0.0
+    },
+    {
+      "feature": "canicule_niveau",
+      "importance": 0.0
+    },
+    {
+      "feature": "nb_residences",
+      "importance": 0.0
+    },
+    {
+      "feature": "nb_logements_zone",
+      "importance": -0.00065
+    },
+    {
+      "feature": "coupures_7j",
+      "importance": -0.00067
+    },
+    {
+      "feature": "heure",
+      "importance": -0.00074
+    },
+    {
+      "feature": "heures_depuis_derniere",
+      "importance": -0.00078
+    },
+    {
+      "feature": "ressentie",
+      "importance": -0.01653
+    }
+  ],
+  "comparaison_regles": {
+    "modele": {
+      "roc_auc": 0.6949,
+      "brier": 0.05588
+    },
+    "regles": {
+      "roc_auc": 0.6871,
+      "brier": 0.06185
+    }
+  },
+  "etr": {
+    "available": true,
+    "n": 327,
+    "metrics": {
+      "q10": {
+        "pinball": 4.53,
+        "couverture": 0.0856
+      },
+      "q50": {
+        "pinball": 13.537,
+        "couverture": 0.5138
+      },
+      "q90": {
+        "pinball": 7.656,
+        "couverture": 0.8746
+      }
+    }
+  },
+  "evaluation": {
+    "n_test": 52416,
+    "modele_p24": {
+      "roc_auc": 0.6949,
+      "pr_auc": 0.1773,
+      "brier": 0.05588,
+      "recall_eleve": 0.0,
+      "calibration": [
+        {
+          "bin": 0.05,
+          "n": 51016,
+          "predit": 0.0534,
+          "observe": 0.0546
+        },
+        {
+          "bin": 0.15,
+          "n": 850,
+          "predit": 0.1111,
+          "observe": 0.3188
+        },
+        {
+          "bin": 0.25,
+          "n": 95,
+          "predit": 0.2532,
+          "observe": 0.3263
+        },
+        {
+          "bin": 0.35,
+          "n": 151,
+          "predit": 0.36,
+          "observe": 0.3974
+        },
+        {
+          "bin": 0.45,
+          "n": 304,
+          "predit": 0.4176,
+          "observe": 0.4441
+        },
+        {
+          "bin": 0.55,
+          "n": 0,
+          "predit": null,
+          "observe": null
+        },
+        {
+          "bin": 0.65,
+          "n": 0,
+          "predit": null,
+          "observe": null
+        },
+        {
+          "bin": 0.75,
+          "n": 0,
+          "predit": null,
+          "observe": null
+        },
+        {
+          "bin": 0.85,
+          "n": 0,
+          "predit": null,
+          "observe": null
+        },
+        {
+          "bin": 0.95,
+          "n": 0,
+          "predit": null,
+          "observe": null
+        }
+      ]
+    },
+    "modele_p48": {
+      "roc_auc": 0.6888,
+      "pr_auc": 0.3305,
+      "brier": 0.09043,
+      "recall_eleve": 0.0692,
+      "calibration": [
+        {
+          "bin": 0.05,
+          "n": 43125,
+          "predit": 0.0821,
+          "observe": 0.0704
+        },
+        {
+          "bin": 0.15,
+          "n": 6150,
+          "predit": 0.1439,
+          "observe": 0.2257
+        },
+        {
+          "bin": 0.25,
+          "n": 1695,
+          "predit": 0.2177,
+          "observe": 0.4035
+        },
+        {
+          "bin": 0.35,
+          "n": 214,
+          "predit": 0.3766,
+          "observe": 0.4953
+        },
+        {
+          "bin": 0.45,
+          "n": 721,
+          "predit": 0.4567,
+          "observe": 0.5936
+        },
+        {
+          "bin": 0.55,
+          "n": 71,
+          "predit": 0.5328,
+          "observe": 0.7465
+        },
+        {
+          "bin": 0.65,
+          "n": 40,
+          "predit": 0.6822,
+          "observe": 0.225
+        },
+        {
+          "bin": 0.75,
+          "n": 325,
+          "predit": 0.7606,
+          "observe": 0.7323
+        },
+        {
+          "bin": 0.85,
+          "n": 71,
+          "predit": 0.822,
+          "observe": 0.6761
+        },
+        {
+          "bin": 0.95,
+          "n": 4,
+          "predit": 0.9789,
+          "observe": 1.0
+        }
+      ]
+    },
+    "regles": {
+      "roc_auc": 0.6871,
+      "pr_auc": 0.2179,
+      "brier": 0.06185,
+      "recall_eleve": 0.3049,
+      "calibration": [
+        {
+          "bin": 0.05,
+          "n": 41055,
+          "predit": 0.0268,
+          "observe": 0.0381
+        },
+        {
+          "bin": 0.15,
+          "n": 4276,
+          "predit": 0.1535,
+          "observe": 0.0405
+        },
+        {
+          "bin": 0.25,
+          "n": 1806,
+          "predit": 0.2637,
+          "observe": 0.0615
+        },
+        {
+          "bin": 0.35,
+          "n": 1078,
+          "predit": 0.3597,
+          "observe": 0.1688
+        },
+        {
+          "bin": 0.45,
+          "n": 1119,
+          "predit": 0.4345,
+          "observe": 0.2243
+        },
+        {
+          "bin": 0.55,
+          "n": 2666,
+          "predit": 0.5451,
+          "observe": 0.3087
+        },
+        {
+          "bin": 0.65,
+          "n": 333,
+          "predit": 0.6622,
+          "observe": 0.3994
+        },
+        {
+          "bin": 0.75,
+          "n": 65,
+          "predit": 0.7395,
+          "observe": 0.4923
+        },
+        {
+          "bin": 0.85,
+          "n": 18,
+          "predit": 0.83,
+          "observe": 0.7222
+        },
+        {
+          "bin": 0.95,
+          "n": 0,
+          "predit": null,
+          "observe": null
+        }
+      ],
+      "confusion_par_niveau": {
+        "faible": {
+          "n": 45706,
+          "positifs": 1741,
+          "taux": 0.0381
+        },
+        "modere": {
+          "n": 3628,
+          "positifs": 541,
+          "taux": 0.1491
+        },
+        "eleve": {
+          "n": 3038,
+          "positifs": 975,
+          "taux": 0.3209
+        },
+        "critique": {
+          "n": 44,
+          "positifs": 26,
+          "taux": 0.5909
+        }
+      }
+    },
+    "modele_niveaux": {
+      "roc_auc": 0.6873,
+      "pr_auc": 0.166,
+      "brier": 0.05602,
+      "recall_eleve": 0.0,
+      "calibration": [
+        {
+          "bin": 0.05,
+          "n": 50984,
+          "predit": 0.0548,
+          "observe": 0.0545
+        },
+        {
+          "bin": 0.15,
+          "n": 880,
+          "predit": 0.1092,
+          "observe": 0.3125
+        },
+        {
+          "bin": 0.25,
+          "n": 101,
+          "predit": 0.2531,
+          "observe": 0.3366
+        },
+        {
+          "bin": 0.35,
+          "n": 127,
+          "predit": 0.3562,
+          "observe": 0.4173
+        },
+        {
+          "bin": 0.45,
+          "n": 324,
+          "predit": 0.4147,
+          "observe": 0.4321
+        },
+        {
+          "bin": 0.55,
+          "n": 0,
+          "predit": null,
+          "observe": null
+        },
+        {
+          "bin": 0.65,
+          "n": 0,
+          "predit": null,
+          "observe": null
+        },
+        {
+          "bin": 0.75,
+          "n": 0,
+          "predit": null,
+          "observe": null
+        },
+        {
+          "bin": 0.85,
+          "n": 0,
+          "predit": null,
+          "observe": null
+        },
+        {
+          "bin": 0.95,
+          "n": 0,
+          "predit": null,
+          "observe": null
+        }
+      ],
+      "confusion_par_niveau": {
+        "faible": {
+          "n": 51907,
+          "positifs": 3067,
+          "taux": 0.0591
+        },
+        "modere": {
+          "n": 509,
+          "positifs": 216,
+          "taux": 0.4244
+        },
+        "eleve": {
+          "n": 0,
+          "positifs": 0,
+          "taux": null
+        },
+        "critique": {
+          "n": 0,
+          "positifs": 0,
+          "taux": null
+        }
+      }
+    },
+    "final_niveaux": {
+      "roc_auc": 0.6877,
+      "pr_auc": 0.2187,
+      "brier": 0.06129,
+      "recall_eleve": 0.3049,
+      "calibration": [
+        {
+          "bin": 0.05,
+          "n": 40956,
+          "predit": 0.0614,
+          "observe": 0.0382
+        },
+        {
+          "bin": 0.15,
+          "n": 4309,
+          "predit": 0.153,
+          "observe": 0.0388
+        },
+        {
+          "bin": 0.25,
+          "n": 1798,
+          "predit": 0.2633,
+          "observe": 0.0562
+        },
+        {
+          "bin": 0.35,
+          "n": 1119,
+          "predit": 0.3596,
+          "observe": 0.1734
+        },
+        {
+          "bin": 0.45,
+          "n": 1152,
+          "predit": 0.4337,
+          "observe": 0.2214
+        },
+        {
+          "bin": 0.55,
+          "n": 2666,
+          "predit": 0.5451,
+          "observe": 0.3087
+        },
+        {
+          "bin": 0.65,
+          "n": 333,
+          "predit": 0.6622,
+          "observe": 0.3994
+        },
+        {
+          "bin": 0.75,
+          "n": 65,
+          "predit": 0.7395,
+          "observe": 0.4923
+        },
+        {
+          "bin": 0.85,
+          "n": 18,
+          "predit": 0.83,
+          "observe": 0.7222
+        },
+        {
+          "bin": 0.95,
+          "n": 0,
+          "predit": null,
+          "observe": null
+        }
+      ],
+      "confusion_par_niveau": {
+        "faible": {
+          "n": 45648,
+          "positifs": 1735,
+          "taux": 0.038
+        },
+        "modere": {
+          "n": 3686,
+          "positifs": 547,
+          "taux": 0.1484
+        },
+        "eleve": {
+          "n": 3038,
+          "positifs": 975,
+          "taux": 0.3209
+        },
+        "critique": {
+          "n": 44,
+          "positifs": 26,
+          "taux": 0.5909
+        }
+      }
+    }
+  }
+}

@@ -60,14 +60,18 @@
 
 {{-- Risque de coupure IA par zone : historique corrélé à la canicule. --}}
 @if ($risques->isNotEmpty())
+@php $modeRegles = collect($risques)->every(fn ($r) => ($r['source'] ?? 'regles') === 'regles'); @endphp
 <div class="rounded-2xl bg-surface-container-low shadow-md border border-outline-variant/20 p-space-md">
-<div class="flex items-center gap-2 mb-3">
+<div class="flex items-center gap-2 mb-3 flex-wrap">
 <span class="material-symbols-outlined text-primary text-[22px]">auto_awesome</span>
 <h2 class="font-title-md text-title-md text-on-surface font-semibold">Risque de coupure par zone <span class="font-body-sm text-body-sm text-on-surface-variant font-normal">(IA · historique + canicule)</span></h2>
+@if ($modeRegles)
+<span class="ml-auto px-2.5 py-0.5 rounded-full bg-surface-variant text-on-surface-variant font-label-sm text-label-sm font-semibold inline-flex items-center gap-1" title="Le microservice IA est indisponible : seules les règles déterministes s'appliquent."><span class="material-symbols-outlined text-[15px]">cloud_off</span>mode règles</span>
+@endif
 </div>
 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
 @foreach ($risques->take(6) as $risque)
-@php $nr = $risque['niveau']; @endphp
+@php $nr = $risque['niveau']; $p24 = $risque['p24'] ?? null; $p48 = $risque['p48'] ?? null; @endphp
 <div class="rounded-xl bg-surface-container border border-outline-variant/20 p-3 flex flex-col gap-2">
 <div class="flex items-center justify-between gap-2">
 <span class="font-title-sm text-title-sm text-on-surface font-medium inline-flex items-center gap-1"><span class="material-symbols-outlined text-[18px]" style="color: {{ $nr->couleurHex() }};">{{ $nr->icone() }}</span>{{ $risque['quartier']->nom }}</span>
@@ -76,9 +80,67 @@
 <div class="h-2 w-full rounded-full bg-surface-container-high overflow-hidden">
 <div class="h-full rounded-full" style="width: {{ $risque['score'] }}%; background: {{ $nr->couleurHex() }};"></div>
 </div>
+@if ($p24 !== null || $p48 !== null)
+<div class="grid grid-cols-2 gap-2">
+<div>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Coupure sous 24 h · {{ $p24 !== null ? round($p24 * 100) : '—' }} %</p>
+<div class="h-1.5 w-full rounded-full bg-surface-container-high overflow-hidden"><div class="h-full rounded-full" style="width: {{ $p24 !== null ? round($p24 * 100) : 0 }}%; background: {{ $nr->couleurHex() }};"></div></div>
+</div>
+<div>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Sous 48 h · {{ $p48 !== null ? round($p48 * 100) : '—' }} %</p>
+<div class="h-1.5 w-full rounded-full bg-surface-container-high overflow-hidden"><div class="h-full rounded-full" style="width: {{ $p48 !== null ? round($p48 * 100) : 0 }}%; background: {{ $nr->couleurHex() }};"></div></div>
+</div>
+</div>
+@endif
+@if (! empty($risque['desaccord']))
+<span class="self-start px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 font-label-sm text-label-sm font-semibold inline-flex items-center gap-1" title="Le modèle et les règles ne proposent pas le même niveau ; le plus grave est conservé."><span class="material-symbols-outlined text-[14px]">compare_arrows</span>IA et règles en désaccord</span>
+@endif
 <p class="font-body-sm text-body-sm text-on-surface-variant">Score {{ $risque['score'] }}/100 · {{ $risque['raison'] }}</p>
+@if (! empty($risque['facteurs']))
+<p class="font-label-sm text-label-sm text-on-surface-variant">{{ implode(' · ', array_slice($risque['facteurs'], 0, 3)) }}</p>
+@endif
 </div>
 @endforeach
+</div>
+</div>
+@endif
+
+{{-- Corrélation chaleur ↔ coupures : dépendance partielle du modèle (admin). --}}
+@php
+    $pd = collect($insights['partial_dependence'] ?? [])
+        ->filter(fn ($p) => isset($p['temp'], $p['p24']))
+        ->sortBy('temp')
+        ->values();
+    $maxP = $pd->isNotEmpty() ? max((float) $pd->max('p48'), 0.01) : 0.01;
+@endphp
+@if ($pd->count() >= 2)
+@php
+    $xG = 48.0; $xD = 700.0;
+    $tMin = (float) $pd->first()['temp']; $tMax = (float) $pd->last()['temp'];
+    $xPour = fn (float $t): float => round($xG + (($t - $tMin) / max(0.001, $tMax - $tMin)) * ($xD - $xG), 1);
+    $yPour = fn (float $p): float => round(198.0 - ($p / $maxP) * 160.0, 1);
+    $pts24 = $pd->map(fn ($p) => $xPour((float) $p['temp']).','.$yPour((float) $p['p24']))->implode(' ');
+    $pts48 = $pd->map(fn ($p) => $xPour((float) $p['temp']).','.$yPour((float) $p['p48']))->implode(' ');
+@endphp
+<div class="rounded-2xl bg-surface-container-low shadow-md border border-outline-variant/20 p-space-md">
+<div class="flex items-center gap-2 mb-2">
+<span class="material-symbols-outlined text-tertiary-container text-[22px]">trending_up</span>
+<h2 class="font-title-md text-title-md text-on-surface font-semibold">Corrélation chaleur ↔ coupures <span class="font-body-sm text-body-sm text-on-surface-variant font-normal">(risque moyen selon la température)</span></h2>
+</div>
+<svg viewBox="0 0 720 220" class="w-full h-auto" role="img" aria-label="Risque de coupure croissant avec la température">
+<line x1="{{ $xG }}" y1="198" x2="{{ $xD }}" y2="198" stroke="rgb(var(--md-outline-variant))" stroke-width="1" />
+<polyline points="{{ $pts48 }}" fill="none" stroke="#ea580c" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+<polyline points="{{ $pts24 }}" fill="none" stroke="#dc2626" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+@foreach ($pd as $p)
+<circle cx="{{ $xPour((float) $p['temp']) }}" cy="{{ $yPour((float) $p['p24']) }}" r="3" fill="#dc2626" />
+<text x="{{ $xPour((float) $p['temp']) }}" y="214" text-anchor="middle" font-size="10" fill="rgb(var(--md-on-surface-variant))">{{ round($p['temp']) }}</text>
+@endforeach
+<text x="{{ $xG }}" y="20" font-size="11" fill="rgb(var(--md-on-surface-variant))">Probabilité (%) — axe des températures (°C)</text>
+</svg>
+<div class="flex items-center gap-4 mt-1 font-body-sm text-body-sm text-on-surface-variant">
+<span class="inline-flex items-center gap-1"><span class="h-2 w-4 rounded-full" style="background:#dc2626"></span>Coupure sous 24 h</span>
+<span class="inline-flex items-center gap-1"><span class="h-2 w-4 rounded-full" style="background:#ea580c"></span>Coupure sous 48 h</span>
+<span class="ml-auto">Pic affiché ≈ {{ round($maxP * 100, 1) }} %</span>
 </div>
 </div>
 @endif
@@ -150,12 +212,25 @@
 {{ $coupures->links() }}
 </div>
 
+@php
+    // Incidents IA géolocalisés (centroïde + rayon) pour la carte Leaflet.
+    $incidentsJs = collect($anomalies)
+        ->map(fn ($a) => [
+            'centroid' => $a['centroid'] ?? null,
+            'radius_m' => $a['radius_m'] ?? 300,
+            'logements' => $a['logements_estimes'] ?? 0,
+            'message' => $a['message'] ?? '',
+        ])
+        ->filter(fn ($a) => is_array($a['centroid']) && count($a['centroid']) === 2)
+        ->values();
+@endphp
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 // Marqueurs préparés côté contrôleur (Back\CoupureController@index) : tout le
 // périmètre (pas seulement la page), avec lien direct vers la modification.
 const CENTRE_BACK = @json($centre ?? [36.8065, 10.1815]);
 const MARQUEURS_BACK = @json($marqueurs ?? []);
+const INCIDENTS_BACK = @json($incidentsJs ?? []);
 
 const carteBack = L.map('carte-back-coupures').setView(CENTRE_BACK, 12);
 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -179,6 +254,16 @@ MARQUEURS_BACK.forEach((m) => {
     }).addTo(carteBack).bindPopup(
         '<strong>' + echapperBack(m.titre) + '</strong><br>' + echapperBack(m.detail) +
         '<br><a href="' + m.edit + '">Modifier →</a>'
+    );
+});
+
+// Incidents suspects (IA) : cercle de rayon autour du centroïde + logements estimés.
+INCIDENTS_BACK.forEach((inc) => {
+    L.circle([inc.centroid[0], inc.centroid[1]], {
+        radius: inc.radius_m, color: '#7c3aed', fillColor: '#7c3aed', fillOpacity: 0.12, weight: 2, dashArray: '6 4',
+    }).addTo(carteBack).bindPopup(
+        '<strong>Incident suspect (IA)</strong><br>' + echapperBack(inc.message) +
+        (inc.logements ? '<br>~' + inc.logements + ' logements concernés' : '')
     );
 });
 </script>

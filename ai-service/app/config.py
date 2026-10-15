@@ -18,6 +18,10 @@ CONFIG_DIR = BASE_DIR / "config"
 DATA_DIR = BASE_DIR / "data"
 ARTIFACTS_DIR = BASE_DIR / "artifacts"
 
+# Dossier d'artefacts DÉDIÉ au module coupures : chaque modèle a le sien, pour
+# rester distinguable du modèle canicule (artifacts/). Voir app/coupures/.
+COUPURES_ARTIFACTS_DIR = ARTIFACTS_DIR / "coupures"
+
 
 def load_labeler_config() -> dict[str, Any]:
     """Charge ``config/labeler.yaml`` (règles de labellisation)."""
@@ -43,6 +47,42 @@ class Settings:
         )
         self.corrections_csv: Path = Path(
             os.environ.get("AI_CORRECTIONS_CSV", DATA_DIR / "corrections.csv")
+        )
+
+        # --- Module coupures (artefacts et données isolés) ---
+        self.coupures_model_path: Path = Path(
+            os.environ.get(
+                "AI_COUPURES_MODEL_PATH", COUPURES_ARTIFACTS_DIR / "model.joblib"
+            )
+        )
+        self.coupures_metadata_path: Path = Path(
+            os.environ.get(
+                "AI_COUPURES_METADATA_PATH", COUPURES_ARTIFACTS_DIR / "metadata.json"
+            )
+        )
+        self.coupures_report_path: Path = Path(
+            os.environ.get(
+                "AI_COUPURES_REPORT_PATH", COUPURES_ARTIFACTS_DIR / "report.json"
+            )
+        )
+        self.coupures_history_csv: Path = Path(
+            os.environ.get("AI_COUPURES_HISTORY_CSV", DATA_DIR / "coupures_history.csv")
+        )
+        # CSV RÉELS exportés par Laravel (`ai:export-coupures`) : fichier distinct
+        # de la simulation pour ne jamais l'écraser. Fusionné à l'entraînement.
+        self.coupures_real_csv: Path = Path(
+            os.environ.get("AI_COUPURES_REAL_CSV", DATA_DIR / "coupures_real.csv")
+        )
+        self.coupures_etr_history_csv: Path = Path(
+            os.environ.get("AI_COUPURES_ETR_HISTORY_CSV", DATA_DIR / "coupures_etr_history.csv")
+        )
+        self.coupures_etr_real_csv: Path = Path(
+            os.environ.get("AI_COUPURES_ETR_REAL_CSV", DATA_DIR / "coupures_etr_real.csv")
+        )
+        self.coupures_etr_model_path: Path = Path(
+            os.environ.get(
+                "AI_COUPURES_ETR_MODEL_PATH", COUPURES_ARTIFACTS_DIR / "etr.joblib"
+            )
         )
 
         self.labeler: dict[str, Any] = load_labeler_config()

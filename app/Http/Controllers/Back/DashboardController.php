@@ -8,12 +8,14 @@ use App\Http\Controllers\Controller;
 use App\Models\AiPrediction;
 use App\Models\Alerte;
 use App\Models\Coupure;
+use App\Models\CoupureRiskSnapshot;
 use App\Models\Lieu;
 use App\Models\Quartier;
 use App\Models\Residence;
 use App\Models\Signalement;
 use App\Models\User;
 use App\Services\Ai\AiServiceClient;
+use App\Services\Ai\CoupureAiClient;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -27,7 +29,10 @@ use Illuminate\View\View;
  */
 class DashboardController extends Controller
 {
-    public function __construct(private AiServiceClient $ia) {}
+    public function __construct(
+        private AiServiceClient $ia,
+        private CoupureAiClient $iaCoupures,
+    ) {}
 
     public function index(Request $request): View
     {
@@ -79,6 +84,7 @@ class DashboardController extends Controller
         // Performance IA (admin uniquement) : taux d'accord gestionnaire/IA,
         // nombre de corrections, version et date du modèle.
         $iaStats = $global ? $this->performanceIa() : null;
+        $iaCoupures = $global ? $this->performanceCoupures() : null;
 
         return view('back.dashboard', compact(
             'stats',
@@ -86,6 +92,7 @@ class DashboardController extends Controller
             'dernieresCoupures',
             'derniersSignalements',
             'iaStats',
+            'iaCoupures',
         ));
     }
 
@@ -127,6 +134,43 @@ class DashboardController extends Controller
             'version' => $meta['version'] ?? null,
             'trained_at' => $meta['trained_at'] ?? $meta['date'] ?? null,
             'n_samples' => $meta['n_samples'] ?? ($meta['metrics']['n_samples'] ?? null),
+        ];
+    }
+
+    /**
+     * Performance du modèle IA du module 2 (coupures) : version, métriques du
+     * hold-out (AUC, Brier, recall au palier « élevé »), nombre de snapshots
+     * réels labellisés. Best-effort — `null` si le service est indisponible.
+     *
+     * @return array{version: ?string, trained_at: ?string, auc: ?float, brier: ?float, recall: ?float, auc_regles: ?float, snapshots: int}|null
+     */
+    private function performanceCoupures(): ?array
+    {
+        $insights = $this->iaCoupures->insights();
+
+        try {
+            $snapshots = CoupureRiskSnapshot::query()->labelises()->count();
+        } catch (\Throwable) {
+            $snapshots = 0;
+        }
+
+        if ($insights === null) {
+            return $snapshots > 0
+                ? ['version' => null, 'trained_at' => null, 'auc' => null, 'brier' => null, 'recall' => null, 'auc_regles' => null, 'snapshots' => $snapshots]
+                : null;
+        }
+
+        $metrics = is_array($insights['metrics'] ?? null) ? $insights['metrics'] : [];
+        $evaluation = is_array($insights['evaluation'] ?? null) ? $insights['evaluation'] : [];
+
+        return [
+            'version' => $insights['version'] ?? null,
+            'trained_at' => $insights['trained_at'] ?? null,
+            'auc' => $metrics['model24']['roc_auc'] ?? ($evaluation['modele_p24']['roc_auc'] ?? null),
+            'brier' => $metrics['model24']['brier'] ?? ($evaluation['modele_p24']['brier'] ?? null),
+            'recall' => $evaluation['modele_niveaux']['recall_eleve'] ?? null,
+            'auc_regles' => $evaluation['regles']['roc_auc'] ?? null,
+            'snapshots' => $insights['n_snapshots_labelises'] ?? $snapshots,
         ];
     }
 

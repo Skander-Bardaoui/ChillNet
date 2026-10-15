@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreCoupureRequest;
 use App\Models\Coupure;
 use App\Models\Quartier;
+use App\Services\Ai\CoupureAiClient;
 use App\Services\CoupureRiskAiService;
 
 /**
@@ -22,7 +23,10 @@ use App\Services\CoupureRiskAiService;
  */
 class CoupureController extends Controller
 {
-    public function __construct(private CoupureRiskAiService $risk) {}
+    public function __construct(
+        private CoupureRiskAiService $risk,
+        private CoupureAiClient $iaClient,
+    ) {}
 
     public function index()
     {
@@ -104,7 +108,11 @@ class CoupureController extends Controller
                 ->values();
         }
 
-        return view('back.coupures.index', compact('coupures', 'tri', 'stats', 'marqueurs', 'centre', 'risques', 'anomalies'));
+        // Graphique « chaleur ↔ coupures » : dépendance partielle du modèle à la
+        // température (admin uniquement). Best-effort : null si service absent.
+        $insights = $user?->isAdmin() ? $this->iaClient->insights() : null;
+
+        return view('back.coupures.index', compact('coupures', 'tri', 'stats', 'marqueurs', 'centre', 'risques', 'anomalies', 'insights'));
     }
 
     public function create()
