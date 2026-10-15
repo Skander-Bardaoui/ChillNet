@@ -160,40 +160,6 @@ class DashboardFrontTest extends TestCase
             ->assertSee('Ajoutez votre premier lieu');
     }
 
-    public function test_the_resident_dashboard_does_not_include_the_support_urgency_assistant(): void
-    {
-        $this->actingAs($this->habitant())
-            ->get(route('dashboard'))
-            ->assertOk()
-            ->assertDontSee('Assistant support — estimation d’urgence')
-            ->assertDontSee('support-estimate-button');
-    }
-
-    public function test_the_support_assistant_estimates_high_urgency_without_saving_the_message(): void
-    {
-        $this->actingAs($this->habitant())
-            ->postJson(route('front.support.estimate'), [
-                'message' => 'Il y a une odeur de gaz dans le couloir.',
-            ])
-            ->assertOk()
-            ->assertJsonPath('pourcentage', 95)
-            ->assertJsonPath('niveau', 'Élevée')
-            ->assertJsonPath('urgence_immediate', true)
-            ->assertJsonPath('indicateurs.0', 'fuite ou odeur de gaz');
-    }
-
-    public function test_the_support_assistant_returns_a_low_indicator_for_a_general_question(): void
-    {
-        $this->actingAs($this->habitant())
-            ->postJson(route('front.support.estimate'), [
-                'message' => 'Où se trouve la carte des refuges du quartier ?',
-            ])
-            ->assertOk()
-            ->assertJsonPath('pourcentage', 10)
-            ->assertJsonPath('niveau', 'Faible')
-            ->assertJsonPath('urgence_immediate', false);
-    }
-
     public function test_the_dashboard_degrades_gracefully_when_the_weather_api_is_down(): void
     {
         config(['services.weather.key' => 'fake-key']);

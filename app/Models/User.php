@@ -70,16 +70,6 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
     }
 
     /**
-     * Signalements créés par cet habitant.
-     *
-     * @return HasMany<Signalement, $this>
-     */
-    public function signalements(): HasMany
-    {
-        return $this->hasMany(Signalement::class, 'user_id');
-    }
-
-    /**
      * Lieux personnels du foyer (Domicile, Travail…). Remplacent le quartier
      * dans l'espace habitant : chaque lieu est géolocalisé et se voit
      * auto-assigner le quartier le plus proche (usage interne).

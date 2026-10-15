@@ -8,7 +8,6 @@ use App\Models\Residence;
 use App\Models\Signalement;
 use App\Models\User;
 use App\Notifications\SignalementNotification;
-use App\Services\SignalementTriageService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -17,7 +16,7 @@ use Illuminate\View\View;
 
 class SignalementController extends Controller
 {
-    public function index(Request $request, SignalementTriageService $triageService): View
+    public function index(Request $request): View
     {
         $stats = $this->accessibleSignalements($request)
             ->selectRaw(
@@ -31,20 +30,12 @@ class SignalementController extends Controller
 
         $signalements = $this->accessibleSignalements($request)
             ->with(['habitant', 'residence'])
+            ->when($request->filled('categorie'), fn ($query) => $query->where('categorie', $request->string('categorie')))
+            ->when($request->filled('urgence'), fn ($query) => $query->where('urgence', $request->string('urgence')))
+            ->when($request->filled('statut'), fn ($query) => $query->where('statut', $request->string('statut')))
             ->orderByRaw("CASE urgence WHEN 'vitale' THEN 1 WHEN 'prioritaire' THEN 2 ELSE 3 END")
             ->latest()
             ->get();
-
-        $signalements = $triageService->trier($signalements);
-        $signalements = $signalements
-            ->filter(fn (Signalement $signalement): bool => (
-                ! $request->filled('categorie') || $signalement->categorie === $request->input('categorie')
-            ) && (
-                ! $request->filled('urgence') || $signalement->urgence === $request->input('urgence')
-            ) && (
-                ! $request->filled('statut') || $signalement->statut === $request->input('statut')
-            ))
-            ->values();
 
         return view('back.signalements.index', [
             'signalements' => $signalements,

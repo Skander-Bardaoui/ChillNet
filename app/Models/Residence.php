@@ -68,16 +68,6 @@ class Residence extends Model
     }
 
     /**
-     * Signalements déposés pour cette résidence.
-     *
-     * @return HasMany<Signalement, $this>
-     */
-    public function signalements(): HasMany
-    {
-        return $this->hasMany(Signalement::class);
-    }
-
-    /**
      * Champ de recherche scopé : résidences qui sont des points de fraîcheur.
      */
     public function scopePointFraicheur($query)
