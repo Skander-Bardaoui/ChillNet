@@ -65,6 +65,13 @@ class CoupureController extends Controller
         // Pagination : 10 par page, filtres conservés dans les liens (?page=2&quartier_id=..&tri=..).
         $coupures = $liste->paginate(10)->withQueryString();
 
+        // ETR : temps de rétablissement estimé (IA) des coupures EN COURS de la
+        // page courante. Best-effort — vide si le service est indisponible.
+        $etr = $this->risk->tempsRetablissement(
+            collect($coupures->items())
+                ->filter(fn (Coupure $c): bool => ($c->statut?->value ?? $c->statut) === StatutCoupure::EnCours->value),
+        );
+
         // Centre de la carte Leaflet : la zone filtrée si elle a des
         // coordonnées, sinon le barycentre des quartiers géolocalisés,
         // sinon Tunis par défaut (façon étudiante, sans service externe).
@@ -121,7 +128,7 @@ class CoupureController extends Controller
             ];
         }
 
-        return view('front.coupures', compact('quartiers', 'coupures', 'nbActives', 'nbPrevues', 'nbZones', 'risques', 'anomalies', 'tri', 'centre', 'quartiersCoords', 'marqueurs'));
+        return view('front.coupures', compact('quartiers', 'coupures', 'nbActives', 'nbPrevues', 'nbZones', 'risques', 'anomalies', 'tri', 'centre', 'quartiersCoords', 'marqueurs', 'etr'));
     }
 
     /**

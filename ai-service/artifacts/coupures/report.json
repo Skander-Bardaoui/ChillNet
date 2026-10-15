@@ -1,0 +1,32 @@
+{
+  "version": "1.0.7",
+  "n_train": 52416,
+  "n_test": 52416,
+  "n_reel": 0,
+  "calibration": {
+    "model24": "isotonic",
+    "model48": "isotonic"
+  },
+  "metrics": {
+    "model24": {
+      "log_loss": 0.21712,
+      "brier": 0.05588,
+      "roc_auc": 0.69487
+    },
+    "model48": {
+      "log_loss": 0.32425,
+      "brier": 0.09043,
+      "roc_auc": 0.68882
+    }
+  },
+  "comparaison_regles": {
+    "modele": {
+      "roc_auc": 0.6949,
+      "brier": 0.05588
+    },
+    "regles": {
+      "roc_auc": 0.6871,
+      "brier": 0.06185
+    }
+  }
+}

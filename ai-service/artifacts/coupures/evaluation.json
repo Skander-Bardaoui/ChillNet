@@ -1,0 +1,409 @@
+{
+  "n_test": 52416,
+  "modele_p24": {
+    "roc_auc": 0.6949,
+    "pr_auc": 0.1773,
+    "brier": 0.05588,
+    "recall_eleve": 0.0,
+    "calibration": [
+      {
+        "bin": 0.05,
+        "n": 51016,
+        "predit": 0.0534,
+        "observe": 0.0546
+      },
+      {
+        "bin": 0.15,
+        "n": 850,
+        "predit": 0.1111,
+        "observe": 0.3188
+      },
+      {
+        "bin": 0.25,
+        "n": 95,
+        "predit": 0.2532,
+        "observe": 0.3263
+      },
+      {
+        "bin": 0.35,
+        "n": 151,
+        "predit": 0.36,
+        "observe": 0.3974
+      },
+      {
+        "bin": 0.45,
+        "n": 304,
+        "predit": 0.4176,
+        "observe": 0.4441
+      },
+      {
+        "bin": 0.55,
+        "n": 0,
+        "predit": null,
+        "observe": null
+      },
+      {
+        "bin": 0.65,
+        "n": 0,
+        "predit": null,
+        "observe": null
+      },
+      {
+        "bin": 0.75,
+        "n": 0,
+        "predit": null,
+        "observe": null
+      },
+      {
+        "bin": 0.85,
+        "n": 0,
+        "predit": null,
+        "observe": null
+      },
+      {
+        "bin": 0.95,
+        "n": 0,
+        "predit": null,
+        "observe": null
+      }
+    ]
+  },
+  "modele_p48": {
+    "roc_auc": 0.6888,
+    "pr_auc": 0.3305,
+    "brier": 0.09043,
+    "recall_eleve": 0.0692,
+    "calibration": [
+      {
+        "bin": 0.05,
+        "n": 43125,
+        "predit": 0.0821,
+        "observe": 0.0704
+      },
+      {
+        "bin": 0.15,
+        "n": 6150,
+        "predit": 0.1439,
+        "observe": 0.2257
+      },
+      {
+        "bin": 0.25,
+        "n": 1695,
+        "predit": 0.2177,
+        "observe": 0.4035
+      },
+      {
+        "bin": 0.35,
+        "n": 214,
+        "predit": 0.3766,
+        "observe": 0.4953
+      },
+      {
+        "bin": 0.45,
+        "n": 721,
+        "predit": 0.4567,
+        "observe": 0.5936
+      },
+      {
+        "bin": 0.55,
+        "n": 71,
+        "predit": 0.5328,
+        "observe": 0.7465
+      },
+      {
+        "bin": 0.65,
+        "n": 40,
+        "predit": 0.6822,
+        "observe": 0.225
+      },
+      {
+        "bin": 0.75,
+        "n": 325,
+        "predit": 0.7606,
+        "observe": 0.7323
+      },
+      {
+        "bin": 0.85,
+        "n": 71,
+        "predit": 0.822,
+        "observe": 0.6761
+      },
+      {
+        "bin": 0.95,
+        "n": 4,
+        "predit": 0.9789,
+        "observe": 1.0
+      }
+    ]
+  },
+  "regles": {
+    "roc_auc": 0.6871,
+    "pr_auc": 0.2179,
+    "brier": 0.06185,
+    "recall_eleve": 0.3049,
+    "calibration": [
+      {
+        "bin": 0.05,
+        "n": 41055,
+        "predit": 0.0268,
+        "observe": 0.0381
+      },
+      {
+        "bin": 0.15,
+        "n": 4276,
+        "predit": 0.1535,
+        "observe": 0.0405
+      },
+      {
+        "bin": 0.25,
+        "n": 1806,
+        "predit": 0.2637,
+        "observe": 0.0615
+      },
+      {
+        "bin": 0.35,
+        "n": 1078,
+        "predit": 0.3597,
+        "observe": 0.1688
+      },
+      {
+        "bin": 0.45,
+        "n": 1119,
+        "predit": 0.4345,
+        "observe": 0.2243
+      },
+      {
+        "bin": 0.55,
+        "n": 2666,
+        "predit": 0.5451,
+        "observe": 0.3087
+      },
+      {
+        "bin": 0.65,
+        "n": 333,
+        "predit": 0.6622,
+        "observe": 0.3994
+      },
+      {
+        "bin": 0.75,
+        "n": 65,
+        "predit": 0.7395,
+        "observe": 0.4923
+      },
+      {
+        "bin": 0.85,
+        "n": 18,
+        "predit": 0.83,
+        "observe": 0.7222
+      },
+      {
+        "bin": 0.95,
+        "n": 0,
+        "predit": null,
+        "observe": null
+      }
+    ],
+    "confusion_par_niveau": {
+      "faible": {
+        "n": 45706,
+        "positifs": 1741,
+        "taux": 0.0381
+      },
+      "modere": {
+        "n": 3628,
+        "positifs": 541,
+        "taux": 0.1491
+      },
+      "eleve": {
+        "n": 3038,
+        "positifs": 975,
+        "taux": 0.3209
+      },
+      "critique": {
+        "n": 44,
+        "positifs": 26,
+        "taux": 0.5909
+      }
+    }
+  },
+  "modele_niveaux": {
+    "roc_auc": 0.6873,
+    "pr_auc": 0.166,
+    "brier": 0.05602,
+    "recall_eleve": 0.0,
+    "calibration": [
+      {
+        "bin": 0.05,
+        "n": 50984,
+        "predit": 0.0548,
+        "observe": 0.0545
+      },
+      {
+        "bin": 0.15,
+        "n": 880,
+        "predit": 0.1092,
+        "observe": 0.3125
+      },
+      {
+        "bin": 0.25,
+        "n": 101,
+        "predit": 0.2531,
+        "observe": 0.3366
+      },
+      {
+        "bin": 0.35,
+        "n": 127,
+        "predit": 0.3562,
+        "observe": 0.4173
+      },
+      {
+        "bin": 0.45,
+        "n": 324,
+        "predit": 0.4147,
+        "observe": 0.4321
+      },
+      {
+        "bin": 0.55,
+        "n": 0,
+        "predit": null,
+        "observe": null
+      },
+      {
+        "bin": 0.65,
+        "n": 0,
+        "predit": null,
+        "observe": null
+      },
+      {
+        "bin": 0.75,
+        "n": 0,
+        "predit": null,
+        "observe": null
+      },
+      {
+        "bin": 0.85,
+        "n": 0,
+        "predit": null,
+        "observe": null
+      },
+      {
+        "bin": 0.95,
+        "n": 0,
+        "predit": null,
+        "observe": null
+      }
+    ],
+    "confusion_par_niveau": {
+      "faible": {
+        "n": 51907,
+        "positifs": 3067,
+        "taux": 0.0591
+      },
+      "modere": {
+        "n": 509,
+        "positifs": 216,
+        "taux": 0.4244
+      },
+      "eleve": {
+        "n": 0,
+        "positifs": 0,
+        "taux": null
+      },
+      "critique": {
+        "n": 0,
+        "positifs": 0,
+        "taux": null
+      }
+    }
+  },
+  "final_niveaux": {
+    "roc_auc": 0.6877,
+    "pr_auc": 0.2187,
+    "brier": 0.06129,
+    "recall_eleve": 0.3049,
+    "calibration": [
+      {
+        "bin": 0.05,
+        "n": 40956,
+        "predit": 0.0614,
+        "observe": 0.0382
+      },
+      {
+        "bin": 0.15,
+        "n": 4309,
+        "predit": 0.153,
+        "observe": 0.0388
+      },
+      {
+        "bin": 0.25,
+        "n": 1798,
+        "predit": 0.2633,
+        "observe": 0.0562
+      },
+      {
+        "bin": 0.35,
+        "n": 1119,
+        "predit": 0.3596,
+        "observe": 0.1734
+      },
+      {
+        "bin": 0.45,
+        "n": 1152,
+        "predit": 0.4337,
+        "observe": 0.2214
+      },
+      {
+        "bin": 0.55,
+        "n": 2666,
+        "predit": 0.5451,
+        "observe": 0.3087
+      },
+      {
+        "bin": 0.65,
+        "n": 333,
+        "predit": 0.6622,
+        "observe": 0.3994
+      },
+      {
+        "bin": 0.75,
+        "n": 65,
+        "predit": 0.7395,
+        "observe": 0.4923
+      },
+      {
+        "bin": 0.85,
+        "n": 18,
+        "predit": 0.83,
+        "observe": 0.7222
+      },
+      {
+        "bin": 0.95,
+        "n": 0,
+        "predit": null,
+        "observe": null
+      }
+    ],
+    "confusion_par_niveau": {
+      "faible": {
+        "n": 45648,
+        "positifs": 1735,
+        "taux": 0.038
+      },
+      "modere": {
+        "n": 3686,
+        "positifs": 547,
+        "taux": 0.1484
+      },
+      "eleve": {
+        "n": 3038,
+        "positifs": 975,
+        "taux": 0.3209
+      },
+      "critique": {
+        "n": 44,
+        "positifs": 26,
+        "taux": 0.5909
+      }
+    }
+  }
+}

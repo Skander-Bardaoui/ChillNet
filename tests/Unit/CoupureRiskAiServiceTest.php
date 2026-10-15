@@ -8,6 +8,8 @@ use App\Models\Coupure;
 use App\Models\Quartier;
 use App\Services\CoupureRiskAiService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 /**
@@ -146,5 +148,181 @@ class CoupureRiskAiServiceTest extends TestCase
         $this->assertSame(NiveauRisque::Eleve, NiveauRisque::fromScore(50));
         $this->assertSame(NiveauRisque::Critique, NiveauRisque::fromScore(75));
         $this->assertSame(NiveauRisque::Critique, NiveauRisque::fromScore(100));
+    }
+
+    /**
+     * Le service IA est appelé quand il est activé : le résultat est enrichi
+     * (probabilités, niveau modèle, version) et le plancher est conservé.
+     */
+    public function test_le_modele_est_appele_et_le_plancher_respecte(): void
+    {
+        $this->serviceIaActive();
+
+        Http::fake([
+            'ai.test/coupures/risk' => Http::response([
+                'results' => [[
+                    'quartier_id' => 1,
+                    'p24' => 0.42,
+                    'p48' => 0.55,
+                    'score_modele' => 42,
+                    'score_regles' => 0,
+                    'score_final' => 42,
+                    'niveau_modele' => 'modere',
+                    'niveau_regles' => 'faible',
+                    'niveau_final' => 'modere',
+                    'desaccord' => true,
+                    'facteurs' => ['Canicule rouge en cours'],
+                    'raison' => 'Règles : faible — Modèle : modere',
+                    'source' => 'modele',
+                    'model_version' => '1.0.5',
+                ]],
+            ]),
+        ]);
+
+        $resultat = $this->service()->score($this->quartier('Piloté par le modèle'));
+
+        $this->assertSame('modele', $resultat['source']);
+        $this->assertSame(42, $resultat['score']);
+        $this->assertSame(NiveauRisque::Modere, $resultat['niveau']);
+        $this->assertSame(0.42, $resultat['p24']);
+        $this->assertSame(0.55, $resultat['p48']);
+        $this->assertTrue($resultat['desaccord']);
+        $this->assertSame('1.0.5', $resultat['model_version']);
+        $this->assertSame(['Canicule rouge en cours'], $resultat['facteurs']);
+    }
+
+    /**
+     * PLANCHER DE SÉCURITÉ : un modèle qui propose MOINS que les règles ne peut
+     * jamais faire baisser le score final (``max(modele, regles)``).
+     */
+    public function test_le_modele_ne_peut_pas_faire_baisser_le_score(): void
+    {
+        $this->serviceIaActive();
+
+        $quartier = $this->quartier('Chargé');
+
+        Coupure::factory()->count(5)->create([
+            'quartier_id' => $quartier->id,
+            'type' => 'delestage',
+            'statut' => 'en_cours',
+            'debut' => now()->subDay(),
+        ]);
+
+        Http::fake([
+            'ai.test/coupures/risk' => Http::response([
+                'results' => [[
+                    'quartier_id' => $quartier->id,
+                    'p24' => 0.02,
+                    'p48' => 0.03,
+                    'score_modele' => 5,
+                    'score_regles' => 90,
+                    'score_final' => 90,
+                    'niveau_modele' => 'faible',
+                    'niveau_regles' => 'critique',
+                    'niveau_final' => 'critique',
+                    'desaccord' => true,
+                    'facteurs' => [],
+                    'raison' => 'Le modèle suggère un niveau moindre ; le plancher des règles est conservé.',
+                    'source' => 'modele',
+                    'model_version' => '1.0.5',
+                ]],
+            ]),
+        ]);
+
+        $resultat = $this->service()->score($quartier);
+
+        $this->assertSame($resultat['score_regles'], $resultat['score']);
+        $this->assertGreaterThan(5, $resultat['score']);
+        $this->assertSame('modele', $resultat['source']);
+    }
+
+    /**
+     * Service indisponible (connexion refusée) → repli intégral sur les règles
+     * PHP, sans probabilité ni version modèle.
+     */
+    public function test_repli_sur_les_regles_quand_le_service_est_indisponible(): void
+    {
+        $this->serviceIaActive();
+
+        Http::fake(function (): void {
+            throw new ConnectionException('Connection refused');
+        });
+
+        $quartier = $this->quartier('Repli');
+
+        Coupure::factory()->count(3)->create([
+            'quartier_id' => $quartier->id,
+            'type' => 'surcharge',
+            'statut' => 'en_cours',
+            'debut' => now()->subDay(),
+        ]);
+
+        $resultat = $this->service()->score($quartier);
+        $attendu = $this->service()->scoreDepuisContexte([
+            'frequence' => 3,
+            'en_cours' => 3,
+            'chaudes' => 3,
+        ]);
+
+        $this->assertSame('regles', $resultat['source']);
+        $this->assertNull($resultat['p24']);
+        $this->assertNull($resultat['score_modele']);
+        $this->assertNull($resultat['model_version']);
+        $this->assertSame($attendu['score'], $resultat['score']);
+    }
+
+    /**
+     * Incidents enrichis par le service IA : centroïde, rayon, logements estimés,
+     * confiance et sévérité remontés tels quels.
+     */
+    public function test_anomalies_enrichies_par_le_service_ia(): void
+    {
+        $this->serviceIaActive();
+
+        $quartier = $this->quartier('Incident IA');
+
+        Http::fake([
+            'ai.test/coupures/anomalies' => Http::response([
+                'incidents' => [[
+                    'id' => 'inc-1',
+                    'centroid' => [36.8, 10.18],
+                    'radius_m' => 620.0,
+                    'n_reports' => 3,
+                    'n_confirmations' => 2,
+                    'quartier_ids' => [$quartier->id],
+                    'logements_estimes' => 480,
+                    'confidence' => 0.77,
+                    'severity' => 'eleve',
+                    'message' => '3 signalements en 120 min près de Incident IA : possible incident majeur non déclaré (~480 logements concernés)',
+                    'source' => 'modele',
+                ]],
+            ]),
+        ]);
+
+        $anomalies = $this->service()->detecterAnomalies();
+
+        $this->assertCount(1, $anomalies);
+        $incident = $anomalies->first();
+        $this->assertSame($quartier->id, $incident['quartier']->id);
+        $this->assertSame(3, $incident['nombre']);
+        $this->assertSame(480, $incident['logements_estimes']);
+        $this->assertEqualsWithDelta(620.0, $incident['radius_m'], 0.001);
+        $this->assertEqualsWithDelta(0.77, $incident['confidence'], 0.0001);
+        $this->assertSame('eleve', $incident['severity']);
+        $this->assertSame('modele', $incident['source']);
+        $this->assertStringContainsString('possible incident majeur non déclaré', $incident['message']);
+    }
+
+    /**
+     * Active le service IA vers un hôte faussé par ``Http::fake``.
+     */
+    private function serviceIaActive(): void
+    {
+        config([
+            'ai.enabled' => true,
+            'ai.service_url' => 'http://ai.test',
+            'ai.token' => 'test-token',
+            'ai.timeout' => 2.0,
+        ]);
     }
 }

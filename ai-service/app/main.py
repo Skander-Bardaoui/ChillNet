@@ -31,12 +31,38 @@ from .schemas import (
     MessageResponse,
     ModelInfoResponse,
 )
+from .coupures import anomalies as coupures_anomalies
+from .coupures import etr as coupures_etr
+from .coupures import risk as coupures_risk
+from .coupures.etr import CoupureEtrModel
+from .coupures.model import CoupureRiskModel
+from .coupures.schemas import (
+    AnomaliesRequest,
+    AnomaliesResponse,
+    EtrRequest,
+    EtrResponse,
+    Incident,
+    InsightsResponse,
+    RiskRequest,
+    RiskResponse,
+    ZoneResultat,
+)
 
 ORDRE: dict[str, int] = {"normal": 0, "jaune": 1, "orange": 2, "rouge": 3}
 
 app = FastAPI(title="ChillNet — IA vigilance canicule", version="1.0.0")
 
 model = VigilanceModel(settings.model_path, settings.metadata_path)
+
+# Modèle du module 2 (coupures). Artefacts DÉDIÉS (`artifacts/coupures/`). Le
+# chargement ne lève jamais : en l'absence d'artefact, `available` vaut False et
+# le service retombe sur les règles déterministes (plancher de sécurité).
+coupures_model = CoupureRiskModel(
+    settings.coupures_model_path, settings.coupures_metadata_path
+)
+
+# Estimateur ETR (temps de rétablissement) du module 2 — artefact dédié.
+etr_model = CoupureEtrModel(settings.coupures_etr_model_path)
 
 
 def require_token(x_ai_token: str | None = Header(default=None)) -> None:
@@ -204,11 +230,80 @@ def message(payload: MessageRequest) -> MessageResponse:
     return MessageResponse(message=texte)
 
 
+# --------------------------------------------------------------------------- #
+# Module 2 — Coupures
+# --------------------------------------------------------------------------- #
+
+
+@app.post("/coupures/risk", response_model=RiskResponse, dependencies=[Depends(require_token)])
+def coupures_risk_endpoint(payload: RiskRequest) -> RiskResponse:
+    """Batch de zones → risque (modèle + règles, plancher de sécurité)."""
+
+    resultats = coupures_risk.evaluate_zones(payload.zones, coupures_model)
+
+    return RiskResponse(results=[ZoneResultat(**r) for r in resultats])
+
+
+@app.post(
+    "/coupures/anomalies",
+    response_model=AnomaliesResponse,
+    dependencies=[Depends(require_token)],
+)
+def coupures_anomalies_endpoint(payload: AnomaliesRequest) -> AnomaliesResponse:
+    """Afflux de signalements → incidents suspects (cluster + surprise)."""
+
+    incidents = coupures_anomalies.detect_anomalies(payload)
+
+    return AnomaliesResponse(incidents=[Incident(**i) for i in incidents])
+
+
+@app.post("/coupures/etr", response_model=EtrResponse, dependencies=[Depends(require_token)])
+def coupures_etr_endpoint(payload: EtrRequest) -> EtrResponse:
+    """Temps de rétablissement estimé (quantiles) des coupures en cours."""
+
+    resultats = coupures_etr.estimate_etr(payload, etr_model)
+
+    return EtrResponse(results=resultats)
+
+
+@app.get(
+    "/coupures/insights",
+    response_model=InsightsResponse,
+    dependencies=[Depends(require_token)],
+)
+def coupures_insights_endpoint() -> InsightsResponse:
+    """Courbe de dépendance température → risque, importances et métriques."""
+
+    if coupures_model is None or not getattr(coupures_model, "available", False):
+        return InsightsResponse(available=False, model_available=False)
+
+    meta = coupures_model.metadata()
+
+    return InsightsResponse(
+        available=True,
+        model_available=True,
+        version=meta.get("version"),
+        trained_at=meta.get("trained_at") or meta.get("date"),
+        partial_dependence=list(meta.get("partial_dependence", [])),
+        importances=list(meta.get("importances", [])),
+        metrics=dict(meta.get("metrics", {})),
+        evaluation=dict(meta.get("evaluation", {})),
+        n_snapshots_labelises=meta.get("n_snapshots_labelises"),
+    )
+
+
 @app.post("/reload", dependencies=[Depends(require_token)])
 def reload_model() -> dict[str, Any]:
     disponible = model.reload()
+    disponible_coupures = coupures_model.reload()
+    disponible_etr = etr_model.reload()
 
-    return {"status": "reloaded" if disponible else "unavailable", "model_available": disponible}
+    return {
+        "status": "reloaded" if disponible else "unavailable",
+        "model_available": disponible,
+        "coupures_model_available": disponible_coupures,
+        "etr_model_available": disponible_etr,
+    }
 
 
 @app.post("/retrain", dependencies=[Depends(require_token)])
@@ -229,3 +324,33 @@ def retrain() -> dict[str, Any]:
     threading.Thread(target=_job, daemon=True).start()
 
     return {"status": "running"}
+
+
+@app.post("/retrain-coupures", dependencies=[Depends(require_token)])
+def retrain_coupures() -> dict[str, Any]:
+    """Ré-entraîne le modèle COUPURES (artefacts dédiés) puis le recharge.
+
+    Endpoint séparé de ``/retrain`` : on n'écrase jamais les artefacts canicule
+    avec les données du module 2 (et inversement).
+    """
+
+    def _job() -> None:
+        try:
+            subprocess.run(
+                [sys.executable, str(BASE_DIR / "scripts" / "simulate_grid.py")],
+                cwd=str(BASE_DIR),
+                check=True,
+            )
+            subprocess.run(
+                [sys.executable, str(BASE_DIR / "scripts" / "train_coupures.py")],
+                cwd=str(BASE_DIR),
+                check=True,
+            )
+            coupures_model.reload()
+            etr_model.reload()
+        except Exception:  # noqa: BLE001 — le ré-entraînement ne doit jamais tuer le service
+            pass
+
+    threading.Thread(target=_job, daemon=True).start()
+
+    return {"status": "running", "target": "coupures"}
