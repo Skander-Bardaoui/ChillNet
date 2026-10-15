@@ -82,23 +82,48 @@ vagrant ssh k8s -c "curl -s http://localhost:5000/v2/_catalog"
    *Administration → Configuration → Webhooks* →
    `http://192.168.56.10:8080/sonarqube-webhook/`.
 5. **Secrets k8s** : *Manage Credentials → add → Secret file*, id `chillnet-k8s-env`,
-   contenant le fichier `k8s/base/.env` (voir §6).
-6. **Job** : *New Item → Pipeline* ; *Pipeline script from SCM* → Git → ce dépôt →
-   *Script Path* `Jenkinsfile`.
+   contenant le fichier `k8s/base/.env` (voir §6). Utilisé par le job **CD** uniquement.
+6. **Deux jobs** (*New Item → Pipeline* ; *Pipeline script from SCM* → Git → ce dépôt) :
+   - `chillnet-ci` — *Script Path* `Jenkinsfile` (CI : tests, analyse, images).
+   - `chillnet-cd` — *Script Path* `Jenkinsfile.cd` (CD : déploiement k3s).
+   Le nom du job CD **doit** être `chillnet-cd` : la CI le référence en dur dans
+   `build job: 'chillnet-cd'`. Cocher *This project is parameterized* n'est pas requis
+   (le paramètre `IMAGE_TAG` est déclaré dans le `Jenkinsfile.cd` lui-même).
 
-## 5. Le pipeline (`Jenkinsfile`)
+## 5. Les pipelines (CI `Jenkinsfile` · CD `Jenkinsfile.cd`)
+
+La CI et le CD sont **séparés** : la CI ne déploie jamais, le CD ne compile ni ne teste.
+La CI déclenche le CD en fin de build réussi (branche `main` uniquement) via
+`build job: 'chillnet-cd'`, en lui transmettant le tag d'image.
+
+### CI (`Jenkinsfile` → job `chillnet-ci`)
 
 | Stage | Rôle |
 |-------|------|
-| Checkout | clone du dépôt |
+| Checkout | clone + calcul du tag image (SHA court du commit) |
 | Install | `composer install`, `npm ci`, **`npm run build`** |
 | Lint (Pint) | `pint --test` — **informatif** (le dépôt n'est pas encore Pint-clean) |
 | Test (PHP) | `php artisan test` + clover + junit |
 | Test (Python) | `pytest` + couverture dans `ai-service/` |
 | SonarQube (Laravel / ai-service) | analyse via l'image `sonarsource/sonar-scanner-cli` |
 | Quality Gate | `waitForQualityGate` — échec du build si le gate échoue |
-| Build / Push images | app + ai-service, tags `$BUILD_NUMBER` et `latest` |
-| Deploy to k3s | `kubectl apply -k k8s/base`, Job de migration, `rollout status` |
+| Build / Push images | app + ai-service, tags `<sha-court>` et `latest` |
+| Trigger CD | `build job: 'chillnet-cd'` (paramètre `IMAGE_TAG`), si branche `main` |
+
+### CD (`Jenkinsfile.cd` → job `chillnet-cd`)
+
+| Stage | Rôle |
+|-------|------|
+| Checkout | clone (pour les manifestes `k8s/base`) |
+| Deploy to k3s | `kubectl apply -k k8s/base`, `set image` sur le tag reçu, Job de migration, `rollout status` |
+
+Le job CD est **paramétré** (`IMAGE_TAG`, défaut `latest`) : il est déclenché
+automatiquement par la CI, ou lanceable à la main (*Build with Parameters*) pour
+redéployer un tag précis.
+
+> **Séparer les responsabilités** évite de redonner au déploiement les outils de build :
+> le job CD n'a besoin que de `kubectl` + le credential `chillnet-k8s-env` ; la CI n'a
+> pas besoin du kubeconfig.
 
 > **Ordre important** : `npm run build` doit précéder les tests PHP. Les layouts
 > utilisent `@vite` ; sans `public/build/manifest.json` **tous** les tests

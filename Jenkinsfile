@@ -1,3 +1,6 @@
+// Pipeline CI ChillNet — build, tests, analyse SonarQube, build/push des images.
+// Le déploiement vit dans un job séparé (`Jenkinsfile.cd` -> job `chillnet-cd`) que
+// cette CI déclenche en fin de build réussi, sur `main` uniquement.
 pipeline {
   agent any
 
@@ -10,7 +13,6 @@ pipeline {
 
   environment {
     REGISTRY    = '192.168.56.12:5000'
-    IMAGE_TAG   = "${env.BUILD_NUMBER}"
     APP_IMAGE   = "${REGISTRY}/chillnet-app"
     AI_IMAGE    = "${REGISTRY}/chillnet-ai-service"
     XDEBUG_MODE = 'coverage'
@@ -20,7 +22,16 @@ pipeline {
     stage('Checkout') {
       steps {
         checkout scm
-        sh 'git rev-parse --short HEAD'
+        // Tag d'image = SHA court du commit : immuable et traçable, partagé avec
+        // le job CD (les deux jobs ont des numéros de build indépendants).
+        script {
+          env.IMAGE_TAG = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
+          // GIT_BRANCH (posé par le git-plugin, ex. « origin/main ») est plus fiable que
+          // `rev-parse --abbrev-ref HEAD`, car le checkout Jenkins est souvent en HEAD détaché.
+          def branch = env.GIT_BRANCH ?: sh(script: 'git rev-parse --abbrev-ref HEAD', returnStdout: true).trim()
+          env.CI_BRANCH = branch.replaceFirst(~/^origin\//, '')
+          echo "Branche ${env.CI_BRANCH} — tag image ${env.IMAGE_TAG}"
+        }
       }
     }
 
@@ -131,21 +142,14 @@ pipeline {
       }
     }
 
-    stage('Deploy to k3s') {
+    // Le déploiement est volontairement SÉPARÉ (voir « Jenkinsfile.cd » et le job
+    // « chillnet-cd ») : la CI se contente de déclencher ce job en lui transmettant
+    // le tag d'image, et uniquement depuis la branche `main`.
+    stage('Trigger CD') {
+      when { expression { env.CI_BRANCH == 'main' } }
       steps {
-        // Credential « Secret file » (id: chillnet-k8s-env) = contenu de k8s/base/.env.
-        withCredentials([file(credentialsId: 'chillnet-k8s-env', variable: 'K8S_ENV_FILE')]) {
-          sh 'cp "$K8S_ENV_FILE" k8s/base/.env'
-          sh 'kubectl apply -k k8s/base'
-          sh 'kubectl -n chillnet set image deployment/chillnet-app app="$APP_IMAGE:$IMAGE_TAG"'
-          sh 'kubectl -n chillnet set image deployment/ai-service ai-service="$AI_IMAGE:$IMAGE_TAG"'
-          // Job immuable : recréé à chaque déploiement (image :latest poussée ci-dessus).
-          sh 'kubectl -n chillnet delete job chillnet-migrate --ignore-not-found'
-          sh 'kubectl -n chillnet apply -f k8s/base/laravel/laravel-migrate-job.yaml'
-          sh 'kubectl -n chillnet wait --for=condition=complete job/chillnet-migrate --timeout=180s'
-          sh 'kubectl -n chillnet rollout status deployment/chillnet-app --timeout=180s'
-          sh 'kubectl -n chillnet rollout status deployment/ai-service --timeout=180s'
-        }
+        build job: 'chillnet-cd', wait: false,
+              parameters: [string(name: 'IMAGE_TAG', value: env.IMAGE_TAG)]
       }
     }
   }
