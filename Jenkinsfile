@@ -75,16 +75,19 @@ pipeline {
     stage('SonarQube (Laravel)') {
       steps {
         withSonarQubeEnv('sonarqube') {
-          // -u Jenkins : le scanner tourne en tant qu'utilisateur Jenkins, mais son home
-          // de l'image (/opt/sonar-scanner) appartient à root -> AccessDeniedException sur
-          // /opt/sonar-scanner/.sonar/cache. SONAR_USER_HOME redirige le cache vers /tmp.
+          // -u Jenkins : le scanner tourne en tant qu'utilisateur Jenkins, mais les dossiers
+          // de travail de l'image (/opt/sonar-scanner/.sonar et /tmp/.scannerwork) appartiennent
+          // à scanner-cli -> AccessDeniedException. SONAR_USER_HOME déplace le cache dans /tmp
+          // et sonar.working.directory place le dossier de travail dans le workspace monté
+          // (appartenant à Jenkins, et où waitForQualityGate lit report-task.txt).
           sh '''
             docker run --rm \
               -u "$(id -u):$(id -g)" \
               -e SONAR_HOST_URL -e SONAR_TOKEN="$SONAR_AUTH_TOKEN" \
               -e SONAR_USER_HOME=/tmp/.sonar \
               -v "$WORKSPACE:/usr/src" -w /usr/src \
-              sonarsource/sonar-scanner-cli
+              sonarsource/sonar-scanner-cli \
+              -Dsonar.working.directory=/usr/src/.scannerwork
           '''
         }
       }
@@ -99,7 +102,8 @@ pipeline {
               -e SONAR_HOST_URL -e SONAR_TOKEN="$SONAR_AUTH_TOKEN" \
               -e SONAR_USER_HOME=/tmp/.sonar \
               -v "$WORKSPACE/ai-service:/usr/src" -w /usr/src \
-              sonarsource/sonar-scanner-cli
+              sonarsource/sonar-scanner-cli \
+              -Dsonar.working.directory=/usr/src/.scannerwork
           '''
         }
       }
