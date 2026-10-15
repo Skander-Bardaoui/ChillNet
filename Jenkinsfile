@@ -160,7 +160,12 @@ pipeline {
     always {
       junit allowEmptyResults: true, testResults: 'build/**/*.xml, ai-service/build/**/*.xml'
       archiveArtifacts artifacts: 'build/coverage/clover.xml, ai-service/coverage.xml', allowEmptyArchive: true
-      sh 'docker image prune -f >/dev/null 2>&1 || true'
+      // Le builder est en mode « legacy » (buildx absent) : son cache de construction
+      // est stocké sous forme d'images <none> (dangling). Un `docker image prune -f`
+      // SANS filtre supprimerait donc tout le cache à chaque build, forçant à
+      // re-télécharger Composer/npm/apt (lent et vulnérable au moindre timeout DNS).
+      // On ne purge que les images de plus de 7 jours.
+      sh 'docker image prune -f --filter "until=168h" >/dev/null 2>&1 || true'
     }
     success { echo 'ChillNet pipeline succeeded.' }
     failure { echo 'ChillNet pipeline failed.' }
