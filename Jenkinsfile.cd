@@ -50,7 +50,11 @@ pipeline {
         echo "Déploiement du tag : ${env.IMAGE_TAG}"
         // Credential « Secret file » (id: chillnet-k8s-env) = contenu de k8s/base/.env.
         withCredentials([file(credentialsId: 'chillnet-k8s-env', variable: 'K8S_ENV_FILE')]) {
-          sh 'cp "$K8S_ENV_FILE" k8s/base/.env'
+          // Le fichier de credentials Jenkins est en lecture seule (0400) ; `cp` recopie
+          // ce mode. Un `cp` sur un k8s/base/.env déjà présent (donc 0400) échoue en
+          // « Permission denied ». On le supprime d'abord (rm ne dépend que des droits
+          // du dossier, qu'on possède).
+          sh 'rm -f k8s/base/.env && cp "$K8S_ENV_FILE" k8s/base/.env'
           sh 'kubectl apply -k k8s/base'
           sh 'kubectl -n chillnet set image deployment/chillnet-app app="$APP_IMAGE:$IMAGE_TAG"'
           sh 'kubectl -n chillnet set image deployment/ai-service ai-service="$AI_IMAGE:$IMAGE_TAG"'
