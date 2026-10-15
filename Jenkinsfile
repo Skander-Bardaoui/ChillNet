@@ -28,8 +28,10 @@ pipeline {
           env.IMAGE_TAG = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
           // GIT_BRANCH (posé par le git-plugin, ex. « origin/main ») est plus fiable que
           // `rev-parse --abbrev-ref HEAD`, car le checkout Jenkins est souvent en HEAD détaché.
+          // Le préfixe est retiré avec des méthodes String (autorisées par le sandbox Groovy ;
+          // replaceFirst(Pattern,…) y est refusé).
           def branch = env.GIT_BRANCH ?: sh(script: 'git rev-parse --abbrev-ref HEAD', returnStdout: true).trim()
-          env.CI_BRANCH = branch.replaceFirst(~/^origin\//, '')
+          env.CI_BRANCH = branch.startsWith('origin/') ? branch.substring(7) : branch
           echo "Branche ${env.CI_BRANCH} — tag image ${env.IMAGE_TAG}"
         }
       }
