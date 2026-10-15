@@ -35,12 +35,19 @@ pipeline {
       steps {
         checkout scm
         sh 'git rev-parse --short HEAD'
+        // Un paramètre déclaré dans le Jenkinsfile n'est PAS exposé comme variable
+        // d'environnement aux étapes `sh` (contrairement au bloc `environment`) :
+        // sans cette assignation, $IMAGE_TAG était vide dans le shell -> image
+        // « repo/chillnet-app: » -> InvalidImageName. On le rend explicite (défaut latest).
+        script {
+          env.IMAGE_TAG = (params.IMAGE_TAG != null && params.IMAGE_TAG != '') ? params.IMAGE_TAG : 'latest'
+        }
       }
     }
 
     stage('Deploy to k3s') {
       steps {
-        echo "Déploiement du tag : ${params.IMAGE_TAG}"
+        echo "Déploiement du tag : ${env.IMAGE_TAG}"
         // Credential « Secret file » (id: chillnet-k8s-env) = contenu de k8s/base/.env.
         withCredentials([file(credentialsId: 'chillnet-k8s-env', variable: 'K8S_ENV_FILE')]) {
           sh 'cp "$K8S_ENV_FILE" k8s/base/.env'
