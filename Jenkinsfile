@@ -30,6 +30,15 @@ pipeline {
         sh 'npm ci'
         // Les layouts utilisent @vite : le manifest doit exister AVANT les tests.
         sh 'npm run build'
+        // Le checkout CI n'a pas de .env (git-ignoré). Sans lui, phpdotenv émet un
+        // warning « file_get_contents(.env) » et les tests échouent (APP_KEY et
+        // JWT_SECRET manquants -> MissingAppKeyException / SecretMissingException).
+        sh '''
+          set -eu
+          [ -f .env ] || cp .env.example .env
+          grep -q '^APP_KEY=base64:' .env || sed -i "s|^APP_KEY=.*|APP_KEY=base64:$(openssl rand -base64 32)|" .env
+          grep -q '^JWT_SECRET=.' .env || sed -i "s|^JWT_SECRET=.*|JWT_SECRET=$(openssl rand -hex 32)|" .env
+        '''
       }
     }
 
