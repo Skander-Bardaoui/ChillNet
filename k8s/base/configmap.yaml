@@ -27,6 +27,12 @@ data:
   BROADCAST_CONNECTION: "log"
   MAIL_MAILER: "log"
 
+  # Lab servi en HTTP (ingress Traefik « web ») : les cookies d'auth et de session
+  # ne doivent PAS porter le flag `secure`, sinon le navigateur ne les renvoie
+  # jamais et la connexion reboucle sur /login. Passer à "true" derrière TLS.
+  AUTH_COOKIE_SECURE: "false"
+  SESSION_SECURE_COOKIE: "false"
+
   # Microservice IA (voir config/ai.php) — joint via le Service interne.
   AI_SERVICE_ENABLED: "true"
   AI_SERVICE_URL: "http://ai-service:8001"

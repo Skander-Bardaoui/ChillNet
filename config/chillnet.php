@@ -19,4 +19,19 @@ return [
 
     'remember_refresh_ttl' => (int) env('CHILLNET_REMEMBER_REFRESH_TTL', 43200),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Flag « secure » des cookies d'authentification
+    |--------------------------------------------------------------------------
+    |
+    | Les cookies access_token/refresh_token sont httpOnly ; le flag `secure`
+    | interdit au navigateur de les transmettre en clair. Par défaut on suit
+    | l'environnement (true en production, donc derrière TLS). Un lab servi en
+    | HTTP pur (ingress Traefik « web », http://chillnet.local) doit forcer
+    | AUTH_COOKIE_SECURE=false, sinon le navigateur ne renvoie jamais les
+    | cookies et la connexion reboucle sur /login.
+    |
+    */
+    'auth_cookie_secure' => (bool) env('AUTH_COOKIE_SECURE', env('APP_ENV') === 'production'),
+
 ];
