@@ -1,0 +1,30 @@
+# Jenkins Configuration as Code (plugin « configuration-as-code »).
+# À placer dans $JENKINS_HOME/casc.yaml puis :
+#   Manage Jenkins → Configuration as Code → « Reload existing configuration »
+# ou définir CASC_JENKINS_CONFIG=/var/lib/jenkins/casc.yaml.
+#
+# Le jeton d'analyse est lu depuis la variable d'environnement SONAR_TOKEN
+# (à exporter dans le service Jenkins, voir docs/devops.md § Configuration).
+#
+# Alternative 100 % manuelle (sans JCasC) : Manage Jenkins → System →
+# SonarQube servers, puis Manage Credentials → ajouter un « Secret text ».
+jenkins:
+  systemMessage: "ChillNet CI — Jenkins + SonarQube + k3s"
+
+unclassified:
+  sonarGlobalConfiguration:
+    buildWrapperEnabled: true
+    installations:
+      - name: "sonarqube"
+        serverUrl: "http://192.168.56.11:9000"
+        credentialsId: "sonarqube-token"
+
+credentials:
+  system:
+    domainCredentials:
+      - credentials:
+          - string:
+              scope: GLOBAL
+              id: "sonarqube-token"
+              secret: "${SONAR_TOKEN}"
+              description: "Jeton d'analyse SonarQube"
