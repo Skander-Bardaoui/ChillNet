@@ -60,7 +60,10 @@ pipeline {
           sh 'kubectl -n chillnet set image deployment/ai-service ai-service="$AI_IMAGE:$IMAGE_TAG"'
           // Job immuable : recréé à chaque déploiement.
           sh 'kubectl -n chillnet delete job chillnet-migrate --ignore-not-found'
-          sh 'kubectl -n chillnet apply -f k8s/base/laravel/laravel-migrate-job.yaml'
+          // Le Job est hors kustomize : `kubectl set image` ne s'applique pas à un Job
+          // (template immuable). On aligne donc son image sur le tag déployé via sed,
+          // sinon le Job rejouerait l'image `:latest` (potentiellement périmée).
+          sh 'sed "s#chillnet-app:latest#chillnet-app:${IMAGE_TAG}#" k8s/base/laravel/laravel-migrate-job.yaml | kubectl -n chillnet apply -f -'
           sh 'kubectl -n chillnet wait --for=condition=complete job/chillnet-migrate --timeout=180s'
           sh 'kubectl -n chillnet rollout status deployment/chillnet-app --timeout=180s'
           sh 'kubectl -n chillnet rollout status deployment/ai-service --timeout=180s'
