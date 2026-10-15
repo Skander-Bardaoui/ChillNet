@@ -12,6 +12,7 @@ use App\Http\Controllers\Front\DashboardController;
 use App\Http\Controllers\Front\HomeController;
 use App\Http\Controllers\Front\LieuController as FrontLieuController;
 use App\Http\Controllers\Front\SignalementController as FrontSignalementController;
+use App\Http\Controllers\Front\SupportAssistantController;
 use App\Http\Controllers\ProfileController;
 use App\Models\Residence;
 use App\Support\AuthCookie;
@@ -62,9 +63,16 @@ Route::get('/refuges', function () {
  * qu'ils consultent l'espace citoyen en tant que foyer.
  */
 Route::middleware(['auth', 'role:habitant'])->group(function () {
+    Route::post('/assistant-support/evaluer-urgence', [SupportAssistantController::class, 'estimate'])
+        ->middleware('throttle:20,1')
+        ->name('front.support.estimate');
+
     // Module 1 : les alertes canicule VALIDÉES et actives du quartier de l'habitant.
     Route::get('/alertes', [FrontAlerteController::class, 'index'])->name('alertes.index');
     Route::get('/signalements', [FrontSignalementController::class, 'index'])->name('signalements.index');
+    Route::post('/signalements/analyser', [FrontSignalementController::class, 'analyze'])
+        ->middleware('throttle:20,1')
+        ->name('front.signalements.analyze');
     Route::post('/signalements', [FrontSignalementController::class, 'store'])->name('front.signalements.store');
     Route::get('/signalements/{signalement}/modifier', [FrontSignalementController::class, 'edit'])->name('front.signalements.edit');
     Route::patch('/signalements/{signalement}', [FrontSignalementController::class, 'update'])->name('front.signalements.update');

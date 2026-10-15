@@ -3,11 +3,15 @@
 namespace App\Http\Controllers\Front;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\AnalyzeSignalementRequest;
 use App\Http\Requests\StoreSignalementRequest;
 use App\Models\Residence;
 use App\Models\Signalement;
 use App\Notifications\SignalementNotification;
+use App\Services\SignalementLocalClassifier;
+use App\Services\SignalementUrgencyDetector;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
@@ -16,8 +20,8 @@ class SignalementController extends Controller
 {
     public function index(): View
     {
-        $signalements = Signalement::with(['residence', 'residence.quartier'])
-            ->where('user_id', auth()->id())
+        $signalements = auth()->user()->signalements()
+            ->with(['residence', 'residence.quartier'])
             ->latest()
             ->get();
         $notifications = auth()->user()->notifications()->latest()->get();
@@ -25,6 +29,19 @@ class SignalementController extends Controller
         $residences = Residence::with('quartier')->orderBy('nom')->get();
 
         return view('front.signalements', compact('signalements', 'notifications', 'unreadNotificationsCount', 'residences'));
+    }
+
+    public function analyze(
+        AnalyzeSignalementRequest $request,
+        SignalementLocalClassifier $classifier,
+        SignalementUrgencyDetector $urgencyDetector,
+    ): JsonResponse {
+        $description = $request->validated('description');
+
+        return response()->json([
+            ...$classifier->classer($description),
+            'termes_urgents' => $urgencyDetector->detecter($description),
+        ]);
     }
 
     public function store(StoreSignalementRequest $request): RedirectResponse
