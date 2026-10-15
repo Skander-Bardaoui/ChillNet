@@ -1,0 +1,6 @@
+# SonarQube analyse le rapport dans un conteneur où ce dossier est monté à /usr/src.
+# coverage.py écrivait des chemins ABSOLUS (ex. /var/lib/jenkins/workspace/.../app/main.py)
+# introuvables dans le conteneur -> couverture à 0 %. `relative_files` écrit des chemins
+# relatifs (app/main.py), résolus depuis la racine du projet analysé.
+[run]
+relative_files = True
