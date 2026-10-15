@@ -26,13 +26,13 @@ pipeline {
         // le job CD (les deux jobs ont des numéros de build indépendants).
         script {
           env.IMAGE_TAG = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
-          // GIT_BRANCH (posé par le git-plugin, ex. « origin/main ») est plus fiable que
-          // `rev-parse --abbrev-ref HEAD`, car le checkout Jenkins est souvent en HEAD détaché.
-          // Le préfixe est retiré avec des méthodes String (autorisées par le sandbox Groovy ;
-          // replaceFirst(Pattern,…) y est refusé).
-          def branch = env.GIT_BRANCH ?: sh(script: 'git rev-parse --abbrev-ref HEAD', returnStdout: true).trim()
-          env.CI_BRANCH = branch.startsWith('origin/') ? branch.substring(7) : branch
-          echo "Branche ${env.CI_BRANCH} — tag image ${env.IMAGE_TAG}"
+          // Le checkout Jenkins est en HEAD détaché : `rev-parse --abbrev-ref HEAD` renvoie
+          // « HEAD » et GIT_BRANCH est souvent absent. On déduit donc la branche en comparant
+          // le commit courant à la tête de origin/main (fetchee par le checkout).
+          def head = sh(script: 'git rev-parse HEAD', returnStdout: true).trim()
+          def mainHead = sh(script: 'git rev-parse origin/main 2>/dev/null || true', returnStdout: true).trim()
+          env.CI_BRANCH = (mainHead != '' && head == mainHead) ? 'main' : 'autre'
+          echo "HEAD ${head} / origin/main ${mainHead} → branche ${env.CI_BRANCH}"
         }
       }
     }
