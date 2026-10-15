@@ -223,7 +223,7 @@
                                         <div class="flex flex-wrap items-center gap-2">
                                             <a href="{{ route('front.signalements.pdf', $signalement) }}" class="inline-flex items-center gap-1 rounded-xl border border-outline-variant/40 bg-surface-container px-2.5 py-1.5 text-xs font-semibold text-primary transition hover:bg-surface-container-high">PDF</a>
                                             <a href="{{ route('front.signalements.edit', $signalement) }}" class="inline-flex items-center gap-1 rounded-xl border border-outline-variant/40 bg-surface-container px-2.5 py-1.5 text-xs font-semibold text-on-surface transition hover:bg-surface-container-high">Modifier</a>
-                                            <form method="POST" action="{{ route('front.signalements.destroy', $signalement) }}" onsubmit="return confirm('Supprimer ce signalement ?');">
+                                            <form method="POST" action="{{ route('front.signalements.destroy', $signalement) }}" data-confirm="Supprimer ce signalement ?">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" class="inline-flex items-center gap-1 rounded-xl border border-error/20 bg-error-container px-2.5 py-1.5 text-xs font-semibold text-on-error-container transition hover:opacity-90">Supprimer</button>

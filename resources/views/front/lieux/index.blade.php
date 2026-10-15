@@ -43,8 +43,8 @@
                     <div class="grid grid-cols-1 sm:grid-cols-5 gap-3">
                         <div class="sm:col-span-3 flex flex-col gap-1.5">
                             <label for="lieu-nom" class="font-label-md text-label-md text-on-surface">Nom du lieu</label>
-                            <input id="lieu-nom" type="text" name="nom" x-model="form.nom" placeholder="Ex : Domicile, Travail" required
-                                class="w-full rounded-lg bg-surface-container border border-outline-variant/40 px-3 py-2.5 text-on-surface focus:border-primary-container focus:outline-none" />
+                            <input id="lieu-nom" type="text" name="nom" x-model="form.nom" placeholder="Ex : Domicile, Travail"
+                                class="w-full rounded-lg bg-surface-container border border-outline-variant/40 px-3 py-2.5 text-on-surface focus:border-primary-container focus:outline-none @error('nom') border-error @enderror" />
                             @error('nom') <p class="font-body-sm text-body-sm text-error">{{ $message }}</p> @enderror
                         </div>
                         <div class="sm:col-span-2 flex flex-col gap-1.5">
@@ -63,7 +63,7 @@
                         <label for="lieu-adresse" class="font-label-md text-label-md text-on-surface">Adresse <span class="text-on-surface-variant font-normal">(remplie d'après le point)</span></label>
                         <div class="relative">
                             <input id="lieu-adresse" type="text" name="adresse" x-model="form.adresse" placeholder="Ex : 12 rue des Tilleuls"
-                                class="w-full rounded-lg bg-surface-container border border-outline-variant/40 px-3 py-2.5 pr-10 text-on-surface focus:border-primary-container focus:outline-none" />
+                                class="w-full rounded-lg bg-surface-container border border-outline-variant/40 px-3 py-2.5 pr-10 text-on-surface focus:border-primary-container focus:outline-none @error('adresse') border-error @enderror" />
                             <span x-show="adresseEnCours" x-cloak class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center pointer-events-none">
                                 <span class="material-symbols-outlined text-[18px] text-primary animate-spin">progress_activity</span>
                             </span>
@@ -76,8 +76,9 @@
 
                     <input type="hidden" name="latitude" x-model="form.latitude" />
                     <input type="hidden" name="longitude" x-model="form.longitude" />
-                    @error('latitude') <p class="font-body-sm text-body-sm text-error">{{ $message }}</p> @enderror
-                    @error('longitude') <p class="font-body-sm text-body-sm text-error">{{ $message }}</p> @enderror
+                    @if ($errors->has('latitude') || $errors->has('longitude'))
+                        <p class="font-body-sm text-body-sm text-error flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">error</span>{{ $errors->first('latitude') ?: $errors->first('longitude') }}</p>
+                    @endif
 
                     <div class="flex items-center justify-end gap-3">
                         <button type="button" x-show="mode === 'edit'" x-cloak @click="startCreate()" class="px-4 py-2 rounded-lg font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-high">Annuler</button>
@@ -126,7 +127,7 @@
                             </form>
                         @endunless
 
-                        <form method="POST" action="{{ $item['deleteUrl'] }}" onsubmit="return confirm('Supprimer ce lieu ?');">
+                        <form method="POST" action="{{ $item['deleteUrl'] }}" data-confirm="Supprimer ce lieu ?">
                             @csrf
                             @method('DELETE')
                             <button type="submit" @disabled($lieux->count() <= 1) title="{{ $lieux->count() <= 1 ? 'Au moins un lieu est requis.' : 'Supprimer' }}"

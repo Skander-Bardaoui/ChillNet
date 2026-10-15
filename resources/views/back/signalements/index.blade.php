@@ -154,7 +154,7 @@
 <td class="whitespace-nowrap px-6 py-4 font-body-sm text-body-sm text-on-surface-variant">{{ $signalement->date_signalement->format('d/m/Y') }}</td>
 <td class="px-6 py-4 text-right whitespace-nowrap space-x-3">
 <a href="{{ route('back.signalements.edit', $signalement) }}" title="Modifier" aria-label="Modifier" class="inline-flex items-center justify-center h-9 w-9 rounded-lg text-primary hover:bg-primary-container/20"><span class="material-symbols-outlined text-[18px]">edit</span></a>
-<form method="POST" action="{{ route('back.signalements.destroy', $signalement) }}" class="inline" onsubmit="return confirm('Supprimer définitivement ce signalement ?');">@csrf @method('DELETE')<button type="submit" title="Supprimer" aria-label="Supprimer" class="inline-flex items-center justify-center h-9 w-9 rounded-lg text-error hover:bg-error-container/40"><span class="material-symbols-outlined text-[18px]">delete</span></button></form>
+<form method="POST" action="{{ route('back.signalements.destroy', $signalement) }}" class="inline" data-confirm="Supprimer définitivement ce signalement ?">@csrf @method('DELETE')<button type="submit" title="Supprimer" aria-label="Supprimer" class="inline-flex items-center justify-center h-9 w-9 rounded-lg text-error hover:bg-error-container/40"><span class="material-symbols-outlined text-[18px]">delete</span></button></form>
 </td>
 </tr>
 @empty

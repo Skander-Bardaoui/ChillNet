@@ -170,7 +170,7 @@
                 <span class="material-symbols-outlined text-[16px]">edit</span>Modifier
             </a>
             <form method="POST" action="{{ route('equipements.destroy', $equipement) }}"
-                  onsubmit="return confirm('Supprimer cet équipement ?')">
+                  data-confirm="Supprimer cet équipement ?">
                 @csrf @method('DELETE')
                 <button type="submit" class="inline-flex items-center gap-1 text-on-surface-variant font-label-md text-label-md hover:text-error">
                     <span class="material-symbols-outlined text-[16px]">delete</span>

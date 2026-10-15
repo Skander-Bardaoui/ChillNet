@@ -109,7 +109,7 @@
                 <td class="px-5 py-4 text-right space-x-3 whitespace-nowrap">
                     <a href="{{ route('back.conseils.edit', $conseil) }}" class="text-primary hover:underline font-label-md text-label-md">Modifier</a>
                     <form method="POST" action="{{ route('back.conseils.destroy', $conseil) }}" class="inline"
-                          onsubmit="return confirm('Supprimer ce conseil ?')">
+                          data-confirm="Supprimer ce conseil ?">
                         @csrf @method('DELETE')
                         <button type="submit" class="text-error hover:underline font-label-md text-label-md">Supprimer</button>
                     </form>

@@ -96,7 +96,7 @@
 @if ($monAvis->commentaire)<p class="font-body-sm text-body-sm text-on-surface">« {{ $monAvis->commentaire }} »</p>@endif
 <div class="flex gap-2 mt-1">
 <a href="{{ route('avis.edit', $monAvis) }}" class="px-4 py-2 rounded-lg bg-surface-container-high text-on-surface font-label-md text-label-md inline-flex items-center gap-1"><span class="material-symbols-outlined text-[18px]">edit</span>Modifier</a>
-<form method="POST" action="{{ route('avis.destroy', $monAvis) }}" onsubmit="return confirm('Supprimer votre avis ?');">@csrf @method('DELETE')<button type="submit" class="px-4 py-2 rounded-lg text-error hover:bg-error-container/40 font-label-md text-label-md inline-flex items-center gap-1"><span class="material-symbols-outlined text-[18px]">delete</span>Supprimer</button></form>
+<form method="POST" action="{{ route('avis.destroy', $monAvis) }}" data-confirm="Supprimer votre avis ?">@csrf @method('DELETE')<button type="submit" class="px-4 py-2 rounded-lg text-error hover:bg-error-container/40 font-label-md text-label-md inline-flex items-center gap-1"><span class="material-symbols-outlined text-[18px]">delete</span>Supprimer</button></form>
 </div>
 </div>
 @else

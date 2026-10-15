@@ -26,7 +26,7 @@
 @unless ($p->estValide())
 <div class="flex gap-2 shrink-0">
 <a href="{{ route('points.edit', $p) }}" class="px-4 py-2 rounded-lg bg-surface-container-high text-on-surface font-label-md text-label-md inline-flex items-center gap-1"><span class="material-symbols-outlined text-[18px]">edit</span>Modifier</a>
-<form method="POST" action="{{ route('points.destroy', $p) }}" onsubmit="return confirm('Supprimer cette proposition ?');">@csrf @method('DELETE')<button type="submit" class="px-4 py-2 rounded-lg text-error hover:bg-error-container/40 font-label-md text-label-md inline-flex items-center gap-1"><span class="material-symbols-outlined text-[18px]">delete</span>Supprimer</button></form>
+<form method="POST" action="{{ route('points.destroy', $p) }}" data-confirm="Supprimer cette proposition ?">@csrf @method('DELETE')<button type="submit" class="px-4 py-2 rounded-lg text-error hover:bg-error-container/40 font-label-md text-label-md inline-flex items-center gap-1"><span class="material-symbols-outlined text-[18px]">delete</span>Supprimer</button></form>
 </div>
 @endunless
 </article>

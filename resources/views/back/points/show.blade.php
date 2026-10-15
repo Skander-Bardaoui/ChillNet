@@ -10,7 +10,7 @@
 <a href="{{ route('points.show', $point) }}" target="_blank" class="px-3 py-2 rounded-lg bg-surface-container-high text-on-surface font-label-md text-label-md inline-flex items-center gap-1"><span class="material-symbols-outlined text-[18px]">open_in_new</span>Voir côté habitant</a>
 @endif
 <a href="{{ route('back.points.edit', $point) }}" class="px-3 py-2 rounded-lg bg-primary-container text-on-primary-container font-label-md text-label-md font-semibold inline-flex items-center gap-1"><span class="material-symbols-outlined text-[18px]">edit</span>Modifier</a>
-<form method="POST" action="{{ route('back.points.destroy', $point) }}" onsubmit="return confirm('Supprimer ce point et ses {{ $point->avis_count }} avis ? Cette action est définitive.');">@csrf @method('DELETE')<button type="submit" class="px-3 py-2 rounded-lg bg-surface-container-high text-error font-label-md text-label-md font-semibold inline-flex items-center gap-1"><span class="material-symbols-outlined text-[18px]">delete</span>Supprimer</button></form>
+<form method="POST" action="{{ route('back.points.destroy', $point) }}" data-confirm="Supprimer ce point et ses {{ $point->avis_count }} avis ? Cette action est définitive.">@csrf @method('DELETE')<button type="submit" class="px-3 py-2 rounded-lg bg-surface-container-high text-error font-label-md text-label-md font-semibold inline-flex items-center gap-1"><span class="material-symbols-outlined text-[18px]">delete</span>Supprimer</button></form>
 </div>
 </div>
 
@@ -106,7 +106,7 @@
 </div>
 @if ($un->commentaire)<p class="mt-1 font-body-md text-body-md text-on-surface">« {{ $un->commentaire }} »</p>@endif
 </div>
-<form method="POST" action="{{ route('back.avis.destroy', $un) }}" onsubmit="return confirm('Supprimer cet avis (modération) ?');" class="shrink-0">@csrf @method('DELETE')<button type="submit" class="inline-flex items-center gap-1 px-3 py-2 rounded-lg text-error hover:bg-error-container/40 font-label-md text-label-md"><span class="material-symbols-outlined text-[18px]">delete</span>Supprimer</button></form>
+<form method="POST" action="{{ route('back.avis.destroy', $un) }}" data-confirm="Supprimer cet avis (modération) ?" class="shrink-0">@csrf @method('DELETE')<button type="submit" class="inline-flex items-center gap-1 px-3 py-2 rounded-lg text-error hover:bg-error-container/40 font-label-md text-label-md"><span class="material-symbols-outlined text-[18px]">delete</span>Supprimer</button></form>
 </article>
 @empty
 <p class="font-body-sm text-body-sm text-on-surface-variant">Aucun avis pour le moment.</p>

@@ -174,7 +174,7 @@
 <td class="px-6 py-4 text-right space-x-1 whitespace-nowrap">
 <a href="{{ route('back.points.show', $point) }}" title="Voir" aria-label="Voir" class="inline-flex items-center justify-center h-9 w-9 rounded-lg text-on-surface-variant hover:bg-surface-container-high"><span class="material-symbols-outlined text-[18px]">visibility</span></a>
 <a href="{{ route('back.points.edit', $point) }}" title="Modifier" aria-label="Modifier" class="inline-flex items-center justify-center h-9 w-9 rounded-lg text-primary hover:bg-primary-container/20"><span class="material-symbols-outlined text-[18px]">edit</span></a>
-<form method="POST" action="{{ route('back.points.destroy', $point) }}" class="inline" onsubmit="return confirm('Supprimer « {{ addslashes($point->nom) }} » et ses {{ $point->avis_count }} avis ? Cette action est définitive.');">@csrf @method('DELETE')<button type="submit" title="Supprimer" aria-label="Supprimer" class="inline-flex items-center justify-center h-9 w-9 rounded-lg text-error hover:bg-error-container/40"><span class="material-symbols-outlined text-[18px]">delete</span></button></form>
+<form method="POST" action="{{ route('back.points.destroy', $point) }}" class="inline" data-confirm="Supprimer « {{ $point->nom }} » et ses {{ $point->avis_count }} avis ? Cette action est définitive.">@csrf @method('DELETE')<button type="submit" title="Supprimer" aria-label="Supprimer" class="inline-flex items-center justify-center h-9 w-9 rounded-lg text-error hover:bg-error-container/40"><span class="material-symbols-outlined text-[18px]">delete</span></button></form>
 </td>
 </tr>
 @empty

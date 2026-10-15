@@ -24,7 +24,7 @@
 <form method="POST" action="{{ route('back.alertes.valider', $alerte->id) }}">@csrf @method('PATCH')<button type="submit" class="px-4 py-2.5 rounded-xl bg-green-700 text-white font-label-md text-label-md font-semibold hover:bg-green-800 inline-flex items-center gap-2"><span class="material-symbols-outlined text-[18px]">check_circle</span>Valider</button></form>
 @endif
 <a href="{{ route('back.alertes.edit', $alerte->id) }}" class="px-4 py-2.5 rounded-xl bg-primary-container text-on-primary-container font-label-md text-label-md font-semibold hover:opacity-95 inline-flex items-center gap-2"><span class="material-symbols-outlined text-[18px]">edit</span>Modifier</a>
-<form method="POST" action="{{ route('back.alertes.destroy', $alerte->id) }}" onsubmit="return confirm('Supprimer cette alerte ?');">@csrf @method('DELETE')<button type="submit" class="px-4 py-2.5 rounded-xl bg-surface-container-high text-error font-label-md text-label-md font-semibold hover:bg-error-container inline-flex items-center gap-2"><span class="material-symbols-outlined text-[18px]">delete</span>Supprimer</button></form>
+<form method="POST" action="{{ route('back.alertes.destroy', $alerte->id) }}" data-confirm="Supprimer cette alerte ?">@csrf @method('DELETE')<button type="submit" class="px-4 py-2.5 rounded-xl bg-surface-container-high text-error font-label-md text-label-md font-semibold hover:bg-error-container inline-flex items-center gap-2"><span class="material-symbols-outlined text-[18px]">delete</span>Supprimer</button></form>
 </div>
 </div>
 

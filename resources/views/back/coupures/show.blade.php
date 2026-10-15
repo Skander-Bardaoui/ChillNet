@@ -25,7 +25,7 @@
 </div>
 <div class="flex flex-wrap gap-2 shrink-0">
 <a href="{{ route('back.coupures.edit', $coupure->id) }}" class="px-4 py-2.5 rounded-xl bg-primary-container text-on-primary-container font-label-md text-label-md font-semibold hover:opacity-95 inline-flex items-center gap-2"><span class="material-symbols-outlined text-[18px]">edit</span>Modifier</a>
-<form method="POST" action="{{ route('back.coupures.destroy', $coupure->id) }}" onsubmit="return confirm('Supprimer cette coupure ?');">@csrf @method('DELETE')<button type="submit" class="px-4 py-2.5 rounded-xl bg-surface-container-high text-error font-label-md text-label-md font-semibold hover:bg-error-container inline-flex items-center gap-2"><span class="material-symbols-outlined text-[18px]">delete</span>Supprimer</button></form>
+<form method="POST" action="{{ route('back.coupures.destroy', $coupure->id) }}" data-confirm="Supprimer cette coupure ?">@csrf @method('DELETE')<button type="submit" class="px-4 py-2.5 rounded-xl bg-surface-container-high text-error font-label-md text-label-md font-semibold hover:bg-error-container inline-flex items-center gap-2"><span class="material-symbols-outlined text-[18px]">delete</span>Supprimer</button></form>
 </div>
 </div>
 

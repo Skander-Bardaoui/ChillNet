@@ -188,9 +188,11 @@ class CoupureRiskAiService
             fn (Coupure $c): bool => $c->debut !== null && $c->debut->greaterThanOrEqualTo($ilYA7j),
         )->count();
 
+        // Borne [0, 336] : une coupure datée dans le futur donnerait un écart
+        // négatif (invalide pour le modèle, cf. schéma Python ge=0).
         $derniere = $coupures->max('debut');
         $heuresDepuis = $derniere !== null
-            ? min(336.0, (float) $maintenant->diffInHours($derniere))
+            ? max(0.0, min(336.0, (float) $maintenant->diffInHours($derniere, true)))
             : 336.0;
 
         return [

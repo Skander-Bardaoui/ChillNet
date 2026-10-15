@@ -214,6 +214,11 @@ function alerteForm() {
         retour: null,
         predictionId: '',
         carte: null,
+        // Drapeau : la température n'est envoyée à l'IA que si l'utilisateur l'a
+        // saisie à la main. Une valeur auto-remplie par un pré-remplissage
+        // précédent ne doit pas se transformer en override permanent (sinon la
+        // météo n'est plus jamais recalculée pour un nouveau point).
+        temperatureManuelle: false,
         libelleClasse(cls) {
             return { normal: 'Aucune alerte', jaune: 'Vigilance jaune', orange: 'Vigilance orange', rouge: 'Vigilance rouge' }[cls] || cls;
         },
@@ -269,6 +274,12 @@ function alerteForm() {
             this.carte.on('click', (e) => poser(e.latlng.lat, e.latlng.lng));
             rayonInput.addEventListener('input', majCercle);
             majCercle();
+
+            // Toute saisie manuelle de la température arme l'override.
+            const tempInput = form.querySelector('[name="temperature_actuelle"]');
+            if (tempInput) {
+                tempInput.addEventListener('input', () => { this.temperatureManuelle = true; });
+            }
 
             const btnLoc = document.getElementById('btn-localiser-alerte');
             if (btnLoc && navigator.geolocation) {
@@ -331,7 +342,7 @@ function alerteForm() {
                         latitude: lat,
                         longitude: lng,
                         seuil_temperature: form.querySelector('[name="seuil_temperature"]').value || null,
-                        temperature_actuelle: form.querySelector('[name="temperature_actuelle"]').value || null,
+                        temperature_actuelle: this.temperatureManuelle ? (form.querySelector('[name="temperature_actuelle"]').value || null) : null,
                         humidite: form.querySelector('[name="humidite"]').value || null,
                         avec_message: avecMessage,
                     }),
@@ -347,6 +358,9 @@ function alerteForm() {
                 this.retour = data;
                 if (data.ok) {
                     form.querySelector('[name="niveau"]').value = data.niveau;
+                    // Valeur auto-remplie : ne pas la considérer comme une saisie
+                    // manuelle, sinon l'override se figerait pour les clics suivants.
+                    this.temperatureManuelle = false;
                     form.querySelector('[name="temperature_actuelle"]').value = data.temperature;
                     form.querySelector('[name="source_meteo"]').value = data.source;
                     if (data.humidite !== null && data.humidite !== undefined) {

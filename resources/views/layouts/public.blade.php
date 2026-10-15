@@ -24,5 +24,6 @@
 </div>
 </main>
 @include('layouts.stitch-footer')
+<x-confirm-delete />
 </body>
 </html>
