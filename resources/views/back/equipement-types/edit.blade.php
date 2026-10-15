@@ -71,7 +71,7 @@
 
         <div class="mt-6 flex items-center justify-between">
             <form method="POST" action="{{ route('back.equipement-types.destroy', $type) }}"
-                  onsubmit="return confirm('Supprimer ce type ? Impossible s\'il est utilisé.')">
+                  data-confirm="Supprimer ce type ? Impossible s'il est utilisé.">
                 @csrf @method('DELETE')
                 <button type="submit" class="px-4 py-2 rounded-lg text-error hover:bg-red-50 font-label-md text-label-md inline-flex items-center gap-1">
                     <span class="material-symbols-outlined text-[16px]">delete</span>Supprimer

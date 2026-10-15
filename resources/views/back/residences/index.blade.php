@@ -29,7 +29,7 @@
 <td class="px-6 py-4 text-right space-x-3 whitespace-nowrap">
 <a href="{{ route('back.residences.edit', $residence->id) }}" class="text-primary hover:underline font-label-md text-label-md">Modifier</a>
 @if(auth()->user()->isAdmin())
-<form method="POST" action="{{ route('back.residences.destroy', $residence->id) }}" class="inline" onsubmit="return confirm('Supprimer cette résidence ?');">@csrf @method('DELETE')<button type="submit" class="text-error hover:underline font-label-md text-label-md">Supprimer</button></form>
+<form method="POST" action="{{ route('back.residences.destroy', $residence->id) }}" class="inline" data-confirm="Supprimer cette résidence ?">@csrf @method('DELETE')<button type="submit" class="text-error hover:underline font-label-md text-label-md">Supprimer</button></form>
 @endif
 </td>
 </tr>

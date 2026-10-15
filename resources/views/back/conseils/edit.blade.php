@@ -96,7 +96,7 @@
         {{-- Actions --}}
         <div class="mt-6 flex items-center justify-between">
             <form method="POST" action="{{ route('back.conseils.destroy', $conseil) }}"
-                  onsubmit="return confirm('Supprimer définitivement ce conseil ?')">
+                  data-confirm="Supprimer définitivement ce conseil ?">
                 @csrf @method('DELETE')
                 <button type="submit" class="px-4 py-2 rounded-lg text-error hover:bg-red-50 font-label-md text-label-md inline-flex items-center gap-1">
                     <span class="material-symbols-outlined text-[16px]">delete</span>Supprimer

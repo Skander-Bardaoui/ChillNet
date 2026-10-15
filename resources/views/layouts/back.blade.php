@@ -71,5 +71,6 @@
 {{ $slot }}
 </main>
 </div>
+<x-confirm-delete />
 </body>
 </html>

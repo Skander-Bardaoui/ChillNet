@@ -81,7 +81,7 @@
                 <td class="px-5 py-4 text-right space-x-3 whitespace-nowrap">
                     <a href="{{ route('back.equipement-types.edit', $type) }}" class="text-primary hover:underline font-label-md text-label-md">Modifier</a>
                     <form method="POST" action="{{ route('back.equipement-types.destroy', $type) }}" class="inline"
-                          onsubmit="return confirm('Supprimer ce type ? Impossible s\'il est utilisé par des habitants.')">
+                          data-confirm="Supprimer ce type ? Impossible s'il est utilisé par des habitants.">
                         @csrf @method('DELETE')
                         <button type="submit" class="text-error hover:underline font-label-md text-label-md">Supprimer</button>
                     </form>

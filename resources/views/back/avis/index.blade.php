@@ -61,7 +61,7 @@
 <td class="px-6 py-4 font-body-sm text-body-sm text-on-surface max-w-md">{{ $un->commentaire ? \Illuminate\Support\Str::limit($un->commentaire, 160) : '—' }}</td>
 <td class="px-6 py-4"><x-badge-sentiment :sentiment="$un->sentiment" :score="$un->score_sentiment" /></td>
 <td class="px-6 py-4 text-right">
-<form method="POST" action="{{ route('back.avis.destroy', $un) }}" onsubmit="return confirm('Supprimer cet avis (modération) ?');">@csrf @method('DELETE')<button type="submit" title="Supprimer" aria-label="Supprimer" class="inline-flex items-center justify-center h-9 w-9 rounded-lg text-error hover:bg-error-container/40"><span class="material-symbols-outlined text-[18px]">delete</span></button></form>
+<form method="POST" action="{{ route('back.avis.destroy', $un) }}" data-confirm="Supprimer cet avis (modération) ?">@csrf @method('DELETE')<button type="submit" title="Supprimer" aria-label="Supprimer" class="inline-flex items-center justify-center h-9 w-9 rounded-lg text-error hover:bg-error-container/40"><span class="material-symbols-outlined text-[18px]">delete</span></button></form>
 </td>
 </tr>
 @empty
