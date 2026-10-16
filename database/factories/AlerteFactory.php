@@ -4,6 +4,8 @@ namespace Database\Factories;
 
 use App\Enums\NiveauAlerte;
 use App\Models\Alerte;
+use App\Models\Quartier;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -49,6 +51,46 @@ class AlerteFactory extends Factory
             'latitude' => $latitude,
             'longitude' => $longitude,
             'rayon_metres' => $rayon,
+        ]);
+    }
+
+    /**
+     * Cible par quartier (pivot N---N) : alerte « héritée », sans cercle.
+     * Aucun quartier passé = aucun ciblage (combinable avec geo()).
+     */
+    public function cible(Quartier ...$quartiers): static
+    {
+        return $this->hasAttached($quartiers);
+    }
+
+    /**
+     * Cas limite : ni quartier ni cercle (ne doit jamais remonter côté habitant).
+     */
+    public function sansCible(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'latitude' => null,
+            'longitude' => null,
+            'rayon_metres' => null,
+        ]);
+    }
+
+    public function seuil(float $seuil): static
+    {
+        return $this->state(fn (array $attributes) => ['seuil_temperature' => $seuil]);
+    }
+
+    public function creeePar(?User $user): static
+    {
+        return $this->state(fn (array $attributes) => ['user_id' => $user?->id]);
+    }
+
+    public function valideePar(?User $user): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'validee' => true,
+            'validee_le' => now(),
+            'validee_par' => $user?->id,
         ]);
     }
 

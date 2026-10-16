@@ -7,6 +7,7 @@ use App\Enums\ProfilVulnerabilite;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\PredictAlerteRequest;
 use App\Http\Requests\StoreAlerteRequest;
+use App\Models\AiPrediction;
 use App\Models\Alerte;
 use App\Models\Quartier;
 use App\Models\User;
@@ -15,6 +16,7 @@ use App\Services\VigilanceAiService;
 use App\Services\WeatherService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Back office des alertes canicule (module 1).
@@ -40,22 +42,28 @@ class AlerteController extends Controller
         $user = $request->user();
         $quartierId = $user?->residence?->quartier_id;
 
-        $query = Alerte::with('quartiers')
-            ->when($user && $user->isGestionnaire(), fn ($q) => $q->parQuartier((int) $quartierId))
+        // Périmètre du gestionnaire : sa zone uniquement (admin = tout).
+        $base = Alerte::query()
+            ->when($user && $user->isGestionnaire(), fn ($q) => $q->parQuartier((int) $quartierId));
+
+        // Chiffres clés : calculés sur le périmètre SEUL, indépendamment des
+        // filtres d'affichage — sinon « total » varierait selon le filtre.
+        $stats = [
+            'total' => (clone $base)->count(),
+            'actives' => (clone $base)->actives()->count(),
+            'programmees' => (clone $base)->programmees()->count(),
+            'terminees' => (clone $base)->terminees()->count(),
+            'brouillons' => (clone $base)->where('validee', false)->count(),
+            'rouge' => (clone $base)->where('niveau', NiveauAlerte::Rouge->value)->count(),
+            'orange' => (clone $base)->where('niveau', NiveauAlerte::Orange->value)->count(),
+            'jaune' => (clone $base)->where('niveau', NiveauAlerte::Jaune->value)->count(),
+        ];
+
+        // Liste filtrable (filtres d'affichage uniquement).
+        $query = (clone $base)->with('quartiers')
             ->when($request->filled('quartier_id'), fn ($q) => $q->parQuartier((int) $request->input('quartier_id')))
             ->when(in_array($request->input('niveau'), array_column(NiveauAlerte::cases(), 'value'), true),
                 fn ($q) => $q->niveau(NiveauAlerte::from($request->input('niveau'))));
-
-        $stats = [
-            'total' => (clone $query)->count(),
-            'actives' => (clone $query)->actives()->count(),
-            'programmees' => (clone $query)->programmees()->count(),
-            'terminees' => (clone $query)->terminees()->count(),
-            'brouillons' => (clone $query)->where('validee', false)->count(),
-            'rouge' => (clone $query)->where('niveau', NiveauAlerte::Rouge->value)->count(),
-            'orange' => (clone $query)->where('niveau', NiveauAlerte::Orange->value)->count(),
-            'jaune' => (clone $query)->where('niveau', NiveauAlerte::Jaune->value)->count(),
-        ];
 
         // Marqueurs de la carte : un cercle par alerte géolocalisée, sinon une
         // entrée par (alerte × quartier) géolocalisé pour les alertes héritées.
@@ -145,6 +153,15 @@ class AlerteController extends Controller
         return view('back.alertes.create', compact('quartiers', 'alerte', 'niveaux', 'meteo', 'meteoLieu'));
     }
 
+    public function show(int $id)
+    {
+        $this->authorizeAlerte($id);
+
+        $alerte = Alerte::with(['quartiers', 'user', 'validateur'])->findOrFail($id);
+
+        return view('back.alertes.show', compact('alerte'));
+    }
+
     public function store(StoreAlerteRequest $request)
     {
         $data = $this->donnees($request);
@@ -152,6 +169,9 @@ class AlerteController extends Controller
 
         $alerte = Alerte::create($data);
         $alerte->quartiers()->sync($this->quartierIds($request->user(), (array) $request->input('quartier_ids', [])));
+
+        // Boucle de retour : le gestionnaire a-t-il suivi la suggestion IA ?
+        $this->finaliserPrediction($request, $alerte);
 
         return redirect()->route('back.alertes.index')
             ->with('success', 'Alerte créée avec succès.');
@@ -177,6 +197,8 @@ class AlerteController extends Controller
         $alerte->update($this->donnees($request));
         $alerte->quartiers()->sync($this->quartierIds($request->user(), (array) $request->input('quartier_ids', [])));
 
+        $this->finaliserPrediction($request, $alerte);
+
         return redirect()->route('back.alertes.index')
             ->with('success', 'Alerte mise à jour avec succès.');
     }
@@ -198,20 +220,31 @@ class AlerteController extends Controller
     {
         $this->authorizeAlerte($id);
 
-        Alerte::findOrFail($id)->update([
+        $alerte = Alerte::findOrFail($id);
+
+        $alerte->update([
             'validee' => true,
             'validee_le' => now(),
             'validee_par' => $request->user()?->id,
         ]);
+
+        // Publication = niveau effectivement retenu : on fige la correction sur
+        // les prédictions IA rattachées (niveau_final connu côté modèle+règles).
+        $this->finaliserPredictionsLiees($alerte);
 
         return redirect()->route('back.alertes.index')
             ->with('success', 'Alerte validée et publiée.');
     }
 
     /**
-     * « Pré-remplir météo + IA » : récupère la météo (live ou override
-     * manuel), classe le niveau par règles, et — à la demande — rédige un
-     * message via Groq. Ne renvoie jamais 500 : `ok:false` si pas de météo.
+     * « Pré-remplir météo + IA » : récupère la météo (live ou override manuel),
+     * classe le niveau via le moteur HYBRIDE (classifieur ML + plancher de
+     * règles), expose les probabilités / facteurs / désaccord, et — à la
+     * demande — rédige un message (générateur local par défaut).
+     *
+     * Chaque appel trace une ligne `ai_predictions` (features + niveaux) pour la
+     * boucle de retour d'expérience. Ne renvoie jamais 500 : `ok:false` si la
+     * météo est indisponible, repli sur les règles seules si l'IA défaille.
      */
     public function prefill(PredictAlerteRequest $request): JsonResponse
     {
@@ -225,19 +258,38 @@ class AlerteController extends Controller
 
         $latitude = $request->filled('latitude') ? (float) $request->input('latitude') : null;
         $longitude = $request->filled('longitude') ? (float) $request->input('longitude') : null;
+        $overrideManuel = $request->filled('temperature_actuelle');
 
-        if ($request->filled('temperature_actuelle')) {
-            // Override manuel : aucun appel WeatherAPI.
-            $meteo = new MeteoActuelle(
-                temperature: (float) $request->input('temperature_actuelle'),
-                humidite: $request->filled('humidite') ? (int) $request->input('humidite') : null,
-                source: 'manuel',
-            );
-        } elseif ($latitude !== null && $longitude !== null) {
-            // Ciblage géographique : météo au point exact.
-            $meteo = $this->meteo->actuel($latitude, $longitude);
-        } else {
-            $meteo = $this->meteo->actuelPourQuartiers($quartiers);
+        // Acquisition météo + prévisions : isolée dans un try/catch pour que
+        // l'endpoint ne renvoie JAMAIS 500, même si WeatherService régresse.
+        $previsions = [];
+
+        try {
+            if ($overrideManuel) {
+                // Override manuel : aucun appel WeatherAPI.
+                $meteo = new MeteoActuelle(
+                    temperature: (float) $request->input('temperature_actuelle'),
+                    humidite: $request->filled('humidite') ? (int) $request->input('humidite') : null,
+                    source: 'manuel',
+                );
+            } elseif ($latitude !== null && $longitude !== null) {
+                // Ciblage géographique : météo au point exact.
+                $meteo = $this->meteo->actuel($latitude, $longitude);
+            } else {
+                $meteo = $this->meteo->actuelPourQuartiers($quartiers);
+            }
+
+            // Prévisions horaires : jamais en override manuel (pas d'appel
+            // réseau quand la température est saisie à la main). Non bloquant.
+            if (! $overrideManuel) {
+                $previsions = ($latitude !== null && $longitude !== null)
+                    ? $this->meteo->previsions($latitude, $longitude, 48)
+                    : $this->meteo->previsionsPourQuartiers($quartiers, 48);
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Prévisions météo : repli sans prévision horaire', ['message' => $e->getMessage()]);
+            $meteo = $meteo ?? null;
+            $previsions = [];
         }
 
         if (! $meteo) {
@@ -247,23 +299,67 @@ class AlerteController extends Controller
             ]);
         }
 
-        $historique = $ids !== [] ? $this->ia->historiquePourQuartier((int) $ids[0], 3) : [];
-        $analyse = $this->ia->analyse($meteo->temperature, $meteo->humidite, $historique, $seuil);
-        $niveau = $analyse['niveau'];
+        // Historique sur TOUS les quartiers visés, pas seulement le premier.
+        $historique = $ids !== [] ? $this->ia->historiquePourQuartier($ids, 3) : [];
+
+        $contexte = [
+            'temperature' => $meteo->temperature,
+            'ressentie' => $meteo->ressentie,
+            'humidite' => $meteo->humidite,
+            'seuil' => $seuil,
+            'historique' => $historique,
+            'previsions' => $previsions,
+        ];
+
+        $prediction = $this->predireSansEchouer($contexte);
+        $niveau = $prediction['niveau'];
 
         $payload = [
             'ok' => true,
             'niveau' => $niveau->value,
             'niveau_label' => $niveau->label(),
             'badge_classes' => $niveau->badgeClasses(),
+            'niveau_modele' => $prediction['niveau_modele']?->value,
+            'niveau_regles' => $prediction['niveau_regles']?->value,
             'temperature' => round($meteo->temperature, 1),
             'ressentie' => $meteo->ressentie,
             'humidite' => $meteo->humidite,
             'source' => $meteo->source,
+            'ville' => $meteo->ville,
+            'condition' => $meteo->condition,
+            'vent' => $meteo->vent,
+            'ia_source' => $prediction['source'],
             'historique' => $historique,
-            'raison' => $analyse['raison'],
+            'raison' => $prediction['raison'],
+            'probabilites' => $prediction['probabilites'],
+            'confiance' => $prediction['confiance'],
+            'facteurs' => $prediction['facteurs'],
+            'desaccord' => $prediction['desaccord'],
+            'model_version' => $prediction['model_version'],
+            'modele_disponible' => $prediction['modele_disponible'],
             'message' => null,
+            'prediction_id' => null,
         ];
+
+        // Trace de la prédiction : contexte brut reproductible + niveaux, pour la
+        // boucle de retour (l'alerte sera rattachée à l'enregistrement).
+        try {
+            $trace = AiPrediction::create([
+                'alerte_id' => null,
+                'quartier_ids' => $ids,
+                'context' => $contexte,
+                'niveau_modele' => $prediction['niveau_modele']?->value,
+                'probabilites' => $prediction['probabilites'],
+                'niveau_regles' => $prediction['niveau_regles']?->value,
+                'niveau_final' => null,
+                'model_version' => $prediction['model_version'],
+                'source' => $prediction['source'],
+            ]);
+
+            $payload['prediction_id'] = $trace->id;
+        } catch (\Throwable $e) {
+            Log::warning('Trace IA canicule : enregistrement impossible', ['message' => $e->getMessage()]);
+        }
 
         if ($request->boolean('avec_message') || $request->filled('profil')) {
             $profils = [];
@@ -278,12 +374,96 @@ class AlerteController extends Controller
                 'quartiers' => $quartiers->pluck('nom')->all() ?: ['Zone ciblée par cercle'],
                 'seuil_temperature' => $seuil,
                 'temperature_actuelle' => round($meteo->temperature, 1),
+                'temperature_ressentie' => $meteo->ressentie,
                 'humidite' => $meteo->humidite,
-                'raison' => $analyse['raison'],
+                'raison' => $prediction['raison'],
             ], $profils);
         }
 
         return response()->json($payload);
+    }
+
+    /**
+     * Prédiction hybride infaillible : le moteur ne lève jamais, mais on
+     * garantit ici un repli « règles seules » même en cas d'erreur imprévue,
+     * pour que `prefill` ne renvoie JAMAIS 500.
+     *
+     * @param  array<string, mixed>  $contexte
+     * @return array<string, mixed>
+     */
+    private function predireSansEchouer(array $contexte): array
+    {
+        try {
+            return $this->ia->predict($contexte);
+        } catch (\Throwable $e) {
+            Log::warning('Prévision IA canicule : repli sur les règles', ['message' => $e->getMessage()]);
+
+            $analyse = $this->ia->analyse(
+                (float) (is_numeric($contexte['temperature'] ?? null) ? $contexte['temperature'] : config('ai.defaults.temperature', 25.0)),
+                is_numeric($contexte['humidite'] ?? null) ? (int) $contexte['humidite'] : null,
+                is_array($contexte['historique'] ?? null) ? $contexte['historique'] : [],
+                is_numeric($contexte['seuil'] ?? null) ? (float) $contexte['seuil'] : null,
+            );
+
+            return [
+                'niveau' => $analyse['niveau'],
+                'niveau_final' => $analyse['niveau']->value,
+                'niveau_modele' => null,
+                'niveau_regles' => $analyse['niveau_regles'],
+                'probabilites' => [],
+                'confiance' => 0.0,
+                'facteurs' => [],
+                'desaccord' => false,
+                'raison' => $analyse['raison'],
+                'model_version' => null,
+                'source' => 'regles',
+                'contexte' => $contexte,
+                'modele_disponible' => false,
+            ];
+        }
+    }
+
+    /**
+     * Rattache la prédiction tracée au formulaire (champ caché) et fige le
+     * niveau réellement enregistré comme `niveau_final` (correction).
+     */
+    private function finaliserPrediction(Request $request, Alerte $alerte): void
+    {
+        $id = $request->input('ai_prediction_id');
+
+        if ($id === null || $id === '') {
+            return;
+        }
+
+        try {
+            $prediction = AiPrediction::find((int) $id);
+
+            if ($prediction) {
+                $prediction->forceFill([
+                    'alerte_id' => $alerte->id,
+                    'niveau_final' => $alerte->niveau?->value,
+                ])->save();
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Trace IA canicule : rattachement impossible', ['message' => $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Fige le niveau publié sur les prédictions déjà rattachées à l'alerte
+     * (cas d'un brouillon issu de `ai:predict-daily` validé sans repasser par
+     * le formulaire).
+     */
+    private function finaliserPredictionsLiees(Alerte $alerte): void
+    {
+        try {
+            AiPrediction::query()
+                ->where('alerte_id', $alerte->id)
+                ->whereNull('niveau_final')
+                ->update(['niveau_final' => $alerte->niveau?->value]);
+        } catch (\Throwable $e) {
+            Log::warning('Trace IA canicule : finalisation impossible', ['message' => $e->getMessage()]);
+        }
     }
 
     /**
@@ -354,7 +534,7 @@ class AlerteController extends Controller
     private function donnees(StoreAlerteRequest $request): array
     {
         $data = $request->validated();
-        unset($data['quartier_ids']);
+        unset($data['quartier_ids'], $data['ai_prediction_id']);
 
         if (empty($data['source_meteo'])) {
             $data['source_meteo'] = 'manuel';

@@ -3,11 +3,15 @@
 namespace App\Services;
 
 use App\Models\Signalement;
+use App\Models\SignalementAnalyse;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class SignalementTriageService
 {
+    private const VERSION_MODELE = 'regles-v1';
+
     private const URGENCES = [
         'normale' => 20,
         'prioritaire' => 60,
@@ -47,23 +51,14 @@ class SignalementTriageService
             $descriptions[$signalement->id] = $this->motsCles($signalement->description);
         }
 
+        $analyses = [];
         foreach ($signalements as $signalement) {
             $analyse = $this->urgencyEstimator->evaluer($signalement->description);
-            $scoreEnregistre = self::URGENCES[$signalement->urgence] ?? 0;
-            $scorePriorite = max($scoreEnregistre, $analyse['pourcentage']);
-
-            $signalement->setAttribute('urgence_suggeree', match (true) {
+            $urgenceSuggeree = match (true) {
                 $analyse['pourcentage'] >= 80 => 'vitale',
                 $analyse['pourcentage'] >= 50 => 'prioritaire',
                 default => 'normale',
-            });
-            $signalement->setAttribute('score_urgence_texte', $analyse['pourcentage']);
-            $signalement->setAttribute('indicateurs_urgence_texte', $analyse['indicateurs']);
-            $signalement->setAttribute('score_priorite_tri', $scorePriorite);
-            $signalement->setAttribute(
-                'termes_urgents_detectes',
-                $this->urgencyDetector->detecter($signalement->description),
-            );
+            };
 
             $lies = [];
             if ($signalement->statut !== 'resolu') {
@@ -89,17 +84,63 @@ class SignalementTriageService
 
                     $lies[] = [
                         'id' => $candidat->id,
-                        'habitant' => $candidat->habitant?->name ?? 'Habitant',
                     ];
                 }
             }
 
-            $signalement->setAttribute('signalements_lies', $lies);
+            $signalementsLies = array_values(array_unique(array_column($lies, 'id')));
+            sort($signalementsLies);
+            $analyses[$signalement->id] = [
+                'score_urgence' => $analyse['pourcentage'],
+                'urgence_suggeree' => $urgenceSuggeree,
+                'indicateurs_urgence' => $analyse['indicateurs'],
+                'termes_urgents' => $this->urgencyDetector->detecter($signalement->description),
+                'signalements_lies' => $signalementsLies,
+                'empreinte_description' => hash('sha256', $signalement->description),
+                'version_modele' => self::VERSION_MODELE,
+            ];
+        }
+
+        DB::transaction(function () use ($signalements, $analyses): void {
+            foreach ($signalements as $signalement) {
+                $analyse = SignalementAnalyse::firstOrNew(['signalement_id' => $signalement->id]);
+                $analyse->fill($analyses[$signalement->id]);
+
+                if ($analyse->isDirty()) {
+                    $analyse->analysee_le = now();
+                    $analyse->save();
+                }
+            }
+        });
+
+        foreach ($signalements as $signalement) {
+            $analyse = SignalementAnalyse::where('signalement_id', $signalement->id)->firstOrFail();
+            $signalement->setRelation('analyseIa', $analyse);
+            $scoreEnregistre = self::URGENCES[$signalement->urgence] ?? 0;
+            $signalement->setAttribute('urgence_suggeree', $analyse->urgence_suggeree);
+            $signalement->setAttribute('score_urgence_texte', $analyse->score_urgence);
+            $signalement->setAttribute('indicateurs_urgence_texte', $analyse->indicateurs_urgence ?? []);
+            $signalement->setAttribute('score_priorite_tri', max($scoreEnregistre, $analyse->score_urgence));
+            $signalement->setAttribute('termes_urgents_detectes', $analyse->termes_urgents ?? []);
+            $signalement->setAttribute('signalements_lies', array_map(
+                fn (int $id): array => ['id' => $id],
+                $analyse->signalements_lies ?? [],
+            ));
         }
 
         return $signalements
             ->sortByDesc(fn (Signalement $signalement): int => $signalement->score_priorite_tri)
             ->values();
+    }
+
+    /**
+     * Recomputes and stores the analysis for every report.
+     *
+     * @return Collection<int, Signalement>
+     */
+    public function actualiser(): Collection
+    {
+        return $this->trier(Signalement::with('habitant')->get());
     }
 
     private function dansLaFenetre(Signalement $premier, Signalement $second): bool

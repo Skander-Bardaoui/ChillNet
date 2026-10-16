@@ -1,96 +1,102 @@
-<section>
-    <header>
-        <h2 class="text-lg font-medium text-gray-900 dark:text-gray-100">
-            {{ __('Profile Information') }}
-        </h2>
+@php
+    $user = $user ?? auth()->user();
+    $profilsSelectionnes = old('profil_vulnerabilites', $user->profilsVulnerabilite());
+    $profilsSelectionnes = array_map(fn ($p) => $p instanceof \App\Enums\ProfilVulnerabilite ? $p->value : (string) $p, $profilsSelectionnes);
+@endphp
 
-        <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
-            {{ __("Update your account's profile information and email address.") }}
-        </p>
+<section class="flex flex-col gap-space-sm">
+    <header class="flex items-start gap-3">
+        <span class="p-2.5 rounded-xl bg-primary/10 text-primary shrink-0">
+            <span class="material-symbols-outlined text-[22px]">badge</span>
+        </span>
+        <div>
+            <h2 class="font-title-md text-title-md text-on-surface">Informations personnelles</h2>
+            <p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Mettez à jour votre nom et votre adresse e-mail.</p>
+        </div>
     </header>
+
+    {{-- Contexte du compte : rôle applicatif (et résidence pour les foyers rattachés). --}}
+    <div class="rounded-xl bg-surface-container border border-outline-variant/30 px-3 py-2.5 flex items-center gap-2 flex-wrap">
+        <span class="material-symbols-outlined text-primary text-[20px]">verified_user</span>
+        <span class="font-label-sm text-label-sm text-on-surface-variant">Rôle</span>
+        <span class="font-label-md text-label-md text-on-surface">{{ $user->role?->label() ?? '—' }}</span>
+        @if ($user->residence)
+            <span class="text-outline-variant">·</span>
+            <span class="material-symbols-outlined text-primary text-[20px]">home_work</span>
+            <span class="font-label-sm text-label-sm text-on-surface-variant">Résidence</span>
+            <span class="font-label-md text-label-md text-on-surface">{{ $user->residence->nom }}</span>
+        @endif
+    </div>
 
     <form id="send-verification" method="post" action="{{ route('verification.send') }}">
         @csrf
     </form>
 
-    <form method="post" action="{{ route('profile.update') }}" class="mt-6 space-y-6">
+    <form method="post" action="{{ route('profile.update') }}" class="flex flex-col gap-4">
         @csrf
         @method('patch')
 
-        <div>
-            <x-input-label for="name" :value="__('Name')" />
-            <x-text-input id="name" name="name" type="text" class="mt-1 block w-full" :value="old('name', $user->name)" required autofocus autocomplete="name" />
-            <x-input-error class="mt-2" :messages="$errors->get('name')" />
-        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="flex flex-col gap-1">
+                <label for="name" class="font-label-sm text-label-sm text-on-surface-variant">Nom</label>
+                <input id="name" name="name" type="text" value="{{ old('name', $user->name) }}" required autofocus autocomplete="name"
+                       class="rounded-xl bg-surface-container border border-outline-variant/40 px-3 py-2.5 text-on-surface focus:border-primary-container focus:outline-none" />
+                <x-input-error class="mt-1" :messages="$errors->get('name')" />
+            </div>
 
-        <div>
-            <x-input-label for="email" :value="__('Email')" />
-            <x-text-input id="email" name="email" type="email" class="mt-1 block w-full" :value="old('email', $user->email)" required autocomplete="username" />
-            <x-input-error class="mt-2" :messages="$errors->get('email')" />
+            <div class="flex flex-col gap-1">
+                <label for="email" class="font-label-sm text-label-sm text-on-surface-variant">Adresse e-mail</label>
+                <input id="email" name="email" type="email" value="{{ old('email', $user->email) }}" required autocomplete="username"
+                       class="rounded-xl bg-surface-container border border-outline-variant/40 px-3 py-2.5 text-on-surface focus:border-primary-container focus:outline-none" />
+                <x-input-error class="mt-1" :messages="$errors->get('email')" />
 
-            @if ($user instanceof \Illuminate\Contracts\Auth\MustVerifyEmail && ! $user->hasVerifiedEmail())
-                <div>
-                    <p class="text-sm mt-2 text-gray-800 dark:text-gray-200">
-                        {{ __('Your email address is unverified.') }}
-
-                        <button form="send-verification" class="underline text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                            {{ __('Click here to re-send the verification email.') }}
+                @if ($user instanceof \Illuminate\Contracts\Auth\MustVerifyEmail && ! $user->hasVerifiedEmail())
+                    <p class="font-body-sm text-body-sm text-on-surface-variant mt-1">
+                        Votre adresse e-mail n'est pas vérifiée.
+                        <button form="send-verification" class="underline text-primary hover:opacity-80 focus:outline-none">
+                            Renvoyer l'e-mail de vérification.
                         </button>
                     </p>
 
                     @if (session('status') === 'verification-link-sent')
-                        <p class="mt-2 font-medium text-sm text-green-600">
-                            {{ __('A new verification link has been sent to your email address.') }}
-                        </p>
+                        <p class="font-body-sm text-body-sm text-green-700 mt-1">Un nouveau lien de vérification a été envoyé.</p>
                     @endif
-                </div>
-            @endif
-        </div>
-
-        <div>
-            <x-input-label :value="__('Profil de vulnérabilité du foyer')" />
-            <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                {{ __("Cochez ce qui s'applique à votre foyer : les messages de vigilance canicule seront adaptés (hydratation, appels, équipements médicaux). Laissez vide pour un profil standard.") }}
-            </p>
-
-            @php
-                $profilsSelectionnes = old('profil_vulnerabilites', $user->profilsVulnerabilite());
-                $profilsSelectionnes = array_map(fn ($p) => $p instanceof \App\Enums\ProfilVulnerabilite ? $p->value : (string) $p, $profilsSelectionnes);
-            @endphp
-
-            <div class="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3">
-                @foreach (\App\Enums\ProfilVulnerabilite::cases() as $profil)
-                    @continue($profil === \App\Enums\ProfilVulnerabilite::Standard)
-                    <label class="flex items-start gap-2 rounded-xl border border-gray-200 dark:border-gray-700 px-3 py-2.5 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800">
-                        <input
-                            type="checkbox"
-                            name="profil_vulnerabilites[]"
-                            value="{{ $profil->value }}"
-                            @checked(in_array($profil->value, $profilsSelectionnes, true))
-                            class="mt-0.5 h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                        />
-                        <span class="flex items-center gap-1.5 text-sm text-gray-700 dark:text-gray-300">
-                            <span class="material-symbols-outlined text-[18px]">{{ $profil->icone() }}</span>
-                            {{ $profil->label() }}
-                        </span>
-                    </label>
-                @endforeach
+                @endif
             </div>
-
-            <x-input-error class="mt-2" :messages="$errors->get('profil_vulnerabilites')" />
         </div>
 
-        <div class="flex items-center gap-4">
-            <x-primary-button>{{ __('Save') }}</x-primary-button>
+        @if ($user->isHabitant())
+            <div class="flex flex-col gap-1">
+                <span class="font-label-sm text-label-sm text-on-surface-variant">Profil de vulnérabilité du foyer</span>
+                <p class="font-body-sm text-body-sm text-on-surface-variant">
+                    Cochez ce qui s'applique à votre foyer : les messages de vigilance canicule seront adaptés (hydratation, appels, équipements médicaux). Laissez vide pour un profil standard.
+                </p>
+
+                <div class="mt-2 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    @foreach (\App\Enums\ProfilVulnerabilite::cases() as $profil)
+                        @continue($profil === \App\Enums\ProfilVulnerabilite::Standard)
+                        <label class="flex items-start gap-2 rounded-xl border border-outline-variant/40 px-3 py-2.5 cursor-pointer hover:bg-surface-container-high transition-colors">
+                            <input type="checkbox" name="profil_vulnerabilites[]" value="{{ $profil->value }}"
+                                   @checked(in_array($profil->value, $profilsSelectionnes, true))
+                                   class="mt-0.5 h-5 w-5 rounded border-outline-variant text-primary-container focus:ring-primary-container" />
+                            <span class="flex items-center gap-1.5 font-body-sm text-body-sm text-on-surface">
+                                <span class="material-symbols-outlined text-[18px] text-primary">{{ $profil->icone() }}</span>
+                                {{ $profil->label() }}
+                            </span>
+                        </label>
+                    @endforeach
+                </div>
+
+                <x-input-error class="mt-1" :messages="$errors->get('profil_vulnerabilites')" />
+            </div>
+        @endif
+
+        <div class="flex items-center gap-3">
+            <x-primary-button>Enregistrer</x-primary-button>
 
             @if (session('status') === 'profile-updated')
-                <p
-                    x-data="{ show: true }"
-                    x-show="show"
-                    x-transition
-                    x-init="setTimeout(() => show = false, 2000)"
-                    class="text-sm text-gray-600 dark:text-gray-400"
-                >{{ __('Saved.') }}</p>
+                <p x-data="{ show: true }" x-show="show" x-transition x-init="setTimeout(() => show = false, 2500)"
+                   class="font-body-sm text-body-sm text-green-700">Enregistré.</p>
             @endif
         </div>
     </form>

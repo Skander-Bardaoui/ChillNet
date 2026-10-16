@@ -1,0 +1,190 @@
+﻿description;urgence;residence_id;categorie;date_signalement;groupe_panne
+L'éclairage du couloir du deuxième étage ne fonctionne plus.;normale;5;panne locale;2026-07-02;G021
+Du bruit régulier dans le couloir tard le soir.;normale;5;autre;2026-07-02;G004
+Petite coupure de courant dans le couloir qui est revenu seul.;normale;5;coupure;2026-07-02;
+Le joint du lavabo du local poubelles suinte légèrement.;normale;5;fuite;2026-07-04;G012
+Un mur du balcon s'effondre et menace les passants.;urgente;4;autre;2026-07-04;
+Une fuite lente sous le lavabo de la cuisine commune.;normale;1;fuite;2026-07-04;
+Une flaque d'eau grandit chaque jour dans le parking souterrain.;prioritaire;1;fuite;2026-07-06;
+Forte odeur de gaz dans la cage d'escalier.;urgente;2;autre;2026-07-06;
+Une vitre cassée dans le hall d'entrée, du verre au sol.;prioritaire;3;autre;2026-07-07;
+Plus d'eau depuis ce matin dans tout le bâtiment.;prioritaire;4;coupure;2026-07-08;
+Fumée qui sort du local électrique au sous-sol.;urgente;1;panne locale;2026-07-08;G010
+Coupure de courant répétée, le frigo des voisins âgés est en danger.;prioritaire;5;coupure;2026-07-08;
+Coupure de courant totale en pleine canicule, des personnes âgées et des bébés sont dans les logements.;urgente;2;coupure;2026-07-08;G014
+Pas d'eau depuis la nuit et aucune information du gestionnaire.;prioritaire;3;coupure;2026-07-08;
+Coupure de courant totale en pleine canicule, des personnes âgées et des bébés sont dans les logements.;urgente;2;coupure;2026-07-09;G014
+La porte automatique du garage est bloquée en position ouverte.;prioritaire;1;panne locale;2026-07-10;G001
+Un arbre penché menace de tomber sur le parking.;prioritaire;1;autre;2026-07-10;
+Coupure de courant totale en pleine canicule, des personnes âgées et des bébés sont dans les logements.;urgente;5;coupure;2026-07-11;
+La porte du garage met du temps à se fermer.;normale;5;panne locale;2026-07-11;
+Le robinet du couloir goutte depuis deux jours.;normale;5;fuite;2026-07-12;G005
+Le chauffe-eau collectif fuit abondamment et la pièce se remplit d'eau.;urgente;4;fuite;2026-07-12;
+Petite tache d'humidité au plafond du hall, sans écoulement visible.;normale;1;fuite;2026-07-12;
+L'eau chaude a été coupée une heure puis est revenue.;normale;5;coupure;2026-07-13;
+Panne totale d'électricité dans le bâtiment avec une personne sous assistance respiratoire.;urgente;1;panne locale;2026-07-13;
+Une goutte tombe du siphon dans la buanderie.;normale;3;fuite;2026-07-14;
+Un vélo abandonné occupe le local depuis longtemps.;normale;1;autre;2026-07-14;
+La lumière du parking clignote de temps en temps.;normale;3;panne locale;2026-07-15;G006
+Le chauffe-eau collectif fuit abondamment et la pièce se remplit d'eau.;urgente;1;fuite;2026-07-15;
+Le néon du local vélos est cassé.;normale;1;panne locale;2026-07-15;G013
+Tout l'éclairage de l'escalier est éteint depuis hier soir.;prioritaire;2;panne locale;2026-07-17;G020
+Des graffitis sont apparus sur le mur du parking.;normale;4;autre;2026-07-17;
+Courte coupure d'électricité hier soir, tout est rétabli.;normale;4;coupure;2026-07-18;G002
+Une fuite lente sous le lavabo de la cuisine commune.;normale;2;fuite;2026-07-18;
+Du bruit régulier dans le couloir tard le soir.;normale;1;autre;2026-07-18;
+Grosse fuite d'eau qui traverse le plafond sur les prises électriques.;urgente;2;fuite;2026-07-18;
+Fuite d'eau près du tableau électrique, risque de court-circuit.;urgente;4;fuite;2026-07-19;G011
+Une rampe d'escalier est arrachée, risque de chute.;prioritaire;5;autre;2026-07-19;
+Plus d'eau chaude depuis trois jours pour tous les logements.;prioritaire;4;coupure;2026-07-20;
+Un vélo abandonné occupe le local depuis longtemps.;normale;5;autre;2026-07-20;
+Fuite sous l'évier commun, le meuble est gonflé d'eau.;prioritaire;2;fuite;2026-07-21;G007
+Le mur de l'escalier est trempé et l'eau continue de couler.;prioritaire;3;fuite;2026-07-21;G019
+Courte coupure d'électricité hier soir, tout est rétabli.;normale;4;coupure;2026-07-24;G002
+Panne totale d'électricité dans le bâtiment avec une personne sous assistance respiratoire.;urgente;4;panne locale;2026-07-25;G015
+Coupure d'eau pendant deux heures ce matin, l'eau est revenue.;normale;2;coupure;2026-07-25;
+Le joint du lavabo du local poubelles suinte légèrement.;normale;5;fuite;2026-07-26;G012
+Une infestation de cafards dans le local poubelles se propage aux étages.;prioritaire;3;autre;2026-07-27;G029
+L'ascenseur est bloqué entre deux étages avec une personne à l'intérieur.;urgente;4;panne locale;2026-07-28;
+Une goutte tombe du siphon dans la buanderie.;normale;2;fuite;2026-07-28;
+Un tuyau a éclaté dans le couloir, l'eau inonde tout l'étage.;urgente;1;fuite;2026-07-28;
+Plus de lumière dans le parking souterrain, c'est dangereux la nuit.;prioritaire;2;panne locale;2026-07-29;
+De l'eau s'infiltre dans le local compteurs depuis le plafond.;prioritaire;5;fuite;2026-07-29;
+La porte automatique du garage est bloquée en position ouverte.;prioritaire;1;panne locale;2026-07-30;G001
+Petite tache d'humidité au plafond du hall, sans écoulement visible.;normale;2;fuite;2026-07-30;
+Fuite importante sur la colonne d'eau du couloir, le sol est mouillé.;prioritaire;1;fuite;2026-07-30;G018
+Un enfant est resté bloqué sur le toit, il faut intervenir immédiatement.;urgente;2;autre;2026-07-31;G016
+Les poubelles ne sont pas ramassées depuis trois jours.;normale;3;autre;2026-07-31;G017
+La porte du garage met du temps à se fermer.;normale;1;panne locale;2026-07-31;
+La porte du garage met du temps à se fermer.;normale;3;panne locale;2026-07-31;
+Inondation dans le sous-sol, l'eau monte rapidement.;urgente;2;fuite;2026-08-01;
+Une fuite lente sous le lavabo de la cuisine commune.;normale;3;fuite;2026-08-01;
+Des mauvaises herbes envahissent l'entrée de la résidence.;normale;1;autre;2026-08-01;
+Coupure d'eau pendant deux heures ce matin, l'eau est revenue.;normale;1;coupure;2026-08-01;
+Un câble électrique dénudé pend dans le couloir.;urgente;4;panne locale;2026-08-01;
+L'éclairage du couloir du deuxième étage ne fonctionne plus.;normale;5;panne locale;2026-08-02;G021
+Le robinet extérieur du jardin fuit légèrement.;normale;5;fuite;2026-08-03;
+Coupure d'électricité depuis six heures dans les étages supérieurs.;prioritaire;4;coupure;2026-08-03;G008
+Les poubelles ne sont pas ramassées depuis trois jours.;normale;3;autre;2026-08-03;G017
+Tout l'éclairage de l'escalier est éteint depuis hier soir.;prioritaire;2;panne locale;2026-08-03;G020
+De l'eau s'infiltre dans le local compteurs depuis le plafond.;prioritaire;4;fuite;2026-08-04;
+Un tuyau a éclaté dans le couloir, l'eau inonde tout l'étage.;urgente;4;fuite;2026-08-04;
+Une vitre cassée dans le hall d'entrée, du verre au sol.;prioritaire;4;autre;2026-08-05;
+Des mauvaises herbes envahissent l'entrée de la résidence.;normale;3;autre;2026-08-06;
+Un vélo abandonné occupe le local depuis longtemps.;normale;3;autre;2026-08-06;
+Coupure d'électricité depuis six heures dans les étages supérieurs.;prioritaire;4;coupure;2026-08-06;G008
+Plus d'eau chaude depuis trois jours pour tous les logements.;prioritaire;2;coupure;2026-08-07;
+L'eau coule du plafond du deuxième étage lorsque les voisins utilisent la douche.;prioritaire;5;fuite;2026-08-07;G003
+Du bruit régulier dans le couloir tard le soir.;normale;5;autre;2026-08-08;G004
+La serrure du local compteurs a été forcée.;prioritaire;1;autre;2026-08-12;
+Odeur de brûlé et étincelles au niveau du tableau électrique du hall.;urgente;1;panne locale;2026-08-12;G022
+La chasse d'eau des toilettes communes coule un peu en continu.;normale;4;fuite;2026-08-13;
+Plus de lumière dans le parking souterrain, c'est dangereux la nuit.;prioritaire;1;panne locale;2026-08-13;
+Des mauvaises herbes envahissent l'entrée de la résidence.;normale;2;autre;2026-08-14;
+Le robinet extérieur du jardin fuit légèrement.;normale;3;fuite;2026-08-14;
+Début d'incendie dans le local poubelles.;urgente;1;autre;2026-08-15;
+Le mur de l'escalier est trempé et l'eau continue de couler.;prioritaire;3;fuite;2026-08-15;G019
+Forte odeur de gaz dans la cage d'escalier.;urgente;1;autre;2026-08-15;
+Panne totale d'électricité dans le bâtiment avec une personne sous assistance respiratoire.;urgente;4;panne locale;2026-08-15;G015
+Forte odeur de gaz dans la cage d'escalier.;urgente;3;autre;2026-08-16;
+L'eau coule du plafond du deuxième étage lorsque les voisins utilisent la douche.;prioritaire;5;fuite;2026-08-16;G003
+Grosse fuite d'eau qui traverse le plafond sur les prises électriques.;urgente;4;fuite;2026-08-16;G028
+La sonnette de l'interphone du troisième étage ne sonne plus.;normale;2;panne locale;2026-08-17;G024
+Fuite importante sur la colonne d'eau du couloir, le sol est mouillé.;prioritaire;1;fuite;2026-08-18;G018
+Une fuite d'eau est visible dans les parties communes près du hall.;prioritaire;1;fuite;2026-08-18;
+Plus d'eau depuis ce matin dans tout le bâtiment.;prioritaire;2;coupure;2026-08-18;
+Une goutte tombe du siphon dans la buanderie.;normale;1;fuite;2026-08-18;
+Canalisation cassée dans le hall, l'eau jaillit et inonde l'entrée.;urgente;1;fuite;2026-08-19;
+Fuite d'eau près du tableau électrique, risque de court-circuit.;urgente;4;fuite;2026-08-20;G011
+Plus d'eau depuis deux jours en pleine canicule, des habitants sont déshydratés.;urgente;2;coupure;2026-08-21;
+Coupure d'internet dans le hall pendant une demi-heure.;normale;2;coupure;2026-08-22;
+Le joint du lavabo du local poubelles suinte légèrement.;normale;5;fuite;2026-08-23;G012
+Le robinet du couloir goutte depuis deux jours.;normale;5;fuite;2026-08-24;G005
+L'interphone ne fonctionne plus pour tout l'immeuble.;prioritaire;5;panne locale;2026-08-24;
+La lumière du parking clignote de temps en temps.;normale;3;panne locale;2026-08-25;G006
+L'eau chaude a été coupée une heure puis est revenue.;normale;1;coupure;2026-08-26;
+La porte principale ne se verrouille plus, n'importe qui peut entrer.;prioritaire;3;panne locale;2026-08-26;
+La porte principale ne se verrouille plus, n'importe qui peut entrer.;prioritaire;5;panne locale;2026-08-27;
+Des graffitis sont apparus sur le mur du parking.;normale;3;autre;2026-08-28;G027
+La boîte aux lettres du rez-de-chaussée est cassée.;normale;1;autre;2026-08-28;
+La lumière du parking clignote de temps en temps.;normale;2;panne locale;2026-08-28;
+Fuite importante sur la colonne d'eau du couloir, le sol est mouillé.;prioritaire;3;fuite;2026-08-28;
+Courte coupure d'électricité hier soir, tout est rétabli.;normale;3;coupure;2026-08-29;
+Fumée qui sort du local électrique au sous-sol.;urgente;4;panne locale;2026-08-29;
+L'éclairage du couloir du deuxième étage ne fonctionne plus.;normale;5;panne locale;2026-08-29;G021
+Coupure d'internet dans le hall pendant une demi-heure.;normale;4;coupure;2026-08-31;
+Le néon du local vélos est cassé.;normale;3;panne locale;2026-09-01;
+Le portail du jardin grince beaucoup.;normale;2;autre;2026-09-03;
+Pas d'eau depuis la nuit et aucune information du gestionnaire.;prioritaire;4;coupure;2026-09-03;
+Le digicode de la porte d'entrée est parfois lent à répondre.;normale;3;panne locale;2026-09-03;
+Une infestation de cafards dans le local poubelles se propage aux étages.;prioritaire;3;autre;2026-09-03;G029
+Le digicode de la porte d'entrée est parfois lent à répondre.;normale;2;panne locale;2026-09-03;
+Odeur de brûlé et étincelles au niveau du tableau électrique du hall.;urgente;1;panne locale;2026-09-04;G022
+Fuite sous l'évier commun, le meuble est gonflé d'eau.;prioritaire;2;fuite;2026-09-07;G007
+Une fuite d'eau est visible dans les parties communes près du hall.;prioritaire;4;fuite;2026-09-07;
+Le portail du jardin grince beaucoup.;normale;1;autre;2026-09-07;
+Inondation dans le sous-sol, l'eau monte rapidement.;urgente;5;fuite;2026-09-07;
+La sonnette de l'interphone du troisième étage ne sonne plus.;normale;2;panne locale;2026-09-08;G024
+Un arbre penché menace de tomber sur le parking.;prioritaire;2;autre;2026-09-08;
+Un banc du jardin commun est cassé.;normale;4;autre;2026-09-08;
+L'interphone ne fonctionne plus pour tout l'immeuble.;prioritaire;2;panne locale;2026-09-08;G026
+Tout l'éclairage de l'escalier est éteint depuis hier soir.;prioritaire;4;panne locale;2026-09-09;
+La pompe du surpresseur est en panne, la pression d'eau est très faible aux étages.;prioritaire;5;panne locale;2026-09-09;
+Une odeur d'égout très forte dans les escaliers depuis deux jours.;prioritaire;4;autre;2026-09-09;G025
+Une odeur d'égout très forte dans les escaliers depuis deux jours.;prioritaire;4;autre;2026-09-10;G025
+La boîte aux lettres du rez-de-chaussée est cassée.;normale;5;autre;2026-09-11;
+Plus d'eau depuis deux jours en pleine canicule, des habitants sont déshydratés.;urgente;1;coupure;2026-09-11;G009
+Plus de climatisation ni d'eau, une résidente a fait un malaise à cause de la chaleur.;urgente;5;coupure;2026-09-11;
+Un câble électrique dénudé pend dans le couloir.;urgente;5;panne locale;2026-09-12;
+Pas d'eau depuis la nuit et aucune information du gestionnaire.;prioritaire;1;coupure;2026-09-13;
+Coupure de courant répétée, le frigo des voisins âgés est en danger.;prioritaire;1;coupure;2026-09-13;
+Une rampe d'escalier est arrachée, risque de chute.;prioritaire;3;autre;2026-09-13;
+Grosse fuite d'eau qui traverse le plafond sur les prises électriques.;urgente;4;fuite;2026-09-13;G028
+La pompe du surpresseur est en panne, la pression d'eau est très faible aux étages.;prioritaire;2;panne locale;2026-09-14;
+Léger suintement sur un tuyau dans le local technique.;normale;4;fuite;2026-09-14;
+Le néon du local vélos est cassé.;normale;1;panne locale;2026-09-15;G013
+Coupure d'électricité qui bloque les appareils médicaux d'un résident.;urgente;5;coupure;2026-09-15;
+Canalisation cassée dans le hall, l'eau jaillit et inonde l'entrée.;urgente;4;fuite;2026-09-15;
+Fuite sous l'évier commun, le meuble est gonflé d'eau.;prioritaire;1;fuite;2026-09-16;
+Le détecteur de mouvement du hall ne s'allume plus.;normale;5;panne locale;2026-09-16;
+Un banc du jardin commun est cassé.;normale;3;autre;2026-09-17;
+Un enfant est resté bloqué sur le toit, il faut intervenir immédiatement.;urgente;4;autre;2026-09-18;
+Coupure d'électricité qui bloque les appareils médicaux d'un résident.;urgente;1;coupure;2026-09-18;
+Le chauffe-eau collectif fuit abondamment et la pièce se remplit d'eau.;urgente;2;fuite;2026-09-19;
+Le détecteur de mouvement du hall ne s'allume plus.;normale;3;panne locale;2026-09-20;
+Une vitre cassée dans le hall d'entrée, du verre au sol.;prioritaire;1;autre;2026-09-20;
+La serrure du local compteurs a été forcée.;prioritaire;2;autre;2026-09-20;
+Fuite d'eau près du tableau électrique, risque de court-circuit.;urgente;2;fuite;2026-09-22;
+Plus de climatisation ni d'eau, une résidente a fait un malaise à cause de la chaleur.;urgente;4;coupure;2026-09-23;
+Plus d'eau chaude depuis trois jours pour tous les logements.;prioritaire;5;coupure;2026-09-23;
+La porte principale ne se verrouille plus, n'importe qui peut entrer.;prioritaire;4;panne locale;2026-09-24;
+Le mur de l'escalier est trempé et l'eau continue de couler.;prioritaire;2;fuite;2026-09-24;
+Les poubelles ne sont pas ramassées depuis trois jours.;normale;2;autre;2026-09-24;
+L'ascenseur est bloqué entre deux étages avec une personne à l'intérieur.;urgente;3;panne locale;2026-09-24;
+Début d'incendie dans le local poubelles.;urgente;2;autre;2026-09-24;
+Plus d'eau depuis deux jours en pleine canicule, des habitants sont déshydratés.;urgente;1;coupure;2026-09-25;G009
+Fumée qui sort du local électrique au sous-sol.;urgente;1;panne locale;2026-09-25;G010
+Le robinet du couloir goutte depuis deux jours.;normale;1;fuite;2026-09-25;
+Une ampoule est grillée dans l'escalier du bâtiment B.;normale;1;panne locale;2026-09-26;
+La chasse d'eau des toilettes communes coule un peu en continu.;normale;2;fuite;2026-09-28;
+Une flaque d'eau grandit chaque jour dans le parking souterrain.;prioritaire;2;fuite;2026-09-29;G023
+Un tuyau a éclaté dans le couloir, l'eau inonde tout l'étage.;urgente;5;fuite;2026-09-30;
+L'interphone ne fonctionne plus pour tout l'immeuble.;prioritaire;2;panne locale;2026-09-30;G026
+Une infestation de cafards dans le local poubelles se propage aux étages.;prioritaire;2;autre;2026-09-30;
+Un câble électrique dénudé pend dans le couloir.;urgente;2;panne locale;2026-10-01;
+Une odeur d'égout très forte dans les escaliers depuis deux jours.;prioritaire;2;autre;2026-10-03;
+Un mur du balcon s'effondre et menace les passants.;urgente;2;autre;2026-10-03;
+Inondation dans le sous-sol, l'eau monte rapidement.;urgente;3;fuite;2026-10-04;
+Une ampoule est grillée dans l'escalier du bâtiment B.;normale;5;panne locale;2026-10-05;
+Petite coupure de courant dans le couloir qui est revenu seul.;normale;1;coupure;2026-10-05;
+Des graffitis sont apparus sur le mur du parking.;normale;3;autre;2026-10-05;G027
+L'ascenseur est en panne depuis ce matin, plusieurs personnes âgées habitent aux étages élevés.;prioritaire;1;panne locale;2026-10-06;
+Une flaque d'eau grandit chaque jour dans le parking souterrain.;prioritaire;2;fuite;2026-10-07;G023
+De l'eau s'infiltre dans le local compteurs depuis le plafond.;prioritaire;3;fuite;2026-10-07;
+Une ampoule est grillée dans l'escalier du bâtiment B.;normale;3;panne locale;2026-10-07;
+Coupure d'eau pendant deux heures ce matin, l'eau est revenue.;normale;3;coupure;2026-10-11;
+Un enfant est resté bloqué sur le toit, il faut intervenir immédiatement.;urgente;2;autre;2026-10-11;G016
+Léger suintement sur un tuyau dans le local technique.;normale;3;fuite;2026-10-12;
+Le tuyau de descente est percé et l'eau inonde le balcon du premier.;prioritaire;1;fuite;2026-10-12;
+L'ascenseur est en panne depuis ce matin, plusieurs personnes âgées habitent aux étages élevés.;prioritaire;4;panne locale;2026-10-13;
+Le tuyau de descente est percé et l'eau inonde le balcon du premier.;prioritaire;2;fuite;2026-10-14;

@@ -21,7 +21,7 @@
 <td class="px-6 py-4 text-on-surface-variant">{{ $quartier->residences_count }}</td>
 <td class="px-6 py-4 text-right space-x-3 whitespace-nowrap">
 <a href="{{ route('back.quartiers.edit', $quartier->id) }}" class="text-primary hover:underline font-label-md text-label-md">Modifier</a>
-<form method="POST" action="{{ route('back.quartiers.destroy', $quartier->id) }}" class="inline" onsubmit="return confirm('Supprimer ce quartier ?');">@csrf @method('DELETE')<button type="submit" class="text-error hover:underline font-label-md text-label-md">Supprimer</button></form>
+<form method="POST" action="{{ route('back.quartiers.destroy', $quartier->id) }}" class="inline" data-confirm="Supprimer ce quartier ?">@csrf @method('DELETE')<button type="submit" class="text-error hover:underline font-label-md text-label-md">Supprimer</button></form>
 </td>
 </tr>
 @empty

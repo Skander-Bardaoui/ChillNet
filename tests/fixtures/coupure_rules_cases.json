@@ -1,0 +1,193 @@
+{
+    "_comment": "Parité des règles déterministes du module 2 (coupures). SOURCE DE VÉRITÉ UNIQUE, lue par le test PHP (tests/Unit/CoupureRulesParityTest.php) ET le test Python (ai-service/tests/test_coupures_rules.py). Les deux implémentations — CoupureRiskAiService::scoreDepuisContexte (PHP) et coupures.rules.score_regles (Python) — doivent produire exactement expected_score, expected_niveau, expected_facteurs et expected_raison.",
+    "_formule": "score = clip(0..100, min(35, 7*frequence) + (frequence>0 ? round(min(20, chaudes/frequence*20)) : 0) + chaleur + min(10, 4*en_cours + (confirmations>=3 ? 2 : 0))) ; chaleur = 35 si alerte rouge, 22 orange, 10 jaune, sinon 12 si temperature>=35, sinon 0.",
+    "_champs": {
+        "frequence": "nombre de coupures de la zone sur 14 jours",
+        "en_cours": "nombre de ces coupures au statut 'en cours'",
+        "chaudes": "nombre de coupures de type surcharge ou delestage",
+        "confirmations": "somme des confirmations des voisins",
+        "niveau_chaleur": "niveau d'alerte canicule couvrant la zone : jaune | orange | rouge | null",
+        "temperature": "pic de température de la zone (°C) ou null",
+        "expected_score": "score attendu (0–100)",
+        "expected_niveau": "niveau attendu : faible | modere | eleve | critique",
+        "expected_facteurs": "liste des facteurs, dans l'ordre d'ajout",
+        "expected_raison": "justification textuelle attendue"
+    },
+    "cases": [
+        {
+            "frequence": 0, "en_cours": 0, "chaudes": 0, "confirmations": 0,
+            "niveau_chaleur": null, "temperature": null,
+            "expected_score": 0, "expected_niveau": "faible",
+            "expected_facteurs": [],
+            "expected_raison": "0 coupure(s) en 14 j · alerte aucune · 0 en cours"
+        },
+        {
+            "frequence": 1, "en_cours": 0, "chaudes": 0, "confirmations": 0,
+            "niveau_chaleur": null, "temperature": null,
+            "expected_score": 7, "expected_niveau": "faible",
+            "expected_facteurs": ["1 coupure(s) ces 14 derniers jours"],
+            "expected_raison": "1 coupure(s) en 14 j · alerte aucune · 0 en cours"
+        },
+        {
+            "frequence": 2, "en_cours": 0, "chaudes": 0, "confirmations": 0,
+            "niveau_chaleur": null, "temperature": null,
+            "expected_score": 14, "expected_niveau": "faible",
+            "expected_facteurs": ["2 coupure(s) ces 14 derniers jours"],
+            "expected_raison": "2 coupure(s) en 14 j · alerte aucune · 0 en cours"
+        },
+        {
+            "frequence": 2, "en_cours": 0, "chaudes": 2, "confirmations": 0,
+            "niveau_chaleur": null, "temperature": null,
+            "expected_score": 34, "expected_niveau": "modere",
+            "expected_facteurs": [
+                "2 coupure(s) ces 14 derniers jours",
+                "2 coupure(s) de type surcharge/délestage"
+            ],
+            "expected_raison": "2 coupure(s) en 14 j · alerte aucune · 0 en cours"
+        },
+        {
+            "frequence": 4, "en_cours": 0, "chaudes": 0, "confirmations": 0,
+            "niveau_chaleur": null, "temperature": null,
+            "expected_score": 28, "expected_niveau": "modere",
+            "expected_facteurs": ["4 coupure(s) ces 14 derniers jours"],
+            "expected_raison": "4 coupure(s) en 14 j · alerte aucune · 0 en cours"
+        },
+        {
+            "frequence": 4, "en_cours": 1, "chaudes": 2, "confirmations": 0,
+            "niveau_chaleur": null, "temperature": null,
+            "expected_score": 42, "expected_niveau": "modere",
+            "expected_facteurs": [
+                "4 coupure(s) ces 14 derniers jours",
+                "2 coupure(s) de type surcharge/délestage",
+                "1 coupure(s) en cours"
+            ],
+            "expected_raison": "4 coupure(s) en 14 j · alerte aucune · 1 en cours"
+        },
+        {
+            "frequence": 5, "en_cours": 1, "chaudes": 5, "confirmations": 3,
+            "niveau_chaleur": "jaune", "temperature": 36,
+            "expected_score": 71, "expected_niveau": "eleve",
+            "expected_facteurs": [
+                "5 coupure(s) ces 14 derniers jours",
+                "5 coupure(s) de type surcharge/délestage",
+                "Vigilance jaune en cours",
+                "Pic de température 36,0°C",
+                "1 coupure(s) en cours"
+            ],
+            "expected_raison": "5 coupure(s) en 14 j · alerte Vigilance jaune · 1 en cours"
+        },
+        {
+            "frequence": 5, "en_cours": 2, "chaudes": 5, "confirmations": 5,
+            "niveau_chaleur": "rouge", "temperature": 38,
+            "expected_score": 100, "expected_niveau": "critique",
+            "expected_facteurs": [
+                "5 coupure(s) ces 14 derniers jours",
+                "5 coupure(s) de type surcharge/délestage",
+                "Vigilance rouge en cours",
+                "Pic de température 38,0°C",
+                "2 coupure(s) en cours"
+            ],
+            "expected_raison": "5 coupure(s) en 14 j · alerte Vigilance rouge · 2 en cours"
+        },
+        {
+            "frequence": 5, "en_cours": 0, "chaudes": 0, "confirmations": 0,
+            "niveau_chaleur": null, "temperature": 36,
+            "expected_score": 47, "expected_niveau": "modere",
+            "expected_facteurs": [
+                "5 coupure(s) ces 14 derniers jours",
+                "Pic de température 36,0°C"
+            ],
+            "expected_raison": "5 coupure(s) en 14 j · alerte aucune · 0 en cours"
+        },
+        {
+            "frequence": 3, "en_cours": 0, "chaudes": 3, "confirmations": 0,
+            "niveau_chaleur": "orange", "temperature": 30,
+            "expected_score": 63, "expected_niveau": "eleve",
+            "expected_facteurs": [
+                "3 coupure(s) ces 14 derniers jours",
+                "3 coupure(s) de type surcharge/délestage",
+                "Vigilance orange en cours",
+                "Pic de température 30,0°C"
+            ],
+            "expected_raison": "3 coupure(s) en 14 j · alerte Vigilance orange · 0 en cours"
+        },
+        {
+            "frequence": 3, "en_cours": 0, "chaudes": 1, "confirmations": 0,
+            "niveau_chaleur": null, "temperature": null,
+            "expected_score": 28, "expected_niveau": "modere",
+            "expected_facteurs": [
+                "3 coupure(s) ces 14 derniers jours",
+                "1 coupure(s) de type surcharge/délestage"
+            ],
+            "expected_raison": "3 coupure(s) en 14 j · alerte aucune · 0 en cours"
+        },
+        {
+            "frequence": 7, "en_cours": 1, "chaudes": 3, "confirmations": 1,
+            "niveau_chaleur": null, "temperature": null,
+            "expected_score": 48, "expected_niveau": "modere",
+            "expected_facteurs": [
+                "7 coupure(s) ces 14 derniers jours",
+                "3 coupure(s) de type surcharge/délestage",
+                "1 coupure(s) en cours"
+            ],
+            "expected_raison": "7 coupure(s) en 14 j · alerte aucune · 1 en cours"
+        },
+        {
+            "frequence": 6, "en_cours": 2, "chaudes": 6, "confirmations": 4,
+            "niveau_chaleur": "orange", "temperature": 37,
+            "expected_score": 87, "expected_niveau": "critique",
+            "expected_facteurs": [
+                "6 coupure(s) ces 14 derniers jours",
+                "6 coupure(s) de type surcharge/délestage",
+                "Vigilance orange en cours",
+                "Pic de température 37,0°C",
+                "2 coupure(s) en cours"
+            ],
+            "expected_raison": "6 coupure(s) en 14 j · alerte Vigilance orange · 2 en cours"
+        },
+        {
+            "frequence": 5, "en_cours": 3, "chaudes": 5, "confirmations": 2,
+            "niveau_chaleur": "jaune", "temperature": 34,
+            "expected_score": 75, "expected_niveau": "critique",
+            "expected_facteurs": [
+                "5 coupure(s) ces 14 derniers jours",
+                "5 coupure(s) de type surcharge/délestage",
+                "Vigilance jaune en cours",
+                "Pic de température 34,0°C",
+                "3 coupure(s) en cours"
+            ],
+            "expected_raison": "5 coupure(s) en 14 j · alerte Vigilance jaune · 3 en cours"
+        },
+        {
+            "frequence": 0, "en_cours": 0, "chaudes": 0, "confirmations": 0,
+            "niveau_chaleur": null, "temperature": 40,
+            "expected_score": 12, "expected_niveau": "faible",
+            "expected_facteurs": ["Pic de température 40,0°C"],
+            "expected_raison": "0 coupure(s) en 14 j · alerte aucune · 0 en cours"
+        },
+        {
+            "frequence": 2, "en_cours": 0, "chaudes": 2, "confirmations": 0,
+            "niveau_chaleur": null, "temperature": 34.9,
+            "expected_score": 34, "expected_niveau": "modere",
+            "expected_facteurs": [
+                "2 coupure(s) ces 14 derniers jours",
+                "2 coupure(s) de type surcharge/délestage",
+                "Pic de température 34,9°C"
+            ],
+            "expected_raison": "2 coupure(s) en 14 j · alerte aucune · 0 en cours"
+        },
+        {
+            "frequence": 5, "en_cours": 1, "chaudes": 5, "confirmations": 3,
+            "niveau_chaleur": "rouge", "temperature": 42,
+            "expected_score": 96, "expected_niveau": "critique",
+            "expected_facteurs": [
+                "5 coupure(s) ces 14 derniers jours",
+                "5 coupure(s) de type surcharge/délestage",
+                "Vigilance rouge en cours",
+                "Pic de température 42,0°C",
+                "1 coupure(s) en cours"
+            ],
+            "expected_raison": "5 coupure(s) en 14 j · alerte Vigilance rouge · 1 en cours"
+        }
+    ]
+}

@@ -80,6 +80,7 @@ class LieuController extends Controller
             ],
             'urls' => [
                 'store' => route('lieux.store'),
+                'adresse' => route('geocodage.inverse'),
             ],
             'defaut' => [36.8065, 10.1815],
         ];

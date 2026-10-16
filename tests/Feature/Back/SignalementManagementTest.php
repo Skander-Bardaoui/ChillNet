@@ -291,6 +291,12 @@ class SignalementManagementTest extends TestCase
             'id' => $signalement->id,
             'urgence' => 'normale',
         ]);
+        $this->assertDatabaseHas('signalement_analyses', [
+            'signalement_id' => $signalement->id,
+            'score_urgence' => 90,
+            'urgence_suggeree' => 'vitale',
+            'version_modele' => 'regles-v1',
+        ]);
     }
 
     public function test_back_office_suggests_urgency_from_description_without_changing_saved_urgency(): void
@@ -332,12 +338,13 @@ class SignalementManagementTest extends TestCase
             'residence_id' => $residence->id,
         ]);
         $habitants = User::factory()->count(2)->create(['role' => Role::Habitant]);
+        $reportIds = [];
 
         foreach ([
             [$habitants[0], 'L’ascenseur est en panne depuis ce matin dans le bâtiment.', 'nouveau'],
             [$habitants[1], 'La panne d’ascenseur bloque les habitants au deuxième étage.', 'en_traitement'],
         ] as [$habitant, $description, $statut]) {
-            Signalement::create([
+            $report = Signalement::create([
                 'user_id' => $habitant->id,
                 'residence_id' => $residence->id,
                 'categorie' => 'panne_locale',
@@ -346,6 +353,7 @@ class SignalementManagementTest extends TestCase
                 'description' => $description,
                 'date_signalement' => now()->toDateString(),
             ]);
+            $reportIds[] = $report->id;
         }
 
         $this->actingAs($gestionnaire)
@@ -353,6 +361,14 @@ class SignalementManagementTest extends TestCase
             ->assertOk()
             ->assertSee('Signalements possiblement liés')
             ->assertSee('autre(s) signalement(s) semblable(s) dans cette résidence');
+
+        $this->assertDatabaseHas('signalement_analyses', [
+            'signalement_id' => $reportIds[0],
+        ]);
+        $this->assertSame(
+            [$reportIds[1]],
+            \App\Models\SignalementAnalyse::where('signalement_id', $reportIds[0])->value('signalements_lies'),
+        );
     }
 
     public function test_resolved_or_different_residence_reports_are_not_grouped(): void

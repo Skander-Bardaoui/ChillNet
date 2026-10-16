@@ -11,7 +11,9 @@
         ['href' => route('back.coupures.index'), 'label' => 'Coupures', 'active' => request()->routeIs('back.coupures.*')],
         ['href' => route('back.points.index'), 'label' => 'Points de fraîcheur', 'active' => request()->routeIs('back.points.*')],
         ['href' => route('back.conseils.index'), 'label' => 'Conseils', 'active' => request()->routeIs('back.conseils.*')],
+        $estAdmin ? ['href' => route('back.equipement-types.index'), 'label' => 'Types d\'équipements', 'active' => request()->routeIs('back.equipement-types.*')] : null,
         ['href' => route('back.signalements.index'), 'label' => 'Signalements', 'active' => request()->routeIs('back.signalements.*')],
+        ['href' => route('profile.edit'), 'label' => 'Mon profil', 'active' => request()->routeIs('profile.*')],
     ]));
 @endphp
 <!DOCTYPE html>
@@ -65,8 +67,10 @@
 @if (session('error'))
 <div role="alert" class="rounded-xl bg-error-container text-on-error-container px-space-md py-space-sm flex items-center gap-2"><span class="material-symbols-outlined">warning</span><span>{{ session('error') }}</span></div>
 @endif
+<x-errors-banner />
 {{ $slot }}
 </main>
 </div>
+<x-confirm-delete />
 </body>
 </html>

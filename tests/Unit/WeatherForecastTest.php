@@ -93,6 +93,32 @@ class WeatherForecastTest extends TestCase
         $this->assertSame([], $this->service()->previsions(34.2000, 9.1000));
     }
 
+    public function test_previsions_memoises_a_success(): void
+    {
+        config(['services.weather.key' => 'fake-key']);
+        Http::fake(['api.weatherapi.com/*' => Http::response($this->payload())]);
+
+        $service = $this->service();
+
+        $this->assertCount(24, $service->previsions(36.8008, 10.1800, 24));
+        $this->assertCount(24, $service->previsions(36.8008, 10.1800, 24));
+        // Le second appel est servi par le cache : un seul appel HTTP.
+        Http::assertSentCount(1);
+    }
+
+    public function test_previsions_does_not_memoise_a_failure(): void
+    {
+        config(['services.weather.key' => 'fake-key']);
+        Http::fake(['api.weatherapi.com/*' => Http::response('boom', 500)]);
+
+        $service = $this->service();
+
+        $this->assertSame([], $service->previsions(35.1000, 9.5000, 24));
+        $this->assertSame([], $service->previsions(35.1000, 9.5000, 24));
+        // L'échec n'est jamais figé : chaque appel retente.
+        Http::assertSentCount(2);
+    }
+
     public function test_actuel_cache_returns_the_reading_and_memoises_the_success(): void
     {
         config(['services.weather.key' => 'fake-key']);

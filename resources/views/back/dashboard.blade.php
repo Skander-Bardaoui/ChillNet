@@ -8,6 +8,36 @@
 <div class="rounded-xl bg-surface-container/70 backdrop-blur-md p-space-md shadow-md"><div class="flex items-center justify-between text-on-surface-variant"><span class="font-label-md text-label-md uppercase tracking-wider">Résidences</span><span class="material-symbols-outlined text-primary">home</span></div><p class="font-display-lg text-display-lg text-on-surface mt-1">{{ $stats['residences'] }}</p><a href="{{ route('back.residences.index') }}" class="font-body-sm text-body-sm text-primary hover:underline">Gérer →</a></div>
 </section>
 <p class="font-body-sm text-body-sm text-on-surface-variant">Espace <strong class="text-on-surface">administrateur</strong> : référentiel global — quartiers + toutes les résidences (création, modification, suppression).</p>
+
+{{-- Performance de l'IA canicule (admin) : boucle de retour d'expérience. --}}
+<section class="rounded-xl bg-surface-container/70 backdrop-blur-md p-space-md shadow-md border border-outline-variant/20">
+<div class="flex items-center justify-between text-on-surface-variant"><span class="font-label-md text-label-md uppercase tracking-wider">Performance IA — Alerte canicule</span><span class="material-symbols-outlined text-primary">neurology</span></div>
+@if ($iaStats)
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-3">
+<div><p class="font-body-sm text-body-sm text-on-surface-variant">Accord gestionnaire / IA</p><p class="font-headline-sm text-headline-sm text-on-surface">{{ $iaStats['accord'] !== null ? number_format($iaStats['accord'], 1, ',', '').' %' : '—' }}</p></div>
+<div><p class="font-body-sm text-body-sm text-on-surface-variant">Corrections enregistrées</p><p class="font-headline-sm text-headline-sm text-on-surface">{{ $iaStats['corrections'] }} / {{ $iaStats['predictions'] }}</p></div>
+<div><p class="font-body-sm text-body-sm text-on-surface-variant">Version du modèle</p><p class="font-headline-sm text-headline-sm text-on-surface">{{ $iaStats['version'] ?? 'indisponible' }}</p></div>
+<div><p class="font-body-sm text-body-sm text-on-surface-variant">Dernier entraînement</p><p class="font-headline-sm text-headline-sm text-on-surface">{{ $iaStats['trained_at'] ? \Illuminate\Support\Carbon::parse($iaStats['trained_at'])->format('d/m/Y') : '—' }}</p></div>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-2">Modèle scikit-learn (microservice Python) entraîné sur {{ $iaStats['n_samples'] ? number_format((int) $iaStats['n_samples'], 0, ',', ' ').' observations' : 'des données météo' }}. Les corrections gestionnaire sont réinjectées (pondérées) au prochain <code>php artisan ai:retrain</code>.</p>
+@else
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-2">Modèle indisponible : démarrez le microservice IA puis lancez <code>php artisan ai:retrain</code>. En attendant, la classification retombe sur les règles déterministes.</p>
+@endif
+</section>
+
+{{-- Performance du modèle IA coupures (module 2) : métriques du hold-out. --}}
+@if ($iaCoupures)
+<section class="rounded-xl bg-surface-container/70 backdrop-blur-md p-space-md shadow-md border border-outline-variant/20">
+<div class="flex items-center justify-between text-on-surface-variant"><span class="font-label-md text-label-md uppercase tracking-wider">Performance IA — Coupures</span><span class="material-symbols-outlined text-orange-600">bolt</span></div>
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-3">
+<div><p class="font-body-sm text-body-sm text-on-surface-variant">ROC-AUC (modèle)</p><p class="font-headline-sm text-headline-sm text-on-surface">{{ $iaCoupures['auc'] !== null ? number_format((float) $iaCoupures['auc'], 3, ',', '') : '—' }}</p></div>
+<div><p class="font-body-sm text-body-sm text-on-surface-variant">ROC-AUC (règles)</p><p class="font-headline-sm text-headline-sm text-on-surface">{{ $iaCoupures['auc_regles'] !== null ? number_format((float) $iaCoupures['auc_regles'], 3, ',', '') : '—' }}</p></div>
+<div><p class="font-body-sm text-body-sm text-on-surface-variant">Snapshots réels labellisés</p><p class="font-headline-sm text-headline-sm text-on-surface">{{ number_format((int) $iaCoupures['snapshots'], 0, ',', ' ') }}</p></div>
+<div><p class="font-body-sm text-body-sm text-on-surface-variant">Version du modèle</p><p class="font-headline-sm text-headline-sm text-on-surface">{{ $iaCoupures['version'] ?? 'indisponible' }}</p></div>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-2">Modèle scikit-learn du module 2 (risque de coupure par zone) entraîné sur simulateur + observations réelles (pondérées). Dernier entraînement : {{ $iaCoupures['trained_at'] ? \Illuminate\Support\Carbon::parse($iaCoupures['trained_at'])->format('d/m/Y') : '—' }}. Ré-entraînement : <code>php artisan ai:retrain-coupures</code>.</p>
+</section>
+@endif
 @else
 {{-- GESTIONNAIRE : périmètre = sa résidence uniquement --}}
 @php

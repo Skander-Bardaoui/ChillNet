@@ -9,6 +9,7 @@ use App\Models\Residence;
 use App\Models\Signalement;
 use App\Notifications\SignalementNotification;
 use App\Services\SignalementLocalClassifier;
+use App\Services\SignalementTriageService;
 use App\Services\SignalementUrgencyDetector;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
@@ -44,7 +45,10 @@ class SignalementController extends Controller
         ]);
     }
 
-    public function store(StoreSignalementRequest $request): RedirectResponse
+    public function store(
+        StoreSignalementRequest $request,
+        SignalementTriageService $triageService,
+    ): RedirectResponse
     {
         $user = $request->user();
         $today = now()->toDateString();
@@ -72,6 +76,7 @@ class SignalementController extends Controller
         unset($data['photo']);
 
         $signalement = Signalement::create($data);
+        $triageService->actualiser();
         $user->notify(new SignalementNotification($signalement, 'created'));
 
         return to_route('signalements.index')->with('success', 'Votre signalement a été envoyé.');
@@ -84,8 +89,11 @@ class SignalementController extends Controller
         return view('front.signalements-edit', compact('signalement'));
     }
 
-    public function update(StoreSignalementRequest $request, Signalement $signalement): RedirectResponse
-    {
+    public function update(
+        StoreSignalementRequest $request,
+        Signalement $signalement,
+        SignalementTriageService $triageService,
+    ): RedirectResponse {
         abort_unless($signalement->user_id === auth()->id(), 403);
 
         $data = $request->validated();
@@ -100,18 +108,22 @@ class SignalementController extends Controller
 
         unset($data['photo']);
         $signalement->update($data);
+        $triageService->actualiser();
 
         return to_route('signalements.index')->with('success', 'Votre signalement a été modifié.');
     }
 
-    public function destroy(Signalement $signalement): RedirectResponse
-    {
+    public function destroy(
+        Signalement $signalement,
+        SignalementTriageService $triageService,
+    ): RedirectResponse {
         abort_unless($signalement->user_id === auth()->id(), 403);
 
         if ($signalement->photo_path) {
             Storage::disk('public')->delete($signalement->photo_path);
         }
         $signalement->delete();
+        $triageService->actualiser();
 
         return to_route('signalements.index')->with('success', 'Votre signalement a été supprimé.');
     }

@@ -1,0 +1,35 @@
+{
+    "_comment": "Fixtures de parité des règles déterministes canicule. SOURCE DE VÉRITÉ UNIQUE, lue par le test PHP (tests/Unit/Ai/RulesParityTest.php) ET le test Python (ai-service/tests/test_rules_parity.py). Les deux implémentations doivent produire exactement 'expected'. Seuls jaune/orange/rouge existent (le niveau 'normal' n'est jamais retourné par les règles).",
+    "_seuil_defaut": 35.0,
+    "_champs": {
+        "temperature": "température mesurée (°C)",
+        "humidite": "humidité relative (%) ou null",
+        "jours_surchauffe": "jours consécutifs au-dessus du seuil (historique)",
+        "seuil": "seuil de canicule (°C) ; défaut 35",
+        "expected": "niveau attendu : jaune | orange | rouge"
+    },
+    "cases": [
+        {"temperature": 37.0, "humidite": null, "jours_surchauffe": 0, "seuil": 35.0, "expected": "jaune", "note": "au-dessus du seuil mais sous +3"},
+        {"temperature": 38.0, "humidite": null, "jours_surchauffe": 0, "seuil": 35.0, "expected": "orange", "note": "exactement seuil +3"},
+        {"temperature": 41.0, "humidite": null, "jours_surchauffe": 0, "seuil": 35.0, "expected": "rouge", "note": "exactement seuil +6"},
+        {"temperature": 40.9, "humidite": null, "jours_surchauffe": 0, "seuil": 35.0, "expected": "orange", "note": "juste sous seuil +6"},
+        {"temperature": 36.9, "humidite": null, "jours_surchauffe": 0, "seuil": 35.0, "expected": "jaune", "note": "juste sous seuil +3"},
+
+        {"temperature": 37.0, "humidite": 60, "jours_surchauffe": 0, "seuil": 35.0, "expected": "jaune", "note": "humidité 60 % : pénalité nulle"},
+        {"temperature": 37.6, "humidite": 65, "jours_surchauffe": 0, "seuil": 35.0, "expected": "orange", "note": "humidité 65 % : +0,5 °C → franchit +3"},
+        {"temperature": 33.0, "humidite": 85, "jours_surchauffe": 0, "seuil": 35.0, "expected": "orange", "note": "température basse mais humidité >= 70 : escalade jaune→orange"},
+        {"temperature": 37.0, "humidite": 100, "jours_surchauffe": 0, "seuil": 35.0, "expected": "rouge", "note": "humidité saturée : pénalité plafonnée à +3 puis escalade orange→rouge"},
+        {"temperature": 34.0, "humidite": 59, "jours_surchauffe": 0, "seuil": 35.0, "expected": "jaune", "note": "humidité 59 % : sous le palier de 60 %, aucune pénalité"},
+        {"temperature": 40.0, "humidite": 69, "jours_surchauffe": 0, "seuil": 35.0, "expected": "orange", "note": "humidité 69 % : pénalité +0,9 mais pas d'escalade (seuil 70 non atteint)"},
+        {"temperature": 39.0, "humidite": 70, "jours_surchauffe": 0, "seuil": 35.0, "expected": "rouge", "note": "humidité 70 % : escalade orange→rouge"},
+
+        {"temperature": 37.0, "humidite": null, "jours_surchauffe": 2, "seuil": 35.0, "expected": "jaune", "note": "2 jours de surchauffe : sous le palier de 3"},
+        {"temperature": 35.0, "humidite": null, "jours_surchauffe": 3, "seuil": 35.0, "expected": "orange", "note": "3 jours de surchauffe : +2 °C puis escalade jaune→orange"},
+        {"temperature": 39.0, "humidite": null, "jours_surchauffe": 3, "seuil": 35.0, "expected": "rouge", "note": "3 jours de surchauffe : +2 °C → seuil +6"},
+        {"temperature": 60.0, "humidite": 100, "jours_surchauffe": 5, "seuil": 35.0, "expected": "rouge", "note": "cas extrême : pénalités cumulées, plafond rouge"},
+
+        {"temperature": 40.0, "humidite": null, "jours_surchauffe": 0, "seuil": 37.0, "expected": "orange", "note": "seuil personnalisé : 40 = seuil +3"},
+        {"temperature": 42.0, "humidite": null, "jours_surchauffe": 0, "seuil": 37.0, "expected": "orange", "note": "seuil personnalisé : juste sous seuil +6 (43)"},
+        {"temperature": 43.0, "humidite": null, "jours_surchauffe": 0, "seuil": 37.0, "expected": "rouge", "note": "seuil personnalisé : 43 = seuil +6"}
+    ]
+}

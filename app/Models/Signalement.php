@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Signalement extends Model
@@ -35,5 +36,10 @@ class Signalement extends Model
     public function residence(): BelongsTo
     {
         return $this->belongsTo(Residence::class);
+    }
+
+    public function analyseIa(): HasOne
+    {
+        return $this->hasOne(SignalementAnalyse::class);
     }
 }

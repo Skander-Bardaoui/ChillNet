@@ -11,7 +11,10 @@
     @method('PUT')
 @endif
 
-<div x-data="alerteForm()" class="flex flex-col gap-4">
+<div x-data="alerteForm()" data-prefill-url="{{ route('back.alertes.prefill') }}" class="flex flex-col gap-4">
+
+{{-- Trace IA : identifiant de la prédiction à rattacher à l'enregistrement. --}}
+<input type="hidden" name="ai_prediction_id" :value="predictionId" />
 
 {{-- Bandeau IA : pré-remplit la météo + classe le niveau + rédige le message --}}
 <div class="rounded-xl border border-primary-container/30 bg-primary-container/5 p-4 flex flex-col gap-3">
@@ -32,6 +35,43 @@
 <p><strong x-text="retour.niveau_label"></strong> — <span x-text="retour.raison"></span></p>
 </template>
 <template x-if="!retour.ok"><p x-text="retour.raison"></p></template>
+</div>
+</template>
+
+{{-- Explicabilité du moteur hybride : confiance, probabilités, facteurs. --}}
+<template x-if="retour && retour.ok">
+<div class="flex flex-col gap-3 rounded-lg bg-surface-container px-3 py-3">
+<div class="flex flex-wrap items-center gap-2">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Confiance du modèle</span>
+<span class="font-title-md text-title-md text-on-surface" x-text="Math.round((retour.confiance || 0) * 100) + ' %'"></span>
+<template x-if="retour.desaccord">
+<span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-label-sm text-label-sm font-semibold">Désaccord modèle / règles</span>
+</template>
+<template x-if="!retour.modele_disponible">
+<span class="px-2 py-0.5 rounded-full bg-surface-variant text-on-surface-variant font-label-sm text-label-sm">Modèle indisponible — règles seules</span>
+</template>
+</div>
+<template x-if="retour.probabilites && Object.keys(retour.probabilites).length">
+<div class="flex flex-col gap-1">
+<template x-for="(p, cls) in retour.probabilites" :key="cls">
+<div class="flex items-center gap-2">
+<span class="w-32 font-label-sm text-label-sm text-on-surface-variant" x-text="libelleClasse(cls)"></span>
+<div class="flex-1 h-2 rounded-full bg-surface-variant overflow-hidden"><div class="h-full" :class="couleurClasse(cls)" :style="'width:' + Math.round((p || 0) * 100) + '%'"></div></div>
+<span class="w-12 text-right font-label-sm text-label-sm text-on-surface" x-text="Math.round((p || 0) * 100) + '%'"></span>
+</div>
+</template>
+</div>
+</template>
+<template x-if="retour.facteurs && retour.facteurs.length">
+<div>
+<p class="font-label-sm text-label-sm text-on-surface-variant mb-1">Principaux facteurs</p>
+<div class="flex flex-wrap gap-2">
+<template x-for="f in retour.facteurs" :key="f.feature">
+<span class="px-2 py-1 rounded-md bg-surface-container-high text-on-surface font-label-sm text-label-sm"><strong x-text="f.label"></strong> : <span x-text="f.valeur_affichee"></span></span>
+</template>
+</div>
+</div>
+</template>
 </div>
 </template>
 </div>
@@ -89,7 +129,7 @@
 <legend class="px-2 font-title-md text-title-md text-on-surface font-semibold flex items-center gap-2"><span class="material-symbols-outlined text-primary text-[20px]">map</span>Zone géographique (carte)</legend>
 <p class="mb-2 font-body-sm text-body-sm text-on-surface-variant">Cliquez sur la carte pour poser le centre de la zone (ou cochez un quartier pour le centrer), puis ajustez le rayon. Une alerte peut cibler un ou plusieurs quartiers, un cercle, ou les deux.</p>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<div id="carte-alerte-form" class="w-full h-72 rounded-xl overflow-hidden z-0 border border-outline-variant/30"></div>
+<div id="carte-alerte-form" data-quartiers-geo="{{ json_encode($quartiersGeo) }}" class="w-full h-72 rounded-xl overflow-hidden z-0 border border-outline-variant/30"></div>
 <input type="hidden" id="latitude" name="latitude" value="{{ old('latitude', $alerte?->latitude) }}" />
 <input type="hidden" id="longitude" name="longitude" value="{{ old('longitude', $alerte?->longitude) }}" />
 @error('latitude') <p class="mt-1 font-body-sm text-body-sm text-error flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">error</span>{{ $message }}</p> @enderror
@@ -165,14 +205,26 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-const QUARTIERS_GEO = @json($quartiersGeo);
+const QUARTIERS_GEO = JSON.parse(document.getElementById('carte-alerte-form').dataset.quartiersGeo);
 const CENTRE_DEFAUT_ALERTE = [36.8065, 10.1815];
 
 function alerteForm() {
     return {
         chargement: false,
         retour: null,
+        predictionId: '',
         carte: null,
+        // Drapeau : la température n'est envoyée à l'IA que si l'utilisateur l'a
+        // saisie à la main. Une valeur auto-remplie par un pré-remplissage
+        // précédent ne doit pas se transformer en override permanent (sinon la
+        // météo n'est plus jamais recalculée pour un nouveau point).
+        temperatureManuelle: false,
+        libelleClasse(cls) {
+            return { normal: 'Aucune alerte', jaune: 'Vigilance jaune', orange: 'Vigilance orange', rouge: 'Vigilance rouge' }[cls] || cls;
+        },
+        couleurClasse(cls) {
+            return { normal: 'bg-outline', jaune: 'bg-amber-500', orange: 'bg-orange-500', rouge: 'bg-red-600' }[cls] || 'bg-outline';
+        },
         init() {
             const form = this.$root;
             const latInput = form.querySelector('[name="latitude"]');
@@ -223,6 +275,12 @@ function alerteForm() {
             rayonInput.addEventListener('input', majCercle);
             majCercle();
 
+            // Toute saisie manuelle de la température arme l'override.
+            const tempInput = form.querySelector('[name="temperature_actuelle"]');
+            if (tempInput) {
+                tempInput.addEventListener('input', () => { this.temperatureManuelle = true; });
+            }
+
             const btnLoc = document.getElementById('btn-localiser-alerte');
             if (btnLoc && navigator.geolocation) {
                 btnLoc.addEventListener('click', () => {
@@ -272,7 +330,7 @@ function alerteForm() {
             this.chargement = true;
             this.retour = null;
             try {
-                const res = await fetch('{{ route('back.alertes.prefill') }}', {
+                const res = await fetch(form.dataset.prefillUrl, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -284,15 +342,25 @@ function alerteForm() {
                         latitude: lat,
                         longitude: lng,
                         seuil_temperature: form.querySelector('[name="seuil_temperature"]').value || null,
-                        temperature_actuelle: form.querySelector('[name="temperature_actuelle"]').value || null,
+                        temperature_actuelle: this.temperatureManuelle ? (form.querySelector('[name="temperature_actuelle"]').value || null) : null,
                         humidite: form.querySelector('[name="humidite"]').value || null,
                         avec_message: avecMessage,
                     }),
                 });
                 const data = await res.json();
+                if (! res.ok) {
+                    this.retour = {
+                        ok: false,
+                        raison: data.message || 'Requête invalide : vérifiez les champs du formulaire.',
+                    };
+                    return;
+                }
                 this.retour = data;
                 if (data.ok) {
                     form.querySelector('[name="niveau"]').value = data.niveau;
+                    // Valeur auto-remplie : ne pas la considérer comme une saisie
+                    // manuelle, sinon l'override se figerait pour les clics suivants.
+                    this.temperatureManuelle = false;
                     form.querySelector('[name="temperature_actuelle"]').value = data.temperature;
                     form.querySelector('[name="source_meteo"]').value = data.source;
                     if (data.humidite !== null && data.humidite !== undefined) {
@@ -301,7 +369,11 @@ function alerteForm() {
                     if (data.message) {
                         form.querySelector('[name="message"]').value = data.message;
                     }
+                    // Rattache la trace IA au formulaire (boucle de retour).
+                    this.predictionId = data.prediction_id || '';
                 }
+                // Le panneau météo (aside) reflète la même analyse.
+                window.dispatchEvent(new CustomEvent('alerte-ia', { detail: data }));
             } catch (e) {
                 this.retour = { ok: false, raison: 'Erreur réseau. Réessayez ou saisissez la température manuellement.' };
             } finally {

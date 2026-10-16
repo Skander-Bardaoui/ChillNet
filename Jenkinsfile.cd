@@ -1,0 +1,80 @@
+// Pipeline CD ChillNet — déploiement sur k3s (namespace `chillnet`).
+//
+// Job Jenkins : « chillnet-cd », Pipeline script from SCM, Script Path `Jenkinsfile.cd`.
+// Déclenché par la CI (`Jenkinsfile`) via `build job: 'chillnet-cd'`, paramètre IMAGE_TAG ;
+// peut aussi être lancé manuellement (Build with Parameters) pour redéployer un tag donné.
+//
+// Prérequis : credential « Secret file » id `chillnet-k8s-env` (contenu de k8s/base/.env)
+// et le kubeconfig du cluster sur le nœud Jenkins (posé par le provisionnement Vagrant).
+pipeline {
+  agent any
+
+  options {
+    timestamps()
+    disableConcurrentBuilds()
+    buildDiscarder(logRotator(numToKeepStr: '10'))
+    skipDefaultCheckout(true)
+  }
+
+  parameters {
+    string(
+      name: 'IMAGE_TAG',
+      defaultValue: 'latest',
+      description: "Tag des images à déployer (SHA court du commit, ex. 8e9ecee). Par défaut : latest."
+    )
+  }
+
+  environment {
+    REGISTRY  = '192.168.56.12:5000'
+    APP_IMAGE = "${REGISTRY}/chillnet-app"
+    AI_IMAGE  = "${REGISTRY}/chillnet-ai-service"
+  }
+
+  stages {
+    stage('Checkout') {
+      steps {
+        checkout scm
+        sh 'git rev-parse --short HEAD'
+        // Un paramètre déclaré dans le Jenkinsfile n'est PAS exposé comme variable
+        // d'environnement aux étapes `sh` (contrairement au bloc `environment`) :
+        // sans cette assignation, $IMAGE_TAG était vide dans le shell -> image
+        // « repo/chillnet-app: » -> InvalidImageName. On le rend explicite (défaut latest).
+        script {
+          env.IMAGE_TAG = (params.IMAGE_TAG != null && params.IMAGE_TAG != '') ? params.IMAGE_TAG : 'latest'
+        }
+      }
+    }
+
+    stage('Deploy to k3s') {
+      steps {
+        echo "Déploiement du tag : ${env.IMAGE_TAG}"
+        // Credential « Secret file » (id: chillnet-k8s-env) = contenu de k8s/base/.env.
+        withCredentials([file(credentialsId: 'chillnet-k8s-env', variable: 'K8S_ENV_FILE')]) {
+          // Le fichier de credentials Jenkins est en lecture seule (0400) ; `cp` recopie
+          // ce mode. Un `cp` sur un k8s/base/.env déjà présent (donc 0400) échoue en
+          // « Permission denied ». On le supprime d'abord (rm ne dépend que des droits
+          // du dossier, qu'on possède).
+          sh 'rm -f k8s/base/.env && cp "$K8S_ENV_FILE" k8s/base/.env'
+          sh 'kubectl apply -k k8s/base'
+          sh 'kubectl -n chillnet set image deployment/chillnet-app app="$APP_IMAGE:$IMAGE_TAG"'
+          sh 'kubectl -n chillnet set image deployment/ai-service ai-service="$AI_IMAGE:$IMAGE_TAG"'
+          // Job immuable : recréé à chaque déploiement.
+          sh 'kubectl -n chillnet delete job chillnet-migrate --ignore-not-found'
+          sh 'kubectl -n chillnet apply -f k8s/base/laravel/laravel-migrate-job.yaml'
+          sh 'kubectl -n chillnet wait --for=condition=complete job/chillnet-migrate --timeout=180s'
+          sh 'kubectl -n chillnet rollout status deployment/chillnet-app --timeout=180s'
+          sh 'kubectl -n chillnet rollout status deployment/ai-service --timeout=180s'
+        }
+      }
+    }
+  }
+
+  post {
+    always {
+      echo "--- État du namespace chillnet ---"
+      sh 'kubectl -n chillnet get pods,svc,ingress || true'
+    }
+    success { echo 'ChillNet CD succeeded.' }
+    failure { echo 'ChillNet CD failed.' }
+  }
+}

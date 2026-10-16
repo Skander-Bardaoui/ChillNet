@@ -25,10 +25,6 @@ class StoreLieuRequest extends FormRequest
         if (! $this->filled('type')) {
             $this->merge(['type' => LieuType::Domicile->value]);
         }
-
-        if (! $this->filled('nom')) {
-            $this->merge(['nom' => 'Domicile']);
-        }
     }
 
     /**
@@ -53,7 +49,10 @@ class StoreLieuRequest extends FormRequest
         return [
             'nom.required' => 'Donnez un nom à ce lieu (ex. : Domicile, Travail).',
             'nom.min' => 'Le nom du lieu est trop court.',
+            'nom.max' => 'Le nom du lieu ne doit pas dépasser 120 caractères.',
             'type.in' => 'Le type de lieu est invalide.',
+            'adresse.min' => 'L\'adresse est trop courte.',
+            'adresse.max' => 'L\'adresse ne doit pas dépasser 255 caractères.',
             'latitude.required' => 'Posez le point de ce lieu sur la carte.',
             'latitude.numeric' => 'La latitude doit être un nombre.',
             'latitude.between' => 'La latitude doit être comprise entre -90 et 90.',

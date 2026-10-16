@@ -64,7 +64,7 @@ class SignalementController extends Controller
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, SignalementTriageService $triageService): RedirectResponse
     {
         $this->ensureManagerHasResidence($request);
         $data = $this->validateReport($request);
@@ -75,6 +75,7 @@ class SignalementController extends Controller
         unset($data['photo']);
 
         $signalement = Signalement::create($data);
+        $triageService->actualiser();
         $signalement->habitant->notify(new SignalementNotification($signalement, 'created'));
 
         return to_route('back.signalements.index')->with('success', 'Signalement créé avec succès.');
@@ -91,7 +92,11 @@ class SignalementController extends Controller
         ]);
     }
 
-    public function update(Request $request, Signalement $signalement): RedirectResponse
+    public function update(
+        Request $request,
+        Signalement $signalement,
+        SignalementTriageService $triageService,
+    ): RedirectResponse
     {
         $this->authorizeSignalement($request, $signalement);
         $data = $this->validateReport($request);
@@ -106,6 +111,7 @@ class SignalementController extends Controller
 
         $statutChanged = $signalement->statut !== $data['statut'];
         $signalement->update($data);
+        $triageService->actualiser();
 
         if ($request->hasFile('photo') && $anciennePhoto) {
             Storage::disk('public')->delete($anciennePhoto);
@@ -117,7 +123,11 @@ class SignalementController extends Controller
         return to_route('back.signalements.index')->with('success', 'Signalement mis à jour avec succès.');
     }
 
-    public function destroy(Request $request, Signalement $signalement): RedirectResponse
+    public function destroy(
+        Request $request,
+        Signalement $signalement,
+        SignalementTriageService $triageService,
+    ): RedirectResponse
     {
         $this->authorizeSignalement($request, $signalement);
 
@@ -125,11 +135,16 @@ class SignalementController extends Controller
             Storage::disk('public')->delete($signalement->photo_path);
         }
         $signalement->delete();
+        $triageService->actualiser();
 
         return to_route('back.signalements.index')->with('success', 'Signalement supprimé.');
     }
 
-    public function updateTreatment(Request $request, Signalement $signalement): RedirectResponse
+    public function updateTreatment(
+        Request $request,
+        Signalement $signalement,
+        SignalementTriageService $triageService,
+    ): RedirectResponse
     {
         $this->authorizeSignalement($request, $signalement);
         $data = $request->validate([
@@ -139,6 +154,7 @@ class SignalementController extends Controller
 
         $statutChanged = $signalement->statut !== $data['statut'];
         $signalement->update($data);
+        $triageService->actualiser();
         if ($statutChanged) {
             $signalement->habitant->notify(new SignalementNotification($signalement, 'status_changed'));
         }

@@ -40,7 +40,7 @@
 <span class="font-label-md text-label-md text-on-surface font-semibold">Carte du périmètre</span>
 <span class="ml-auto hidden md:inline font-body-sm text-body-sm text-on-surface-variant">🟡 jaune · 🟠 orange · 🔴 rouge — cercle = zone couverte (rayon)</span>
 </div>
-<div id="carte-back-alertes" class="w-full h-72 md:h-80 z-0"></div>
+<div id="carte-back-alertes" data-centre="{{ json_encode($centre ?? [36.8065, 10.1815]) }}" data-marqueurs="{{ json_encode($marqueurs ?? []) }}" class="w-full h-72 md:h-80 z-0"></div>
 </div>
 
 {{-- Filtres --}}
@@ -123,8 +123,9 @@
 @if (! $alerte->validee)
 <form method="POST" action="{{ route('back.alertes.valider', $alerte->id) }}" class="inline">@csrf @method('PATCH')<button type="submit" class="inline-flex items-center gap-1 text-green-700 hover:underline font-label-md text-label-md"><span class="material-symbols-outlined text-[16px]">check_circle</span>Valider</button></form>
 @endif
-<a href="{{ route('back.alertes.edit', $alerte->id) }}" class="inline-flex items-center gap-1 text-primary hover:underline font-label-md text-label-md"><span class="material-symbols-outlined text-[16px]">edit</span>Modifier</a>
-<form method="POST" action="{{ route('back.alertes.destroy', $alerte->id) }}" class="inline" onsubmit="return confirm('Supprimer cette alerte ?');">@csrf @method('DELETE')<button type="submit" class="inline-flex items-center gap-1 text-error hover:underline font-label-md text-label-md"><span class="material-symbols-outlined text-[16px]">delete</span>Supprimer</button></form>
+<a href="{{ route('back.alertes.show', $alerte->id) }}" title="Voir" aria-label="Voir" class="inline-flex items-center justify-center h-9 w-9 rounded-lg text-on-surface-variant hover:bg-surface-container-high"><span class="material-symbols-outlined text-[18px]">visibility</span></a>
+<a href="{{ route('back.alertes.edit', $alerte->id) }}" title="Modifier" aria-label="Modifier" class="inline-flex items-center justify-center h-9 w-9 rounded-lg text-primary hover:bg-primary-container/20"><span class="material-symbols-outlined text-[18px]">edit</span></a>
+<form method="POST" action="{{ route('back.alertes.destroy', $alerte->id) }}" class="inline" data-confirm="Supprimer cette alerte ?">@csrf @method('DELETE')<button type="submit" title="Supprimer" aria-label="Supprimer" class="inline-flex items-center justify-center h-9 w-9 rounded-lg text-error hover:bg-error-container/40"><span class="material-symbols-outlined text-[18px]">delete</span></button></form>
 </td>
 </tr>
 @empty
@@ -144,8 +145,9 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-const CENTRE_BACK_ALERTES = @json($centre ?? [36.8065, 10.1815]);
-const MARQUEURS_BACK_ALERTES = @json($marqueurs ?? []);
+const carteBackAlertesEl = document.getElementById('carte-back-alertes');
+const CENTRE_BACK_ALERTES = JSON.parse(carteBackAlertesEl.dataset.centre);
+const MARQUEURS_BACK_ALERTES = JSON.parse(carteBackAlertesEl.dataset.marqueurs);
 
 const carteBackAlertes = L.map('carte-back-alertes').setView(CENTRE_BACK_ALERTES, 12);
 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
