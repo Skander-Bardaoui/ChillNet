@@ -70,12 +70,27 @@ pipeline {
         }
       }
     }
+
+    stage('Deploy monitoring') {
+      steps {
+        // Stack Prometheus + Grafana (namespace `monitoring`), indépendante de l'app.
+        // Credential « Secret file » id `chillnet-monitoring-env` = contenu de k8s/monitoring/.env.
+        withCredentials([file(credentialsId: 'chillnet-monitoring-env', variable: 'MON_ENV_FILE')]) {
+          sh 'rm -f k8s/monitoring/.env && cp "$MON_ENV_FILE" k8s/monitoring/.env'
+          sh 'kubectl apply -k k8s/monitoring'
+          sh 'kubectl -n monitoring rollout status deployment/prometheus --timeout=180s'
+          sh 'kubectl -n monitoring rollout status deployment/grafana --timeout=180s'
+        }
+      }
+    }
   }
 
   post {
     always {
       echo "--- État du namespace chillnet ---"
       sh 'kubectl -n chillnet get pods,svc,ingress || true'
+      echo "--- État du namespace monitoring ---"
+      sh 'kubectl -n monitoring get pods,svc,ingress || true'
     }
     success { echo 'ChillNet CD succeeded.' }
     failure { echo 'ChillNet CD failed.' }

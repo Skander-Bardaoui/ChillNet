@@ -41,3 +41,5 @@ ai-service/coverage.xml
 ai-service/.coverage
 # Secrets Kubernetes réels (le modèle versionné est k8s/base/.env.example).
 k8s/base/.env
+# Mot de passe admin Grafana (le modèle versionné est k8s/monitoring/.env.example).
+k8s/monitoring/.env
