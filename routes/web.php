@@ -20,11 +20,8 @@ use App\Http\Controllers\Front\EquipementController as FrontEquipementController
 use App\Http\Controllers\Front\HomeController;
 use App\Http\Controllers\Front\LieuController as FrontLieuController;
 use App\Http\Controllers\Front\SignalementController as FrontSignalementController;
-<<<<<<< HEAD
 use App\Http\Controllers\Front\SupportAssistantController;
-=======
 use App\Http\Controllers\GeocodingController;
->>>>>>> origin/main
 use App\Http\Controllers\ProfileController;
 use App\Models\Residence;
 use App\Support\AuthCookie;
@@ -61,15 +58,11 @@ Route::get('/points-fraicheur/{point}', [FrontPointFraicheurController::class, '
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth', 'role:habitant'])->group(function () {
-<<<<<<< HEAD
     Route::post('/assistant-support/evaluer-urgence', [SupportAssistantController::class, 'estimate'])
         ->middleware('throttle:20,1')
         ->name('front.support.estimate');
 
     // Module 1 : les alertes canicule VALIDÉES et actives du quartier de l'habitant.
-=======
-    // Module 1 — alertes canicule validées du quartier de l'habitant.
->>>>>>> origin/main
     Route::get('/alertes', [FrontAlerteController::class, 'index'])->name('alertes.index');
     Route::get('/alertes/{alerte}', [FrontAlerteController::class, 'show'])
         ->whereNumber('alerte')->name('alertes.show');
