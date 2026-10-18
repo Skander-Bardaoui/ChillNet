@@ -21,6 +21,7 @@ ARTIFACTS_DIR = BASE_DIR / "artifacts"
 # Dossier d'artefacts DÉDIÉ au module coupures : chaque modèle a le sien, pour
 # rester distinguable du modèle canicule (artifacts/). Voir app/coupures/.
 COUPURES_ARTIFACTS_DIR = ARTIFACTS_DIR / "coupures"
+SIGNALEMENTS_ARTIFACTS_DIR = ARTIFACTS_DIR / "signalements"
 
 
 def load_labeler_config() -> dict[str, Any]:
@@ -82,6 +83,38 @@ class Settings:
         self.coupures_etr_model_path: Path = Path(
             os.environ.get(
                 "AI_COUPURES_ETR_MODEL_PATH", COUPURES_ARTIFACTS_DIR / "etr.joblib"
+            )
+        )
+
+        # --- Module signalements (modèle et données isolés) ---
+        self.signalements_model_path: Path = Path(
+            os.environ.get(
+                "AI_SIGNALEMENTS_MODEL_PATH",
+                SIGNALEMENTS_ARTIFACTS_DIR / "model.joblib",
+            )
+        )
+        self.signalements_metadata_path: Path = Path(
+            os.environ.get(
+                "AI_SIGNALEMENTS_METADATA_PATH",
+                SIGNALEMENTS_ARTIFACTS_DIR / "metadata.json",
+            )
+        )
+        self.signalements_report_path: Path = Path(
+            os.environ.get(
+                "AI_SIGNALEMENTS_REPORT_PATH",
+                SIGNALEMENTS_ARTIFACTS_DIR / "report.json",
+            )
+        )
+        self.signalements_history_csv: Path = Path(
+            os.environ.get(
+                "AI_SIGNALEMENTS_HISTORY_CSV",
+                DATA_DIR / "signalements_urgence.csv",
+            )
+        )
+        self.signalements_examples_csv: Path = Path(
+            os.environ.get(
+                "AI_SIGNALEMENTS_EXAMPLES_CSV",
+                DATA_DIR / "signalements_categories.csv",
             )
         )
 

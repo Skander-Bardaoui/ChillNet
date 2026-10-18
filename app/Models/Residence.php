@@ -76,21 +76,13 @@ class Residence extends Model
     }
 
     /**
-<<<<<<< HEAD
-     * Signalements déposés pour cette résidence.
-=======
      * Signalements déposés sur cette résidence.
->>>>>>> origin/main
      *
      * @return HasMany<Signalement, $this>
      */
     public function signalements(): HasMany
     {
-<<<<<<< HEAD
-        return $this->hasMany(Signalement::class);
-=======
         return $this->hasMany(Signalement::class, 'residence_id');
->>>>>>> origin/main
     }
 
     /**

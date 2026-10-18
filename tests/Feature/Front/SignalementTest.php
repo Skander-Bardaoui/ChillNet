@@ -149,6 +149,15 @@ class SignalementTest extends TestCase
         $this->assertLessThanOrEqual(100, $resultat['confiance']);
     }
 
+    public function test_local_classifier_defaults_to_other_when_description_has_no_known_terms(): void
+    {
+        $resultat = app(SignalementLocalClassifier::class)
+            ->classer('zxqv blorf plim');
+
+        $this->assertSame('autre', $resultat['categorie']);
+        $this->assertSame(25, $resultat['confiance']);
+    }
+
     public function test_a_habitant_cannot_create_a_signalement_without_a_valid_residence(): void
     {
         Notification::fake();

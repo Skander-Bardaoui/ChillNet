@@ -8,7 +8,7 @@ use App\Http\Requests\StoreSignalementRequest;
 use App\Models\Residence;
 use App\Models\Signalement;
 use App\Notifications\SignalementNotification;
-use App\Services\SignalementLocalClassifier;
+use App\Services\SignalementClassifier;
 use App\Services\SignalementTriageService;
 use App\Services\SignalementUrgencyDetector;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -34,7 +34,7 @@ class SignalementController extends Controller
 
     public function analyze(
         AnalyzeSignalementRequest $request,
-        SignalementLocalClassifier $classifier,
+        SignalementClassifier $classifier,
         SignalementUrgencyDetector $urgencyDetector,
     ): JsonResponse {
         $description = $request->validated('description');

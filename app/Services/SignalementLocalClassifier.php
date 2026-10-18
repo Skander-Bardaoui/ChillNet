@@ -76,6 +76,18 @@ class SignalementLocalClassifier
         }
 
         $motsDescription = $this->tokens($description);
+        $motsConnus = array_values(array_intersect($motsDescription, array_keys($vocabulaire)));
+
+        // Sans aucun mot du vocabulaire d'entraînement, les scores des classes
+        // sont identiques : l'ordre des catégories ne doit pas créer une fausse
+        // prédiction « fuite ».
+        if ($motsConnus === []) {
+            return [
+                'categorie' => 'autre',
+                'confiance' => (int) round(100 / count(self::EXEMPLES)),
+            ];
+        }
+
         $logScores = [];
         $totalCategories = count(self::EXEMPLES);
         $tailleVocabulaire = count($vocabulaire);
@@ -91,10 +103,8 @@ class SignalementLocalClassifier
             }
 
             $score = log(count($phrases) / array_sum(array_map('count', $exemples)));
-            foreach ($motsDescription as $mot) {
-                if (isset($vocabulaire[$mot])) {
-                    $score += log((($comptes[$mot] ?? 0) + 1) / ($totalMots + $tailleVocabulaire));
-                }
+            foreach ($motsConnus as $mot) {
+                $score += log((($comptes[$mot] ?? 0) + 1) / ($totalMots + $tailleVocabulaire));
             }
             $logScores[$categorie] = $score;
         }

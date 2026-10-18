@@ -1,0 +1,8 @@
+{
+  "n_samples": 197,
+  "folds": 5,
+  "accuracy_mean": 0.9388,
+  "accuracy_std": 0.0477,
+  "macro_f1_mean": 0.8288,
+  "macro_f1_std": 0.1243
+}
