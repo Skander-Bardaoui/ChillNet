@@ -236,6 +236,7 @@ class LieuManagementTest extends TestCase
                     'house_number' => '12',
                     'road' => 'Rue des Tilleuls',
                     'postcode' => '1002',
+                    'suburb' => 'Bab Souika',
                     'city' => 'Tunis',
                     'country' => 'Tunisie',
                 ],
@@ -248,7 +249,12 @@ class LieuManagementTest extends TestCase
         $this->actingAs($habitant)
             ->getJson(route('geocodage.inverse', ['latitude' => 36.8065, 'longitude' => 10.1815]))
             ->assertOk()
-            ->assertJson(['adresse' => '12 Rue des Tilleuls, 1002 Tunis, Tunisie']);
+            ->assertJson([
+                'adresse' => '12 Rue des Tilleuls, 1002 Tunis, Tunisie',
+                'quartier' => 'Bab Souika',
+                'ville' => 'Tunis',
+                'code_postal' => '1002',
+            ]);
     }
 
     public function test_the_address_lookup_returns_null_when_the_service_fails(): void

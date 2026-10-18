@@ -50,6 +50,9 @@ class StoreCoupureRequest extends FormRequest
                 'quartier_id' => null,
                 'latitude' => null,
                 'longitude' => null,
+                'nouveau_quartier_nom' => null,
+                'nouveau_quartier_ville' => null,
+                'nouveau_quartier_code_postal' => null,
             ]);
         }
     }
@@ -82,6 +85,12 @@ class StoreCoupureRequest extends FormRequest
             'latitude' => ['nullable', 'numeric', 'between:-90,90'],
             'longitude' => ['nullable', 'numeric', 'between:-180,180'],
 
+            // Quartier créé à la volée depuis le point posé (quand aucun quartier
+            // existant n'est proche) : il rejoint la liste à l'enregistrement.
+            'nouveau_quartier_nom' => ['nullable', 'string', 'min:2', 'max:120'],
+            'nouveau_quartier_ville' => ['nullable', 'string', 'min:2', 'max:120'],
+            'nouveau_quartier_code_postal' => ['nullable', 'string', 'regex:/^[0-9A-Za-z\- ]{3,10}$/'],
+
             // Rue / lieu précis : permet 2 coupures simultanées dans 2 rues
             // différentes du même quartier (l'anti-doublon compare la rue).
             'lieu' => ['nullable', 'string', 'max:255'],
@@ -89,8 +98,14 @@ class StoreCoupureRequest extends FormRequest
             'type' => ['required', Rule::in(array_column(TypeCoupure::cases(), 'value'))],
             'statut' => ['required', Rule::in(array_column(StatutCoupure::cases(), 'value'))],
             // Horaires estimés : début obligatoire, fin facultative mais après début.
+            // Exception : une coupure résolue est un historique, elle doit avoir une fin.
             'debut' => ['required', 'date'],
-            'fin' => ['nullable', 'date', 'after:debut'],
+            'fin' => [
+                'nullable',
+                'date',
+                'after:debut',
+                Rule::requiredIf(fn (): bool => $this->input('statut') === StatutCoupure::Resolue->value),
+            ],
             'description' => ['nullable', 'string', 'max:2000'],
         ];
     }
@@ -195,6 +210,11 @@ class StoreCoupureRequest extends FormRequest
             'lieu_id.required' => 'Choisissez le lieu concerné par la coupure.',
             'lieu_id.exists' => 'Ce lieu ne fait pas partie de votre foyer.',
             'quartier_id.exists' => 'La zone sélectionnée est invalide.',
+            'nouveau_quartier_nom.min' => 'Le nom du nouveau quartier est trop court.',
+            'nouveau_quartier_nom.max' => 'Le nom du nouveau quartier est trop long.',
+            'nouveau_quartier_ville.min' => 'La ville du nouveau quartier est trop courte.',
+            'nouveau_quartier_ville.max' => 'La ville du nouveau quartier est trop longue.',
+            'nouveau_quartier_code_postal.regex' => 'Le code postal du nouveau quartier n\'est pas valide.',
             'latitude.between' => 'La latitude doit être comprise entre -90 et 90.',
             'longitude.between' => 'La longitude doit être comprise entre -180 et 180.',
             'lieu.max' => 'La rue / le lieu ne doit pas dépasser 255 caractères.',
@@ -206,6 +226,7 @@ class StoreCoupureRequest extends FormRequest
             'debut.date' => 'La date de début n\'est pas valide.',
             'fin.date' => 'La date de fin n\'est pas valide.',
             'fin.after' => 'La fin doit être après le début.',
+            'fin.required' => 'Renseignez l\'heure de fin : une coupure résolue doit avoir une fin.',
             'description.max' => 'La description ne doit pas dépasser 2000 caractères.',
         ];
     }

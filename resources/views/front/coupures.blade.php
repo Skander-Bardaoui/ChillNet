@@ -8,6 +8,53 @@
 <span class="text-on-surface font-medium">Coupures de courant</span>
 </nav>
 
+{{-- Bandeau « Mon foyer » (habitant connecté) : d'un coup d'œil, l'état de
+     chacun de ses lieux personnels face aux coupures en cours. --}}
+@if ($foyer->isNotEmpty())
+@php $nbCoupes = $foyer->where('coupee', true)->count(); @endphp
+<section class="rounded-2xl p-space-md border flex flex-col gap-space-sm {{ $nbCoupes > 0 ? 'bg-red-50 border-red-300' : 'bg-green-50 border-green-200' }}" aria-label="État de mon foyer">
+<div class="flex items-start gap-3">
+<span class="material-symbols-outlined text-[28px] shrink-0 {{ $nbCoupes > 0 ? 'text-red-700' : 'text-green-700' }}">home</span>
+<div>
+<h2 class="font-title-md text-title-md font-semibold {{ $nbCoupes > 0 ? 'text-red-900' : 'text-green-900' }}">Mon foyer</h2>
+<p class="font-body-sm text-body-sm {{ $nbCoupes > 0 ? 'text-red-800' : 'text-green-800' }}">
+@if ($nbCoupes > 0)
+{{ $nbCoupes }} de vos lieux {{ $nbCoupes > 1 ? 'sont coupés' : 'est coupé' }} en ce moment.
+@else
+Aucun de vos lieux n'est coupé pour le moment.
+@endif
+</p>
+</div>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+@foreach ($foyer as $item)
+<div class="rounded-xl bg-surface-container-lowest/80 border border-outline-variant/20 px-3 py-2.5 flex items-center gap-3">
+<span class="material-symbols-outlined text-[22px] text-primary shrink-0">{{ $item['lieu']->type->icone() }}</span>
+<div class="flex-1 min-w-0">
+<p class="font-label-md text-label-md text-on-surface font-semibold truncate">{{ $item['lieu']->nom }}</p>
+@if ($item['coupee'])
+@php
+$details = array_values(array_filter([
+    $item['depuis'] ? 'depuis '.$item['depuis']->format('H:i') : null,
+    $item['type']?->label(),
+    $item['lieuPrecis'],
+]));
+@endphp
+<p class="font-body-sm text-body-sm text-red-700">Coupé@if ($details) — {{ implode(' · ', $details) }}@endif</p>
+@else
+<p class="font-body-sm text-body-sm text-green-700">Alimenté</p>
+@endif
+</div>
+<span class="px-2.5 py-0.5 rounded-full font-label-sm text-label-sm font-semibold shrink-0 {{ $item['coupee'] ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800' }}">{{ $item['coupee'] ? 'Coupé' : 'OK' }}</span>
+</div>
+@endforeach
+</div>
+@if ($nbCoupes > 0)
+<a href="#liste-coupures" class="self-start font-label-md text-label-md text-red-800 hover:underline inline-flex items-center gap-1"><span class="material-symbols-outlined text-[18px]">arrow_downward</span>Voir le détail des coupures</a>
+@endif
+</section>
+@endif
+
 {{-- En-tête : titre + explication + actions --}}
 <header class="rounded-2xl bg-surface-container-low p-space-md md:p-space-lg shadow-sm flex flex-col lg:flex-row lg:items-center gap-space-md">
 <div class="flex items-start gap-space-sm flex-1">

@@ -40,7 +40,7 @@
 
 {{-- ============ FORMULAIRE ============ --}}
 <section class="lg:col-span-2 rounded-2xl bg-surface-container-low shadow-md border border-outline-variant/20 p-space-md md:p-space-lg">
-<form method="POST" action="{{ route('coupures.store') }}" class="flex flex-col gap-space-md">
+<form method="POST" action="{{ route('coupures.store') }}" novalidate class="flex flex-col gap-space-md">
 @csrf
 
 {{-- Bloc Où ? : le lieu personnel du foyer (le quartier est déduit). --}}

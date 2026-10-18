@@ -8,8 +8,11 @@ use App\Http\Requests\StoreCoupureRequest;
 use App\Models\Coupure;
 use App\Models\Lieu;
 use App\Models\Quartier;
+use App\Models\User;
 use App\Services\CoupureRiskAiService;
+use App\Support\Geo;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 
 /**
  * Front office des coupures (module 2).
@@ -128,7 +131,65 @@ class CoupureController extends Controller
             ];
         }
 
-        return view('front.coupures', compact('quartiers', 'coupures', 'nbActives', 'nbPrevues', 'nbZones', 'risques', 'anomalies', 'tri', 'centre', 'quartiersCoords', 'marqueurs', 'etr'));
+        // Bandeau « Mon foyer » : pour un habitant connecté, l'état de chacun
+        // de ses lieux personnels au regard des coupures en cours.
+        $visiteur = $request->user();
+        $foyer = ($visiteur !== null && $visiteur->isHabitant())
+            ? $this->statutFoyer($visiteur)
+            : collect();
+
+        return view('front.coupures', compact('quartiers', 'coupures', 'nbActives', 'nbPrevues', 'nbZones', 'risques', 'anomalies', 'tri', 'centre', 'quartiersCoords', 'marqueurs', 'etr', 'foyer'));
+    }
+
+    /**
+     * État « mon foyer » : pour chaque lieu de l'habitant, indique s'il est
+     * touché par une coupure EN COURS — même zone interne, ou à moins de
+     * `Geo::RAYON_FOYER_M` du point (cas des coupures posées librement).
+     *
+     * @return Collection<int, array<string, mixed>>
+     */
+    private function statutFoyer(User $user): Collection
+    {
+        $lieux = $user->lieux()
+            ->orderByDesc('est_principal')
+            ->orderBy('nom')
+            ->get();
+
+        if ($lieux->isEmpty()) {
+            return collect();
+        }
+
+        $actives = Coupure::where('statut', StatutCoupure::EnCours->value)
+            ->get(['id', 'quartier_id', 'latitude', 'longitude', 'type', 'debut', 'lieu']);
+
+        $rayonKm = Geo::RAYON_FOYER_M / 1000;
+
+        return $lieux->map(function (Lieu $lieu) use ($actives, $rayonKm): array {
+            $touchees = $actives->filter(function (Coupure $coupure) use ($lieu, $rayonKm): bool {
+                if ($lieu->quartier_id && $coupure->quartier_id === $lieu->quartier_id) {
+                    return true;
+                }
+
+                return $lieu->hasCoordinates()
+                    && $coupure->hasCoordinates()
+                    && Geo::distanceKm(
+                        (float) $lieu->latitude, (float) $lieu->longitude,
+                        (float) $coupure->latitude, (float) $coupure->longitude,
+                    ) <= $rayonKm;
+            })->sortBy('debut');
+
+            $premiere = $touchees->first();
+
+            return [
+                'lieu' => $lieu,
+                'coupee' => $touchees->isNotEmpty(),
+                'nombre' => $touchees->count(),
+                'depuis' => $premiere?->debut,
+                'type' => $premiere?->type,
+                'lieuPrecis' => $premiere?->lieu,
+                'coupure_id' => $premiere?->id,
+            ];
+        })->values();
     }
 
     /**

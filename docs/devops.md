@@ -3,28 +3,43 @@
 ## 1. Vue d'ensemble
 
 ```
-   développeur
-       │  git push
-       ▼
-┌──────────────┐   analyse   ┌───────────────┐
-│   Jenkins    │────────────▶│   SonarQube   │
-│ 192.168.56.10│◀────────────│ 192.168.56.11 │  (quality gate + webhook)
-└──────┬───────┘             └───────────────┘
-       │ docker build/push
-       ▼
-┌───────────────────────┐   kubectl apply    ┌──────────────────────────┐
-│ registre d'images     │◀───────────────────│  k3s (k8s)               │
-│ 192.168.56.12:5000    │   containerd pull  │ 192.168.56.12            │
-└───────────────────────┘───────────────────▶│ ns chillnet :            │
-                                             │  mysql · chillnet-app    │
-                                             │  ai-service · ingress    │
-                                             └──────────────────────────┘
+                       git push (branche main)
+   développeur ─────────────────────────────┐
+                                            ▼
+                                   ┌─────────────────┐
+                                   │ GitHub  (main)  │
+                                   └────────┬────────┘
+                                            │ webhook / poll SCM
+        ┌───────────────────────────────────┼──────────────────────────────────┐
+        │  CI  (job chillnet-ci)            ▼                                  │
+        │  ┌──────────────┐   analyse   ┌───────────────┐                      │
+        │  │   Jenkins    │────────────▶│   SonarQube   │   quality gate       │
+        │  │ 192.168.56.10│◀────────────│ 192.168.56.11 │   + webhook          │
+        │  └──────┬───────┘             └───────────────┘                      │
+        │         │ docker build/push                                          │
+        │         ▼                                                            │
+        │  ┌────────────────────┐   pull (containerd)   ┌────────────────────┐ │
+        │  │ registre d'images  │──────────────────────▶│  k3s  192.168.56.12│ │
+        │  │ 192.168.56.12:5000 │                       │  ns chillnet :     │ │
+        │  └────────────────────┘                       │   mysql            │ │
+        │         ▲                                     │   chillnet-app x2  │ │
+        │         │        CD (job chillnet-cd)         │   ai-service       │ │
+        │         └───── kubectl apply -k ◀─────────────│   ingress .local   │ │
+        │                                    ▲          │  ns monitoring :   │ │
+        │                                    │          │   prometheus       │ │
+        │  CI ──build job──▶ CD ─────────────┘          │   grafana          │ │
+        └───────────────────────────────────────────────│   node-exporter    │─┘
+                                                        │   kube-state-m.    │
+                                                        └────────────────────┘
 ```
 
-- **Jenkins** : lint, tests (PHP + Python), analyse, build/push des images, déploiement.
+- **Jenkins** : lint, tests (PHP + Python), analyse, build/push des images ; déclenche le CD.
 - **SonarQube** : qualité statique des deux projets (`chillnet`, `chillnet-ai-service`).
 - **k3s** : cluster mono-nœud avec Traefik (Ingress) et local-path (volumes), plus un
   **registre Docker local** `192.168.56.12:5000` en HTTP simple.
+  Deux namespaces : **`chillnet`** (application) et **`monitoring`** (Prometheus + Grafana).
+
+> Le détail de la supervision est dans [`monitoring.md`](monitoring.md).
 
 ## 2. Le lab Vagrant
 
@@ -82,7 +97,8 @@ vagrant ssh k8s -c "curl -s http://localhost:5000/v2/_catalog"
    *Administration → Configuration → Webhooks* →
    `http://192.168.56.10:8080/sonarqube-webhook/`.
 5. **Secrets k8s** : *Manage Credentials → add → Secret file*, id `chillnet-k8s-env`,
-   contenant le fichier `k8s/base/.env` (voir §6). Utilisé par le job **CD** uniquement.
+   contenant le fichier `k8s/base/.env` (voir §6), et id `chillnet-monitoring-env`
+   contenant `k8s/monitoring/.env` (`GRAFANA_ADMIN_PASSWORD`). Utilisés par le job **CD**.
 6. **Deux jobs** (*New Item → Pipeline* ; *Pipeline script from SCM* → Git → ce dépôt) :
    - `chillnet-ci` — *Script Path* `Jenkinsfile` (CI : tests, analyse, images).
    - `chillnet-cd` — *Script Path* `Jenkinsfile.cd` (CD : déploiement k3s).
@@ -114,8 +130,9 @@ La CI déclenche le CD en fin de build réussi (branche `main` uniquement) via
 
 | Stage | Rôle |
 |-------|------|
-| Checkout | clone (pour les manifestes `k8s/base`) |
-| Deploy to k3s | `kubectl apply -k k8s/base`, `set image` sur le tag reçu, Job de migration, `rollout status` |
+| Checkout | clone (pour les manifestes `k8s/base` et `k8s/monitoring`) |
+| Deploy to k3s | `kubectl apply -k k8s/base`, `set image` sur le tag reçu, Job de migration (re-taggé via `sed`), `rollout status` |
+| Deploy monitoring | `kubectl apply -k k8s/monitoring` + `rollout status` Prometheus / Grafana (namespace `monitoring`) |
 
 Le job CD est **paramétré** (`IMAGE_TAG`, défaut `latest`) : il est déclenché
 automatiquement par la CI, ou lanceable à la main (*Build with Parameters*) pour
@@ -171,7 +188,34 @@ curl -H 'Host: chillnet.local' http://192.168.56.12/up
 
 Ou ajouter `192.168.56.12 chillnet.local` au fichier `hosts` de l'hôte.
 
-## 7. Points d'attention connus
+## 7. Supervision (`k8s/monitoring` — Prometheus + Grafana)
+
+Stack légère déployée par kustomize (**sans Helm ni Operator**), dans le namespace
+`monitoring`, indépendante de l'application. Détail complet : [`monitoring.md`](monitoring.md).
+
+```
+  navigateur                          ┌─ namespace: monitoring ───────────────────┐
+     │  Host: grafana.local           │  Prometheus (:9090, PVC 5Gi) ─┐           │
+     │         prometheus.local       │  Grafana    (:3000, PVC 2Gi) ──┼─ datasource│
+     ▼                                │      ▲ scrape                 │           │
+  ┌──────────┐  :80                   │      ├─ kubelet (node + cAdvisor)          │
+  │ Ingress  │────────────────────────┤      ├─ node-exporter   (DaemonSet :9100)   │
+  │ Traefik  │                        │      └─ kube-state-metrics    (:8080)      │
+  └──────────┘                        └────────────────────────────────────────────┘
+```
+
+| Ressource | Détail |
+|-----------|--------|
+| `prometheus` | Deployment + Service + PVC 5Gi + RBAC kubelet (`nodes/metrics`, `nodes/proxy`) |
+| `grafana` | Deployment + Service + PVC 2Gi + provisioning (datasource + dashboard) |
+| `node-exporter` | DaemonSet hostNetwork `:9100` (métriques OS du nœud) |
+| `kube-state-metrics` | Deployment + Service `:8080` (état des objets Kubernetes) |
+| `ingress` | Traefik : `grafana.local` (`:3000`), `prometheus.local` (`:9090`) |
+
+Accès : `http://grafana.local` (login `admin` / `GRAFANA_ADMIN_PASSWORD` de
+`k8s/monitoring/.env`) et `http://prometheus.local` (`Status → Targets` — **8 cibles UP**).
+
+## 8. Points d'attention connus
 
 - **SonarQube RAM** : la VM a ~5 Go ; surveiller `free -m` si l'analyse ralentit.
 - **`vm.max_map_count=262144`** : requis par l'Elasticsearch de SonarQube (posé par le
@@ -182,3 +226,10 @@ Ou ajouter `192.168.56.12 chillnet.local` au fichier `hosts` de l'hôte.
 - **Worker de queue** : `QUEUE_CONNECTION=database` mais aucun worker n'est déployé ;
   les jobs restent en file (sans impact sur l'UI).
 - **Pint** : le dépôt n'est pas encore formaté ; le stage de lint est non bloquant.
+- **Supervision RAM** : la stack `monitoring` ajoute ~500 Mi de *requests* (~1,9 Gi de
+  *limits*) à la VM k8s (6 Go). En cas de tension, réduire la *limit* de Prometheus.
+- **Scrape kubelet `:10250`** : nécessite `insecure_skip_verify: true` (certificat auto-signé)
+  et le ClusterRole `nodes/metrics` + `nodes/proxy`, sinon les cibles passent en `403`.
+- **Cookies d'auth** : le lab est servi en **HTTP** (ingress Traefik « web ») ; le ConfigMap
+  force `AUTH_COOKIE_SECURE=false` / `SESSION_SECURE_COOKIE=false` pour que le navigateur
+  renvoie bien les cookies (sinon boucle de connexion sur `/login`). Passer à `true` derrière TLS.

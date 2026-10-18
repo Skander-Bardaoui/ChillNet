@@ -247,11 +247,35 @@ class CoupureController extends Controller
         if ($user?->isGestionnaire() && $user->residence?->quartier_id) {
             $data['quartier_id'] = $user->residence->quartier_id;
         } elseif (empty($data['quartier_id']) && ! empty($data['latitude']) && ! empty($data['longitude'])) {
-            $data['quartier_id'] = Quartier::plusProche(
-                (float) $data['latitude'],
-                (float) $data['longitude'],
-            )?->id;
+            // Point posé sans quartier choisi : on crée le quartier proposé par
+            // la carte (nom + ville issus du géocodage) si possible, sinon on se
+            // rattache au quartier le plus proche.
+            $nom = trim((string) ($data['nouveau_quartier_nom'] ?? ''));
+            $ville = trim((string) ($data['nouveau_quartier_ville'] ?? ''));
+
+            if ($nom !== '' && $ville !== '') {
+                $data['quartier_id'] = Quartier::firstOrCreate(
+                    ['nom' => $nom, 'ville' => $ville],
+                    [
+                        'code_postal' => trim((string) ($data['nouveau_quartier_code_postal'] ?? '')),
+                        'latitude' => (float) $data['latitude'],
+                        'longitude' => (float) $data['longitude'],
+                    ],
+                )->id;
+            } else {
+                $data['quartier_id'] = Quartier::plusProche(
+                    (float) $data['latitude'],
+                    (float) $data['longitude'],
+                )?->id;
+            }
         }
+
+        // Champs de formulaire transitoires : ils ne sont pas des colonnes de `coupures`.
+        unset(
+            $data['nouveau_quartier_nom'],
+            $data['nouveau_quartier_ville'],
+            $data['nouveau_quartier_code_postal'],
+        );
 
         // Le statut résolu/en cours/prevue est saisi ici (back office),
         // contrairement au front où l'habitant ne crée que du "en cours".

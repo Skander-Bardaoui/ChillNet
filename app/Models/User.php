@@ -162,6 +162,8 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
     protected $hidden = [
         'password',
         'remember_token',
+        'two_factor_secret',
+        'two_factor_recovery_codes',
     ];
 
     /**
@@ -176,6 +178,53 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
             'password' => 'hashed',
             'role' => Role::class,
             'profil_vulnerabilites' => 'array',
+            'two_factor_secret' => 'encrypted',
+            'two_factor_recovery_codes' => 'encrypted:array',
+            'two_factor_confirmed_at' => 'datetime',
         ];
+    }
+
+    /**
+     * La double authentification TOTP est-elle active (premier code validé) ?
+     */
+    public function hasEnabledTwoFactorAuthentication(): bool
+    {
+        return ! is_null($this->two_factor_confirmed_at);
+    }
+
+    /**
+     * Codes de récupération à usage unique encore valides.
+     *
+     * @return array<int, string>
+     */
+    public function recoveryCodes(): array
+    {
+        return $this->two_factor_recovery_codes ?? [];
+    }
+
+    /**
+     * URL publique de la photo de profil, ou `null` si l'utilisateur n'en a pas.
+     * `asset()` plutôt que `Storage::url()` : suit l'hôte/port courant (artisan serve).
+     */
+    public function avatarUrl(): ?string
+    {
+        return $this->avatar_path
+            ? asset('storage/'.$this->avatar_path)
+            : null;
+    }
+
+    /**
+     * Initiales utilisées comme avatar de repli (ex. « I B »).
+     */
+    public function initials(): string
+    {
+        $mots = preg_split('/\s+/', trim((string) $this->name)) ?: [];
+        $initiales = '';
+
+        foreach (array_slice($mots, 0, 2) as $mot) {
+            $initiales .= mb_strtoupper(mb_substr($mot, 0, 1));
+        }
+
+        return $initiales !== '' ? $initiales : '?';
     }
 }

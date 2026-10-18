@@ -26,11 +26,16 @@ class GeocodingController extends Controller
             'longitude' => ['required', 'numeric', 'between:-180,180'],
         ]);
 
+        $latitude = (float) $donnees['latitude'];
+        $longitude = (float) $donnees['longitude'];
+
+        $localite = $this->geocodage->localiteInverse($latitude, $longitude) ?? [];
+
         return response()->json([
-            'adresse' => $this->geocodage->adresseInverse(
-                (float) $donnees['latitude'],
-                (float) $donnees['longitude'],
-            ),
+            'adresse' => $this->geocodage->adresseInverse($latitude, $longitude),
+            'quartier' => $localite['nom'] ?? null,
+            'ville' => $localite['ville'] ?? null,
+            'code_postal' => $localite['code_postal'] ?? null,
         ]);
     }
 }

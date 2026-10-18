@@ -16,7 +16,15 @@
 
 <div class="grid grid-cols-1 gap-space-md">
     <div class="rounded-2xl bg-surface-container-low shadow-md border border-outline-variant/20 p-space-md">
+        @include('profile.partials.update-avatar-form', ['user' => $user])
+    </div>
+
+    <div class="rounded-2xl bg-surface-container-low shadow-md border border-outline-variant/20 p-space-md">
         @include('profile.partials.update-profile-information-form', ['user' => $user])
+    </div>
+
+    <div class="rounded-2xl bg-surface-container-low shadow-md border border-outline-variant/20 p-space-md">
+        @include('profile.partials.two-factor-authentication-form', ['user' => $user])
     </div>
 
     <div class="rounded-2xl bg-surface-container-low shadow-md border border-outline-variant/20 p-space-md">

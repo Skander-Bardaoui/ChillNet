@@ -13,7 +13,15 @@
 
     <div class="flex flex-col gap-space-md">
         <div class="rounded-2xl bg-surface-container-low shadow-md border border-outline-variant/20 p-space-md">
+            @include('profile.partials.update-avatar-form')
+        </div>
+
+        <div class="rounded-2xl bg-surface-container-low shadow-md border border-outline-variant/20 p-space-md">
             @include('profile.partials.update-profile-information-form')
+        </div>
+
+        <div class="rounded-2xl bg-surface-container-low shadow-md border border-outline-variant/20 p-space-md">
+            @include('profile.partials.two-factor-authentication-form')
         </div>
 
         <div class="rounded-2xl bg-surface-container-low shadow-md border border-outline-variant/20 p-space-md">

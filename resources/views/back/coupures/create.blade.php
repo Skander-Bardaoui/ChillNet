@@ -1,7 +1,7 @@
 <x-back-layout :title="'Nouvelle coupure'">
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-space-sm items-start">
 <div class="lg:col-span-2 rounded-2xl bg-surface-container-low/80 shadow-md border border-outline-variant/20 p-space-md md:p-space-lg">
-<form method="POST" action="{{ route('back.coupures.store') }}" class="flex flex-col gap-space-sm">
+<form method="POST" action="{{ route('back.coupures.store') }}" novalidate class="flex flex-col gap-space-sm">
 @include('back.coupures._form')
 </form>
 </div>
