@@ -11,20 +11,20 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
 /**
- * IA du module 3 — analyse de sentiment des avis :
+ * IA du module 3 — analyse de sentiment des avis (100 % locale, sans LLM) :
  *
- *  1. SCORE D'UN AVIS dans [-1, 1] + polarité + thèmes évoqués :
- *     - via Groq (LLM, clé GROQ_API_KEY du .env) quand il est disponible ;
- *     - sinon analyse lexicale française (négations « pas propre »,
- *       intensifieurs « très sale ») mélangée à la note chiffrée (1–5).
+ *  1. SCORE D'UN AVIS dans [-1, 1] + polarité + thèmes évoqués : analyse
+ *     lexicale française (négations « pas propre », intensifieurs « très
+ *     sale ») mélangée à la note chiffrée (1–5).
  *  2. POINTS MAL NOTÉS RÉCURRENTS : points validés qui accumulent des avis
  *     négatifs sur la période, avec les thèmes qui reviennent → modération.
- *  3. SYNTHÈSE IA des problèmes d'un point pour l'admin (Groq, avec secours).
+ *  3. SYNTHÈSE des problèmes d'un point pour l'admin.
+ *
+ * Les thèmes détectés alimentent aussi les « plaintes » du modèle prédictif de
+ * santé des points (SantePointService → ai-service).
  */
 class SentimentAvisService
 {
-    public function __construct(private GroqFraicheurClient $groq) {}
-
     /** Période d'observation pour la détection des points mal notés. */
     public const FENETRE_JOURS = 90;
 
@@ -100,81 +100,12 @@ class SentimentAvisService
     ];
 
     /**
-     * Analyse par le LLM (Groq), avec repli sur l'analyse lexicale.
-     * Utilisée à l'enregistrement d'un avis par un habitant.
+     * Synthèse des problèmes récurrents d'un point mal noté, pour aider l'admin
+     * à agir (déterministe : diagnostic + thème prioritaire).
      *
-     * @return array{score: float, sentiment: Sentiment, themes: list<string>, source: string}
-     */
-    public function analyserAvecIa(?string $commentaire, int $note): array
-    {
-        $secours = $this->analyser($commentaire, $note);
-
-        if ($commentaire === null || trim($commentaire) === '') {
-            return $secours;
-        }
-
-        $themesAutorises = array_keys(self::THEMES);
-
-        $json = $this->groq->completerJson(
-            "Tu analyses le sentiment d'avis d'habitants sur des points de fraîcheur (parcs, salles climatisées, fontaines) "
-            .'pendant les canicules en Tunisie. Réponds UNIQUEMENT par un objet JSON : '
-            .'{"sentiment":"positif|neutre|negatif","score":nombre entre -1 et 1,"themes":[...]}. '
-            .'Les thèmes possibles sont : '.implode(', ', $themesAutorises).'. '
-            .'Tiens compte de la note chiffrée, des négations et de l\'ironie.',
-            "Note : {$note}/5\nCommentaire : ".mb_substr($commentaire, 0, 1000),
-            400,
-        );
-
-        $sentiment = Sentiment::tryFrom((string) ($json['sentiment'] ?? ''));
-
-        if ($sentiment === null || ! is_numeric($json['score'] ?? null)) {
-            return $secours;
-        }
-
-        $themes = array_values(array_intersect($themesAutorises, (array) ($json['themes'] ?? [])));
-
-        return [
-            'score' => round(max(-1.0, min(1.0, (float) $json['score'])), 3),
-            'sentiment' => $sentiment,
-            'themes' => $themes !== [] ? $themes : $secours['themes'],
-            'source' => 'ia',
-        ];
-    }
-
-    /**
-     * Synthèse rédigée (2–3 phrases) des problèmes récurrents d'un point mal
-     * noté, pour aider l'admin à agir. Mise en cache 6 h.
-     *
-     * @param  array{point: PointFraicheur, nb_avis: int, nb_negatifs: int, moyenne: float, themes: array<string, int>, message: string}  $diagnostic
-     */
-    public function synthese(array $diagnostic): string
-    {
-        $point = $diagnostic['point'];
-        $commentaires = $point->avis
-            ->filter(fn (Avis $a): bool => $a->sentiment === Sentiment::Negatif && $a->commentaire)
-            ->take(10)
-            ->map(fn (Avis $a): string => "- ({$a->note}/5) ".mb_substr((string) $a->commentaire, 0, 300))
-            ->implode("\n");
-
-        $cle = 'fraicheur:synthese:'.$point->id.':'.md5($commentaires);
-
-        return cache()->remember($cle, now()->addHours(6), function () use ($diagnostic, $point, $commentaires): string {
-            $texte = $this->groq->completer(
-                'Tu es un assistant de modération pour une application municipale de lutte contre la canicule. '
-                .'En 2 ou 3 phrases en français, sans liste ni markdown, résume les problèmes récurrents signalés '
-                .'par les habitants sur ce point de fraîcheur et propose une action concrète à l\'administrateur.',
-                "Point : {$point->nom} ({$point->type?->label()})\n{$diagnostic['message']}\nAvis négatifs :\n{$commentaires}",
-                500,
-            );
-
-            return $texte ?? $this->syntheseDeSecours($diagnostic);
-        });
-    }
-
-    /**
      * @param  array{themes: array<string, int>, message: string}  $diagnostic
      */
-    private function syntheseDeSecours(array $diagnostic): string
+    public function synthese(array $diagnostic): string
     {
         $phrase = 'Les habitants signalent régulièrement des difficultés : '.$diagnostic['message'].'.';
 
@@ -187,7 +118,8 @@ class SentimentAvisService
 
     /**
      * Analyse lexicale (déterministe, sans réseau) : score [-1, 1], polarité,
-     * thèmes. Repli de l'IA, et utilisée par les seeders / factories.
+     * thèmes. Utilisée à chaque enregistrement d'avis, par les seeders / factories
+     * et pour compter les plaintes du modèle de santé des points.
      *
      * @return array{score: float, sentiment: Sentiment, score_texte: float|null, themes: list<string>, source: string}
      */

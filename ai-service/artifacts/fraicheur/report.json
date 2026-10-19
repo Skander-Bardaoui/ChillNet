@@ -1,0 +1,60 @@
+{
+  "version": "1.0.0",
+  "n_train": 16928,
+  "n_test": 16929,
+  "n_reel": 0,
+  "calibration": "sigmoid",
+  "metrics": {
+    "log_loss": 0.46524,
+    "brier": 0.15031,
+    "roc_auc": 0.82633
+  },
+  "comparaison_regles": {
+    "modele": {
+      "roc_auc": 0.8263,
+      "brier": 0.15031
+    },
+    "regles": {
+      "roc_auc": 0.7399,
+      "brier": 0.19755
+    },
+    "final": {
+      "roc_auc": 0.8044,
+      "brier": 0.16607
+    }
+  },
+  "top_importances": [
+    {
+      "feature": "note_moyenne",
+      "importance": 0.05372
+    },
+    {
+      "feature": "nb_avis_30j",
+      "importance": 0.02519
+    },
+    {
+      "feature": "temperature",
+      "importance": 0.01839
+    },
+    {
+      "feature": "mois",
+      "importance": 0.01082
+    },
+    {
+      "feature": "jours_depuis_dernier_negatif",
+      "importance": 0.01001
+    },
+    {
+      "feature": "note_moyenne_30j",
+      "importance": 0.00306
+    },
+    {
+      "feature": "part_affluence_forte_30j",
+      "importance": 0.00106
+    },
+    {
+      "feature": "evolution_note_30j",
+      "importance": 0.00054
+    }
+  ]
+}
