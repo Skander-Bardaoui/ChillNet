@@ -1,4 +1,5 @@
-@if ($errors->any())
+{{-- Points de fraîcheur et avis : erreurs affichées uniquement sous chaque champ. --}}
+@if ($errors->any() && ! request()->routeIs('refuges.index', 'points.*', 'avis.*', 'back.points.*', 'back.avis.*'))
 <div role="alert" class="rounded-xl bg-error-container text-on-error-container px-space-md py-space-sm flex flex-col gap-2">
 <div class="flex items-center gap-2 font-title-md text-title-md font-semibold">
 <span class="material-symbols-outlined">report</span>
