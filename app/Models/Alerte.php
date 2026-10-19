@@ -51,6 +51,7 @@ class Alerte extends Model
         'latitude',
         'longitude',
         'rayon_metres',
+        'lieu',
         'validee',
         'validee_le',
         'validee_par',

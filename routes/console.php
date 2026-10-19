@@ -28,3 +28,17 @@ Schedule::command('ai:label-snapshots')
     ->hourly()
     ->onOneServer()
     ->withoutOverlapping();
+
+// Boucle de retour d'expérience du module 3 (points de fraîcheur + avis) :
+//  - capture quotidienne de la santé prédite de chaque point (14 h, proche du
+//    pic de chaleur : la température live approche la max. du jour) ;
+//  - labellisation 14 jours plus tard avec les avis réellement reçus.
+Schedule::command('ai:snapshot-fraicheur')
+    ->dailyAt('14:00')
+    ->onOneServer()
+    ->withoutOverlapping();
+
+Schedule::command('ai:label-fraicheur')
+    ->dailyAt('14:30')
+    ->onOneServer()
+    ->withoutOverlapping();

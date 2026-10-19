@@ -13,6 +13,13 @@ final class Geo
     public const RAYON_REFUGES_M = 800;
 
     /**
+     * Rayon (en mètres) autour d'un lieu personnel (« mon foyer ») : une
+     * coupure posée librement (sans quartier commun) au-delà n'est pas
+     * considérée comme touchant le foyer.
+     */
+    public const RAYON_FOYER_M = 1000;
+
+    /**
      * Distance orthodromique (Haversine) entre deux points, en kilomètres.
      * Même formule que le calcul JavaScript de `front/coupures-create.blade.php`.
      */

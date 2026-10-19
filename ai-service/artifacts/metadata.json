@@ -1,7 +1,7 @@
 {
-  "version": "1.0.1",
-  "date": "2026-10-13",
-  "trained_at": "2026-10-13",
+  "version": "1.0.2",
+  "date": "2026-10-19",
+  "trained_at": "2026-10-19",
   "features": [
     "temp",
     "ressentie",
@@ -21,95 +21,95 @@
     "orange",
     "rouge"
   ],
-  "n_samples": 856,
+  "n_samples": 20456,
   "n_corrections": 0,
-  "data_hash": "34792d9e807a96e9",
+  "data_hash": "e1ec66054a2cec1a",
   "medians": {
-    "temp": 35.5,
-    "ressentie": 35.75,
-    "humidite": 52.0,
-    "heat_index": 42.4418,
-    "temp_minus_seuil": 0.5,
-    "max_24h": 35.5,
-    "max_48h": 35.5,
+    "temp": 24.0,
+    "ressentie": 23.2,
+    "humidite": 67.0,
+    "heat_index": 24.0,
+    "temp_minus_seuil": -11.0,
+    "max_24h": 24.0,
+    "max_48h": 24.0,
     "nuit_tropicale": 0.0,
-    "jours_chauds_consecutifs": 1.0,
+    "jours_chauds_consecutifs": 0.0,
     "mois": 7.0,
     "heure_pic": 15.0
   },
   "metrics": {
-    "accuracy": 0.9535,
-    "macro_f1": 0.7888,
+    "accuracy": 0.9615,
+    "macro_f1": 0.9046,
     "recall_par_classe": {
-      "normal": 0.0,
-      "jaune": 0.8,
-      "orange": 0.5556,
-      "rouge": 0.9751
+      "normal": 0.9782,
+      "jaune": 0.9203,
+      "orange": 0.8649,
+      "rouge": 0.9438
     },
     "confusion": [
       [
-        0,
-        0,
+        3504,
+        78,
         0,
         0
       ],
       [
-        0,
-        4,
-        1,
+        3,
+        485,
+        39,
         0
       ],
       [
         0,
-        0,
-        5,
-        4
+        17,
+        224,
+        18
       ],
       [
         0,
         0,
-        5,
-        196
+        42,
+        705
       ]
     ],
-    "n_test": 215
+    "n_test": 5115
   },
   "metrics_regles": {
-    "accuracy": 0.8791,
-    "macro_f1": 0.4835,
+    "accuracy": 0.1507,
+    "macro_f1": 0.2176,
     "recall_par_classe": {
       "normal": 0.0,
-      "jaune": 1.0,
-      "orange": 0.1111,
-      "rouge": 0.9104
+      "jaune": 0.7704,
+      "orange": 0.2741,
+      "rouge": 0.3936
     },
     "confusion": [
       [
         0,
-        0,
-        0,
+        1930,
+        1652,
         0
       ],
       [
         0,
-        5,
-        0,
+        406,
+        121,
         0
       ],
       [
         0,
-        7,
-        1,
+        187,
+        71,
         1
       ],
       [
         0,
-        8,
-        10,
-        183
+        285,
+        168,
+        294
       ]
     ],
-    "n_test": 215
+    "n_test": 5115
   },
   "seuil": 35.0
 }

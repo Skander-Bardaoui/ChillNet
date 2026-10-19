@@ -65,6 +65,12 @@
 @endforelse
 </dd>
 </div>
+@if ($alerte->lieu)
+<div>
+<dt class="text-on-surface-variant">Rue / lieu précis</dt>
+<dd class="text-on-surface mt-1">{{ $alerte->lieu }}</dd>
+</div>
+@endif
 <div>
 <dt class="text-on-surface-variant">Zone géographique</dt>
 <dd class="text-on-surface mt-1">

@@ -106,6 +106,31 @@ ré-entraînement au service.
 La validation est stricte : température hors `[-10, 60]` °C, humidité hors
 `[0, 100]` %, ou plus de 72 prévisions déclenchent une réponse **422**.
 
+## Module 3 — Santé des points de fraîcheur (points + avis)
+
+Prédit si un point de fraîcheur recevra **au moins 2 avis négatifs dans les
+14 prochains jours**, à partir de ses caractéristiques et de l'historique de ses
+avis (code `app/fraicheur/`, artefacts `artifacts/fraicheur/`). Détails :
+[`docs/ai-module-fraicheur.md`](../docs/ai-module-fraicheur.md).
+
+```bash
+# 1. Météo réelle des 24 gouvernorats (export Open-Meteo .xlsx) → data/meteo_gouvernorats.csv
+python scripts/import_meteo.py ../open-meteo-36.87N10.18E9m.xlsx
+
+# 2. Simulation points + avis sur cette météo → data/fraicheur_history.csv
+python scripts/simulate_fraicheur.py
+
+# 3. Entraînement puis évaluation (hold-out temporel, comparaison aux règles)
+python scripts/train_fraicheur.py
+python scripts/evaluate_fraicheur.py
+```
+
+| Méthode | Chemin                | Description |
+|--------:|-----------------------|-------------|
+| POST    | `/fraicheur/sante`    | Points → p14, score final (plancher des règles), niveau, 3 facteurs, actions |
+| GET     | `/fraicheur/insights` | Importances, dépendance partielle, métriques, évaluation |
+| POST    | `/retrain-fraicheur`  | Ré-entraîne (sim + réels `data/fraicheur_real.csv`) puis recharge (token) |
+
 ## Limites assumées
 
 - Les étiquettes d'entraînement proviennent de **règles expertes**, pas de

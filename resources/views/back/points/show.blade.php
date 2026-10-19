@@ -16,7 +16,7 @@
 
 {{-- Modération rapide (admin) --}}
 @if (auth()->user()->isAdmin() && ! $point->estValide())
-<div class="rounded-2xl bg-amber-50 border border-amber-200 p-space-md flex flex-col md:flex-row md:items-center gap-3" x-data="{ refus: false }">
+<div class="rounded-2xl bg-amber-50 border border-amber-200 p-space-md flex flex-col md:flex-row md:items-center gap-3" x-data="{ refus: @js($errors->has('motif_refus')) }">
 <p class="flex-1 font-body-md text-body-md text-amber-900"><span class="material-symbols-outlined align-middle">pending_actions</span>
 @if ($point->estEnAttente()) Ce point attend votre validation avant d'être visible des habitants.
 @else Ce point a été refusé : « {{ $point->motif_refus }} ».
@@ -25,9 +25,10 @@
 <form method="POST" action="{{ route('back.points.valider', $point) }}">@csrf @method('PATCH')<button class="px-4 py-2 rounded-lg bg-primary-container text-on-primary-container font-label-md text-label-md font-semibold">Valider</button></form>
 @if ($point->estEnAttente())<button type="button" @click="refus = true" class="px-4 py-2 rounded-lg bg-surface-container-high text-error font-label-md text-label-md font-semibold">Refuser</button>@endif
 </div>
-<form method="POST" action="{{ route('back.points.refuser', $point) }}" x-show="refus" x-cloak class="flex flex-col sm:flex-row gap-2">@csrf @method('PATCH')
-<input type="text" name="motif_refus" value="{{ old('motif_refus') }}" required minlength="10" maxlength="500" placeholder="Motif du refus" class="sm:w-72 rounded-lg bg-surface-container border border-outline-variant/40 px-3 py-2 text-on-surface" />
+<form method="POST" action="{{ route('back.points.refuser', $point) }}" x-show="refus" x-cloak class="flex flex-col sm:flex-row sm:flex-wrap gap-2">@csrf @method('PATCH')
+<input type="text" name="motif_refus" value="{{ old('motif_refus') }}" required minlength="10" maxlength="500" placeholder="Motif du refus" class="sm:w-72 rounded-lg bg-surface-container border border-outline-variant/40 px-3 py-2 text-on-surface @error('motif_refus') border-error @enderror" />
 <button class="px-4 py-2 rounded-lg bg-error text-on-error font-label-md text-label-md font-semibold">Confirmer</button>
+@error('motif_refus') <p class="w-full font-body-sm text-body-sm text-error flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">error</span>{{ $message }}</p> @enderror
 </form>
 </div>
 @endif
@@ -71,6 +72,10 @@
 </div>
 </div>
 
+@if ($sante)
+@include('back.points._sante', ['sante' => $sante])
+@endif
+
 <div class="rounded-2xl bg-surface-container-low shadow-sm border border-outline-variant/20 p-space-md">
 <h2 class="font-title-md text-title-md text-on-surface font-semibold flex items-center gap-2"><span class="material-symbols-outlined text-primary">auto_awesome</span>Sentiment (IA)</h2>
 <div class="mt-2 flex flex-wrap gap-2">
@@ -82,7 +87,7 @@
 <div class="mt-3 rounded-xl bg-red-50 border border-red-200 p-3">
 <p class="font-label-md text-label-md text-red-900 font-semibold flex items-center gap-1"><span class="material-symbols-outlined text-[18px]">crisis_alert</span>Point mal noté récurrent · gravité {{ $diagnostic['gravite'] }}/100</p>
 <p class="mt-1 font-body-sm text-body-sm text-red-800">{{ $diagnostic['message'] }}</p>
-@if ($synthese)<p class="mt-2 font-body-sm text-body-sm text-on-surface border-t border-red-200 pt-2"><strong>Synthèse IA :</strong> {{ $synthese }}</p>@endif
+@if ($synthese)<p class="mt-2 font-body-sm text-body-sm text-on-surface border-t border-red-200 pt-2"><strong>Synthèse :</strong> {{ $synthese }}</p>@endif
 </div>
 @else
 <p class="mt-3 font-body-sm text-body-sm text-on-surface-variant">Aucun signal négatif récurrent détecté.</p>

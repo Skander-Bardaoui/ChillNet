@@ -31,8 +31,11 @@ class PredictAlerteRequest extends FormRequest
             $ids = $ids === null ? [] : [$ids];
         }
 
+        // La case « nouveau quartier » porte un identifiant symbolique : elle ne
+        // doit pas atteindre la règle `exists` (le quartier sera créé à
+        // l'enregistrement de l'alerte).
         $this->merge([
-            'quartier_ids' => array_values(array_map('intval', $ids)),
+            'quartier_ids' => array_values(array_filter(array_map('intval', $ids), fn (int $id): bool => $id > 0)),
             'avec_message' => filter_var($this->input('avec_message'), FILTER_VALIDATE_BOOLEAN),
         ]);
     }

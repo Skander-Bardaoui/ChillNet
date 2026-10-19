@@ -14,7 +14,7 @@ use Illuminate\View\View;
 /**
  * Avis des habitants sur les points de fraîcheur (module 3) :
  * dépôt, modification et suppression de SON avis. Le sentiment est analysé
- * par l'IA (Groq, repli lexical) à chaque enregistrement.
+ * localement (analyse lexicale + note) à chaque enregistrement.
  */
 class AvisController extends Controller
 {
@@ -70,7 +70,7 @@ class AvisController extends Controller
 
     private function analyser(Avis $avis): void
     {
-        $analyse = $this->sentiment->analyserAvecIa($avis->commentaire, (int) $avis->note);
+        $analyse = $this->sentiment->analyser($avis->commentaire, (int) $avis->note);
         $avis->sentiment = $analyse['sentiment'];
         $avis->score_sentiment = $analyse['score'];
     }

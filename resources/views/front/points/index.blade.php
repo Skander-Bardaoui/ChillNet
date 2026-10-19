@@ -14,7 +14,7 @@
 <div>
 <p class="font-label-sm text-label-sm uppercase tracking-widest text-sky-800 font-semibold">Module 3 · Se rafraîchir</p>
 <h1 class="font-headline-md text-headline-md md:font-headline-lg md:text-headline-lg text-on-surface font-bold">Refuges et points de fraîcheur</h1>
-<p class="font-body-md text-body-md text-on-surface-variant mt-1 max-w-2xl">Parcs ombragés, salles climatisées et fontaines autour de vous, classés par notre IA selon la distance, l'affluence estimée et vos besoins.</p>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1 max-w-2xl">Parcs ombragés, salles climatisées et fontaines autour de vous, classés par notre IA selon la distance, l'affluence estimée, vos besoins et l'état prévu d'après les avis récents.</p>
 </div>
 </div>
 <div class="flex flex-wrap gap-2 shrink-0">
@@ -98,6 +98,7 @@
 <div class="flex flex-wrap items-center gap-2">
 <a href="{{ route('points.show', $p) }}" class="font-title-lg text-title-lg text-on-surface font-semibold hover:underline">{{ $p->nom }}</a>
 <span class="px-2 py-0.5 rounded-full font-label-sm text-label-sm font-semibold {{ $reco['ouvert'] ? 'bg-green-100 text-green-800' : 'bg-slate-200 text-slate-700' }}">{{ $reco['ouvert'] ? 'Ouvert' : 'Fermé' }}</span>
+<x-badge-prevision :sante="$reco['sante'] ?? null" />
 </div>
 <x-point-equipements :point="$p" />
 <ul class="flex flex-col gap-1 font-body-sm text-body-sm text-on-surface-variant">
@@ -148,6 +149,8 @@
 </div>
 <p class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">schedule</span>{{ $p->horaires() }} · {{ $reco['ouvert'] ? 'ouvert' : 'fermé' }} · {{ mb_strtolower($reco['affluence']['libelle']) }}</p>
 <div class="flex items-center gap-2"><x-etoiles :note="$p->noteMoyenne()" :taille="14" /><span class="font-body-sm text-body-sm text-on-surface-variant">{{ $p->avis_count ? number_format($p->noteMoyenne(), 1, ',', '').' · '.$p->avis_count.' avis' : 'Pas encore d\'avis' }}</span></div>
+<x-badge-prevision :sante="$reco['sante'] ?? null" />
+
 <x-point-equipements :point="$p" />
 <a href="{{ route('points.show', $p) }}" class="mt-auto pt-2 inline-flex items-center gap-1 font-label-md text-label-md text-primary hover:underline">Détails et avis<span class="material-symbols-outlined text-[16px]">arrow_forward</span></a>
 </div>

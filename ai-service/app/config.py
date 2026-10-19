@@ -23,6 +23,10 @@ ARTIFACTS_DIR = BASE_DIR / "artifacts"
 COUPURES_ARTIFACTS_DIR = ARTIFACTS_DIR / "coupures"
 SIGNALEMENTS_ARTIFACTS_DIR = ARTIFACTS_DIR / "signalements"
 
+# Dossier d'artefacts DÉDIÉ au module 3 (points de fraîcheur + avis). Voir
+# app/fraicheur/.
+FRAICHEUR_ARTIFACTS_DIR = ARTIFACTS_DIR / "fraicheur"
+
 
 def load_labeler_config() -> dict[str, Any]:
     """Charge ``config/labeler.yaml`` (règles de labellisation)."""
@@ -116,6 +120,29 @@ class Settings:
                 "AI_SIGNALEMENTS_EXAMPLES_CSV",
                 DATA_DIR / "signalements_categories.csv",
             )
+        # --- Module 3 : santé des points de fraîcheur (artefacts et données isolés) ---
+        self.fraicheur_model_path: Path = Path(
+            os.environ.get(
+                "AI_FRAICHEUR_MODEL_PATH", FRAICHEUR_ARTIFACTS_DIR / "model.joblib"
+            )
+        )
+        self.fraicheur_metadata_path: Path = Path(
+            os.environ.get(
+                "AI_FRAICHEUR_METADATA_PATH", FRAICHEUR_ARTIFACTS_DIR / "metadata.json"
+            )
+        )
+        self.fraicheur_report_path: Path = Path(
+            os.environ.get(
+                "AI_FRAICHEUR_REPORT_PATH", FRAICHEUR_ARTIFACTS_DIR / "report.json"
+            )
+        )
+        self.fraicheur_history_csv: Path = Path(
+            os.environ.get("AI_FRAICHEUR_HISTORY_CSV", DATA_DIR / "fraicheur_history.csv")
+        )
+        # CSV RÉELS exportés par Laravel (`ai:export-fraicheur`) : fichier distinct
+        # de la simulation pour ne jamais l'écraser. Fusionné à l'entraînement.
+        self.fraicheur_real_csv: Path = Path(
+            os.environ.get("AI_FRAICHEUR_REAL_CSV", DATA_DIR / "fraicheur_real.csv")
         )
 
         self.labeler: dict[str, Any] = load_labeler_config()

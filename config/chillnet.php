@@ -19,4 +19,31 @@ return [
 
     'remember_refresh_ttl' => (int) env('CHILLNET_REMEMBER_REFRESH_TTL', 43200),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Flag « secure » des cookies d'authentification
+    |--------------------------------------------------------------------------
+    |
+    | Les cookies access_token/refresh_token sont httpOnly ; le flag `secure`
+    | interdit au navigateur de les transmettre en clair. Par défaut on suit
+    | l'environnement (true en production, donc derrière TLS). Un lab servi en
+    | HTTP pur (ingress Traefik « web », http://chillnet.local) doit forcer
+    | AUTH_COOKIE_SECURE=false, sinon le navigateur ne renvoie jamais les
+    | cookies et la connexion reboucle sur /login.
+    |
+    */
+    'auth_cookie_secure' => (bool) env('AUTH_COOKIE_SECURE', env('APP_ENV') === 'production'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Consentement à la reconnaissance faciale
+    |--------------------------------------------------------------------------
+    |
+    | Version du texte de consentement accepté lors de l'inscription du
+    | visage. Permet de tracer quelle formulation l'utilisateur a approuvée
+    | (données biométriques = catégorie particulière au sens du RGPD).
+    |
+    */
+    'face_consent_version' => env('CHILLNET_FACE_CONSENT_VERSION', '2026-10-01'),
+
 ];

@@ -1,0 +1,34 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: monitoring
+
+generatorOptions:
+  disableNameSuffixHash: true
+
+# Lit k8s/monitoring/.env (non versionné) et produit le Secret « grafana-admin ».
+secretGenerator:
+  - name: grafana-admin
+    envs:
+      - .env
+
+# Le nom de clé de la ConfigMap = nom du fichier (grafana illumine /var/lib/grafana/dashboards).
+configMapGenerator:
+  - name: grafana-dashboards
+    files:
+      - grafana/dashboard-node.json
+
+resources:
+  - namespace.yaml
+  - prometheus/rbac.yaml
+  - prometheus/configmap.yaml
+  - prometheus/pvc.yaml
+  - prometheus/service.yaml
+  - prometheus/deployment.yaml
+  - grafana/pvc.yaml
+  - grafana/provisioning-cm.yaml
+  - grafana/service.yaml
+  - grafana/deployment.yaml
+  - exporters/node-exporter.yaml
+  - exporters/kube-state-metrics.yaml
+  - ingress.yaml

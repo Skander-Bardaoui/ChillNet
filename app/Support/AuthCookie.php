@@ -29,7 +29,7 @@ final class AuthCookie
             $minutes,
             '/',
             null,
-            app()->environment('production'),
+            (bool) config('chillnet.auth_cookie_secure', app()->environment('production')),
             true,
             false,
             'lax',

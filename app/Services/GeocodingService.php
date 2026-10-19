@@ -9,8 +9,9 @@ use Illuminate\Support\Facades\Log;
 /**
  * Géocodage inverse (coordonnées → adresse) via Nominatim / OpenStreetMap.
  *
- * Sert uniquement à pré-remplir le champ « adresse » de « Mes lieux » quand
- * l'habitant pose ou déplace son point : l'adresse reste toujours modifiable.
+ * Sert à pré-remplir automatiquement les champs « adresse » (Mes lieux, points
+ * de fraîcheur) et « rue / quartier » (formulaire de coupure) quand on pose ou
+ * déplace un point : les valeurs restent toujours modifiables.
  *
  * Toute erreur (réseau, quota, payload inattendu) renvoie `null` : l'appelant
  * laisse alors le champ tel quel. Cette classe ne lève jamais d'exception.
@@ -21,6 +22,49 @@ class GeocodingService
      * Adresse lisible pour des coordonnées, ou null si indisponible.
      */
     public function adresseInverse(?float $latitude, ?float $longitude): ?string
+    {
+        $json = $this->rechercher($latitude, $longitude);
+
+        if ($json === null) {
+            return null;
+        }
+
+        return $this->composerAdresse($json['address'] ?? [], $json['display_name'] ?? null);
+    }
+
+    /**
+     * Composants de localité d'un point : nom de quartier, ville, code postal.
+     * Sert à pré-remplir un quartier créé à la volée depuis la carte.
+     *
+     * @return array{nom: ?string, ville: ?string, code_postal: ?string}|null
+     */
+    public function localiteInverse(?float $latitude, ?float $longitude): ?array
+    {
+        $json = $this->rechercher($latitude, $longitude);
+
+        if ($json === null) {
+            return null;
+        }
+
+        $composants = $json['address'] ?? [];
+
+        $ville = $this->premier($composants, ['city', 'town', 'village', 'municipality']);
+        $nom = $this->premier($composants, ['suburb', 'neighbourhood', 'quarter', 'city_district', 'hamlet']) ?? $ville;
+        $codePostal = $this->premier($composants, ['postcode']);
+
+        if ($nom === null && $ville === null && $codePostal === null) {
+            return null;
+        }
+
+        return ['nom' => $nom, 'ville' => $ville, 'code_postal' => $codePostal];
+    }
+
+    /**
+     * Réponse Nominatim brute (mise en cache), ou null si indisponible.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function rechercher(?float $latitude, ?float $longitude): ?array
     {
         if ($latitude === null || $longitude === null) {
             return null;
@@ -33,7 +77,7 @@ class GeocodingService
 
         $memoire = Cache::get($cacheKey);
 
-        if (is_string($memoire)) {
+        if (is_array($memoire)) {
             return $memoire;
         }
 
@@ -72,13 +116,28 @@ class GeocodingService
             return null;
         }
 
-        $adresse = $this->composerAdresse($json['address'] ?? [], $json['display_name'] ?? null);
+        Cache::put($cacheKey, $json, now()->addDay());
 
-        if ($adresse !== null) {
-            Cache::put($cacheKey, $adresse, now()->addDay());
+        return $json;
+    }
+
+    /**
+     * Première valeur textuelle non vide parmi les clés indiquées.
+     *
+     * @param  array<string, mixed>  $composants
+     * @param  list<string>  $cles
+     */
+    private function premier(array $composants, array $cles): ?string
+    {
+        foreach ($cles as $cle) {
+            $valeur = $composants[$cle] ?? null;
+
+            if (is_string($valeur) && trim($valeur) !== '') {
+                return trim($valeur);
+            }
         }
 
-        return $adresse;
+        return null;
     }
 
     /**

@@ -7,7 +7,6 @@ use App\Enums\Role;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use App\Models\Equipement;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -172,6 +171,9 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
     protected $hidden = [
         'password',
         'remember_token',
+        'two_factor_secret',
+        'two_factor_recovery_codes',
+        'face_reference_image',
     ];
 
     /**
@@ -186,6 +188,68 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
             'password' => 'hashed',
             'role' => Role::class,
             'profil_vulnerabilites' => 'array',
+            'two_factor_secret' => 'encrypted',
+            'two_factor_recovery_codes' => 'encrypted:array',
+            'two_factor_confirmed_at' => 'datetime',
+            'face_reference_image' => 'encrypted',
+            'face_enrolled_at' => 'datetime',
+            'face_consent_at' => 'datetime',
         ];
+    }
+
+    /**
+     * La connexion par visage est-elle active pour cet utilisateur ?
+     * Vérifie la valeur brute : le déchiffrement peut échouer après une
+     * rotation d'APP_KEY, la connexion par mot de passe reste alors possible.
+     */
+    public function hasFaceEnrollment(): bool
+    {
+        return ! is_null($this->face_enrolled_at)
+            && is_string($this->getRawOriginal('face_reference_image'))
+            && $this->getRawOriginal('face_reference_image') !== '';
+    }
+
+    /**
+     * La double authentification TOTP est-elle active (premier code validé) ?
+     */
+    public function hasEnabledTwoFactorAuthentication(): bool
+    {
+        return ! is_null($this->two_factor_confirmed_at);
+    }
+
+    /**
+     * Codes de récupération à usage unique encore valides.
+     *
+     * @return array<int, string>
+     */
+    public function recoveryCodes(): array
+    {
+        return $this->two_factor_recovery_codes ?? [];
+    }
+
+    /**
+     * URL publique de la photo de profil, ou `null` si l'utilisateur n'en a pas.
+     * `asset()` plutôt que `Storage::url()` : suit l'hôte/port courant (artisan serve).
+     */
+    public function avatarUrl(): ?string
+    {
+        return $this->avatar_path
+            ? asset('storage/'.$this->avatar_path)
+            : null;
+    }
+
+    /**
+     * Initiales utilisées comme avatar de repli (ex. « I B »).
+     */
+    public function initials(): string
+    {
+        $mots = preg_split('/\s+/', trim((string) $this->name)) ?: [];
+        $initiales = '';
+
+        foreach (array_slice($mots, 0, 2) as $mot) {
+            $initiales .= mb_strtoupper(mb_substr($mot, 0, 1));
+        }
+
+        return $initiales !== '' ? $initiales : '?';
     }
 }

@@ -60,10 +60,26 @@ pipeline {
           sh 'kubectl -n chillnet set image deployment/ai-service ai-service="$AI_IMAGE:$IMAGE_TAG"'
           // Job immuable : recréé à chaque déploiement.
           sh 'kubectl -n chillnet delete job chillnet-migrate --ignore-not-found'
-          sh 'kubectl -n chillnet apply -f k8s/base/laravel/laravel-migrate-job.yaml'
+          // Le Job est hors kustomize : `kubectl set image` ne s'applique pas à un Job
+          // (template immuable). On aligne donc son image sur le tag déployé via sed,
+          // sinon le Job rejouerait l'image `:latest` (potentiellement périmée).
+          sh 'sed "s#chillnet-app:latest#chillnet-app:${IMAGE_TAG}#" k8s/base/laravel/laravel-migrate-job.yaml | kubectl -n chillnet apply -f -'
           sh 'kubectl -n chillnet wait --for=condition=complete job/chillnet-migrate --timeout=180s'
           sh 'kubectl -n chillnet rollout status deployment/chillnet-app --timeout=180s'
           sh 'kubectl -n chillnet rollout status deployment/ai-service --timeout=180s'
+        }
+      }
+    }
+
+    stage('Deploy monitoring') {
+      steps {
+        // Stack Prometheus + Grafana (namespace `monitoring`), indépendante de l'app.
+        // Credential « Secret file » id `chillnet-monitoring-env` = contenu de k8s/monitoring/.env.
+        withCredentials([file(credentialsId: 'chillnet-monitoring-env', variable: 'MON_ENV_FILE')]) {
+          sh 'rm -f k8s/monitoring/.env && cp "$MON_ENV_FILE" k8s/monitoring/.env'
+          sh 'kubectl apply -k k8s/monitoring'
+          sh 'kubectl -n monitoring rollout status deployment/prometheus --timeout=180s'
+          sh 'kubectl -n monitoring rollout status deployment/grafana --timeout=180s'
         }
       }
     }
@@ -73,6 +89,8 @@ pipeline {
     always {
       echo "--- État du namespace chillnet ---"
       sh 'kubectl -n chillnet get pods,svc,ingress || true'
+      echo "--- État du namespace monitoring ---"
+      sh 'kubectl -n monitoring get pods,svc,ingress || true'
     }
     success { echo 'ChillNet CD succeeded.' }
     failure { echo 'ChillNet CD failed.' }

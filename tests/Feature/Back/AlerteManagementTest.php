@@ -60,6 +60,34 @@ class AlerteManagementTest extends TestCase
         $this->assertSame($admin->id, $alerte->user_id);
     }
 
+    public function test_lieu_is_saved_and_validated(): void
+    {
+        $admin = $this->userWithRole(Role::Admin);
+        $a = $this->quartier('Centre-Ville');
+        $b = $this->quartier('La Marsa');
+
+        $this->actingAs($admin)
+            ->post(route('back.alertes.store'), $this->payload([
+                'quartier_ids' => [$a->id],
+                'lieu' => '  12 rue des Lilas  ',
+            ]))
+            ->assertRedirect(route('back.alertes.index'));
+
+        $this->assertDatabaseHas('alertes', [
+            'titre' => 'Vigilance forte chaleur',
+            'lieu' => '12 rue des Lilas',
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('back.alertes.store'), $this->payload([
+                'titre' => 'Alerte avec une rue trop longue',
+                'niveau' => NiveauAlerte::Rouge->value,
+                'quartier_ids' => [$b->id],
+                'lieu' => str_repeat('a', 256),
+            ]))
+            ->assertSessionHasErrors('lieu');
+    }
+
     public function test_updating_an_alerte_syncs_the_quartiers(): void
     {
         $admin = $this->userWithRole(Role::Admin);
@@ -105,6 +133,122 @@ class AlerteManagementTest extends TestCase
         $this->assertTrue($alerte->validee);
         $this->assertNotNull($alerte->validee_le);
         $this->assertSame($admin->id, $alerte->validee_par);
+    }
+
+    public function test_validation_errors_are_displayed_on_the_form(): void
+    {
+        $admin = $this->userWithRole(Role::Admin);
+
+        $this->actingAs($admin)
+            ->from(route('back.alertes.create'))
+            ->post(route('back.alertes.store'), $this->payload([
+                'titre' => '',
+                'quartier_ids' => [],
+                'seuil_temperature' => 10,
+            ]))
+            ->assertRedirect(route('back.alertes.create'))
+            ->assertSessionHasErrors(['titre', 'quartier_ids', 'seuil_temperature']);
+
+        $this->actingAs($admin)
+            ->get(route('back.alertes.create'))
+            ->assertOk()
+            ->assertSee('Le titre de l\'alerte est obligatoire.')
+            ->assertSee('Ciblez l\'alerte : cochez au moins un quartier ou posez un point sur la carte.')
+            ->assertSee('Le seuil de température doit être compris entre 30 et 55 °C.');
+    }
+
+    public function test_an_alert_creates_and_links_a_new_quartier_from_an_unknown_point(): void
+    {
+        $admin = $this->userWithRole(Role::Admin);
+
+        $this->actingAs($admin)
+            ->post(route('back.alertes.store'), $this->payload([
+                'quartier_ids' => ['nouveau'],
+                'latitude' => 36.9000,
+                'longitude' => 10.3000,
+                'rayon_metres' => 1200,
+                'nouveau_quartier_nom' => 'La Marsa Plage',
+                'nouveau_quartier_ville' => 'La Marsa',
+                'nouveau_quartier_code_postal' => '2070',
+            ]))
+            ->assertRedirect(route('back.alertes.index'));
+
+        $quartier = Quartier::where('nom', 'La Marsa Plage')->firstOrFail();
+
+        $this->assertSame('La Marsa', $quartier->ville);
+        $this->assertSame('2070', $quartier->code_postal);
+        $this->assertEquals(36.9, $quartier->latitude);
+        $this->assertEquals(10.3, $quartier->longitude);
+
+        $alerte = Alerte::firstOrFail();
+        $this->assertSame([$quartier->id], $alerte->quartiers()->pluck('quartiers.id')->all());
+    }
+
+    public function test_the_same_unknown_point_reuses_the_new_quartier(): void
+    {
+        $admin = $this->userWithRole(Role::Admin);
+
+        $payload = [
+            'quartier_ids' => ['nouveau'],
+            'latitude' => 36.9000,
+            'longitude' => 10.3000,
+            'nouveau_quartier_nom' => 'La Marsa Plage',
+            'nouveau_quartier_ville' => 'La Marsa',
+            'nouveau_quartier_code_postal' => '2070',
+        ];
+
+        $this->actingAs($admin)
+            ->post(route('back.alertes.store'), $this->payload($payload))
+            ->assertRedirect(route('back.alertes.index'));
+
+        $this->actingAs($admin)
+            ->post(route('back.alertes.store'), $this->payload($payload + [
+                'titre' => 'Deuxième vigilance',
+                'niveau' => NiveauAlerte::Rouge->value,
+            ]))
+            ->assertRedirect(route('back.alertes.index'));
+
+        $this->assertSame(1, Quartier::where('nom', 'La Marsa Plage')->count());
+        $this->assertSame(2, Alerte::count());
+    }
+
+    public function test_no_quartier_is_created_when_the_alert_is_invalid(): void
+    {
+        $admin = $this->userWithRole(Role::Admin);
+
+        $this->actingAs($admin)
+            ->post(route('back.alertes.store'), $this->payload([
+                'titre' => '',
+                'quartier_ids' => ['nouveau'],
+                'latitude' => 36.9000,
+                'longitude' => 10.3000,
+                'nouveau_quartier_nom' => 'La Marsa Plage',
+                'nouveau_quartier_ville' => 'La Marsa',
+            ]))
+            ->assertSessionHasErrors('titre');
+
+        $this->assertSame(0, Quartier::where('nom', 'La Marsa Plage')->count());
+        $this->assertSame(0, Alerte::count());
+    }
+
+    public function test_a_gestionnaire_does_not_create_a_quartier_outside_his_zone(): void
+    {
+        $sien = $this->quartier('Centre-Ville');
+        $residence = Residence::create(['nom' => 'Ma résidence', 'adresse' => '1 rue', 'quartier_id' => $sien->id]);
+        $gestionnaire = $this->userWithRole(Role::Gestionnaire, $residence->id);
+
+        $this->actingAs($gestionnaire)
+            ->post(route('back.alertes.store'), $this->payload([
+                'quartier_ids' => ['nouveau'],
+                'latitude' => 36.9000,
+                'longitude' => 10.3000,
+                'nouveau_quartier_nom' => 'La Marsa Plage',
+                'nouveau_quartier_ville' => 'La Marsa',
+            ]))
+            ->assertRedirect(route('back.alertes.index'));
+
+        $this->assertSame(0, Quartier::where('nom', 'La Marsa Plage')->count());
+        $this->assertSame([$sien->id], Alerte::firstOrFail()->quartiers()->pluck('quartiers.id')->all());
     }
 
     public function test_fin_must_be_after_debut(): void
@@ -273,6 +417,32 @@ class AlerteManagementTest extends TestCase
         Http::assertNothingSent();
     }
 
+    public function test_prefill_ignores_the_symbolic_new_quartier_checkbox(): void
+    {
+        Http::fake();
+
+        $admin = $this->userWithRole(Role::Admin);
+
+        $this->actingAs($admin)
+            ->postJson(route('back.alertes.prefill'), [
+                'quartier_ids' => ['nouveau'],
+                'nouveau_quartier_nom' => 'La Marsa Plage',
+                'nouveau_quartier_ville' => 'La Marsa',
+                'latitude' => 35,
+                'longitude' => 9,
+                'seuil_temperature' => 35,
+                'temperature_actuelle' => 41,
+            ])
+            ->assertOk()
+            ->assertJson([
+                'ok' => true,
+                'niveau' => NiveauAlerte::Rouge->value,
+                'source' => 'manuel',
+            ]);
+
+        Http::assertNothingSent();
+    }
+
     public function test_prefill_degrades_gracefully_when_weather_is_unavailable(): void
     {
         config(['services.weather.key' => null]);
@@ -358,13 +528,13 @@ class AlerteManagementTest extends TestCase
         $admin = $this->userWithRole(Role::Admin);
         $quartier = $this->quartier();
 
-        $alerte = Alerte::factory()->create(['titre' => 'Alerte écran']);
+        $alerte = Alerte::factory()->create(['titre' => 'Alerte écran', 'lieu' => 'Rue des Tests']);
         $alerte->quartiers()->sync([$quartier->id]);
 
         $this->actingAs($admin)->get(route('back.alertes.index'))->assertOk()->assertSee('Alerte écran');
         $this->actingAs($admin)->get(route('back.alertes.create'))->assertOk()->assertSee('Assistant IA canicule');
         $this->actingAs($admin)->get(route('back.alertes.edit', $alerte->id))->assertOk()->assertSee('Alerte écran');
-        $this->actingAs($admin)->get(route('back.alertes.show', $alerte->id))->assertOk()->assertSee('Alerte écran')->assertSee('Centre-Ville');
+        $this->actingAs($admin)->get(route('back.alertes.show', $alerte->id))->assertOk()->assertSee('Alerte écran')->assertSee('Centre-Ville')->assertSee('Rue des Tests');
 
         // Chaque mode de tri doit rendre sans erreur.
         foreach (['recent', 'ancien', 'niveau', 'statut', 'zone'] as $tri) {

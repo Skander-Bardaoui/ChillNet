@@ -3,11 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Auth\IssuesJwtCookies;
+use App\Http\Requests\Profile\DestroyFaceEnrollmentRequest;
+use App\Http\Requests\Profile\UpdateFaceEnrollmentRequest;
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Services\Face\FacePlusPlusClient;
+use App\Support\FaceImage;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class ProfileController extends Controller
@@ -44,6 +49,97 @@ class ProfileController extends Controller
         $request->user()->save();
 
         return Redirect::route('profile.edit')->with('status', 'profile-updated');
+    }
+
+    /**
+     * Update the user's profile photo.
+     */
+    public function updateAvatar(Request $request): RedirectResponse
+    {
+        $request->validateWithBag('avatarUpdate', [
+            'avatar' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+        ]);
+
+        $user = $request->user();
+
+        $ancien = $user->avatar_path;
+
+        $user->avatar_path = $request->file('avatar')->store('avatars', 'public');
+        $user->save();
+
+        if ($ancien && $ancien !== $user->avatar_path) {
+            Storage::disk('public')->delete($ancien);
+        }
+
+        return Redirect::route('profile.edit')->with('status', 'avatar-updated');
+    }
+
+    /**
+     * Remove the user's profile photo.
+     */
+    public function destroyAvatar(Request $request): RedirectResponse
+    {
+        $user = $request->user();
+
+        if ($user->avatar_path) {
+            Storage::disk('public')->delete($user->avatar_path);
+            $user->avatar_path = null;
+            $user->save();
+        }
+
+        return Redirect::route('profile.edit')->with('status', 'avatar-removed');
+    }
+
+    /**
+     * Active ou remplace la connexion par visage (Face++).
+     */
+    public function updateFace(UpdateFaceEnrollmentRequest $request, FacePlusPlusClient $facePlusPlus): RedirectResponse
+    {
+        $reference = FaceImage::prepareForStorage((string) $request->input('image'));
+
+        if ($reference === null) {
+            return Redirect::route('profile.edit')
+                ->withErrors(['image' => 'La photo du visage est illisible.'], 'faceEnrollment');
+        }
+
+        $faces = $facePlusPlus->detect($reference);
+
+        if ($faces === null) {
+            return Redirect::route('profile.edit')
+                ->withErrors(['image' => 'Le service de reconnaissance faciale est indisponible. Réessayez plus tard.'], 'faceEnrollment');
+        }
+
+        if (count($faces) !== 1) {
+            return Redirect::route('profile.edit')
+                ->withErrors(['image' => 'La photo doit contenir un seul visage, de face et bien éclairé.'], 'faceEnrollment');
+        }
+
+        $user = $request->user();
+
+        // Colonnes sensibles volontairement hors `$fillable`.
+        $user->forceFill([
+            'face_reference_image' => $reference,
+            'face_enrolled_at' => now(),
+            'face_consent_at' => now(),
+            'face_consent_version' => config('chillnet.face_consent_version'),
+        ])->save();
+
+        return Redirect::route('profile.edit')->with('status', 'face-enrolled');
+    }
+
+    /**
+     * Supprime l'image de référence et désactive la connexion par visage.
+     */
+    public function destroyFace(DestroyFaceEnrollmentRequest $request): RedirectResponse
+    {
+        $request->user()->forceFill([
+            'face_reference_image' => null,
+            'face_enrolled_at' => null,
+            'face_consent_at' => null,
+            'face_consent_version' => null,
+        ])->save();
+
+        return Redirect::route('profile.edit')->with('status', 'face-removed');
     }
 
     /**
