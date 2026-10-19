@@ -4,3 +4,5 @@ kubernetes
 nodejs
 configuration-as-code
 ws-cleanup
+# Déclenchement par webhook GitHub (githubPush() dans le Jenkinsfile).
+github
