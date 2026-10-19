@@ -43,7 +43,7 @@
 <h2 class="font-title-md text-title-md text-amber-900 font-semibold flex items-center gap-2"><span class="material-symbols-outlined">pending_actions</span>Propositions d'habitants à modérer ({{ $enAttente->count() }})</h2>
 <div class="flex flex-col gap-3">
 @foreach ($enAttente as $proposition)
-<article class="rounded-xl bg-surface-container-lowest border border-outline-variant/20 p-4 flex flex-col lg:flex-row lg:items-center gap-3" x-data="{ refus: false }">
+<article class="rounded-xl bg-surface-container-lowest border border-outline-variant/20 p-4 flex flex-col lg:flex-row lg:items-center gap-3" x-data="{ refus: @js($errors->has('motif_refus') && (int) old('refus_point') === $proposition->id) }">
 <div class="flex items-start gap-3 flex-1 min-w-0">
 @if ($proposition->photo_url)
 <img src="{{ $proposition->photo_url }}" alt="" class="w-16 h-16 rounded-lg object-cover shrink-0" />
@@ -61,10 +61,13 @@
 <form method="POST" action="{{ route('back.points.valider', $proposition) }}">@csrf @method('PATCH')<button type="submit" class="px-4 py-2 rounded-lg bg-primary-container text-on-primary-container font-label-md text-label-md font-semibold hover:opacity-95 inline-flex items-center gap-1"><span class="material-symbols-outlined text-[18px]">check</span>Valider</button></form>
 <button type="button" @click="refus = true" class="px-4 py-2 rounded-lg bg-surface-container-high text-error font-label-md text-label-md font-semibold hover:opacity-95 inline-flex items-center gap-1"><span class="material-symbols-outlined text-[18px]">close</span>Refuser</button>
 </div>
-<form method="POST" action="{{ route('back.points.refuser', $proposition) }}" x-show="refus" x-cloak class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">@csrf @method('PATCH')
-<input type="text" name="motif_refus" required minlength="10" maxlength="500" placeholder="Motif du refus (visible par l'habitant)" class="flex-1 lg:w-72 rounded-lg bg-surface-container border border-outline-variant/40 px-3 py-2 text-on-surface focus:border-primary-container focus:outline-none" />
+@php($erreurRefus = (int) old('refus_point') === $proposition->id)
+<form method="POST" action="{{ route('back.points.refuser', $proposition) }}" x-show="refus" x-cloak class="flex flex-col sm:flex-row sm:flex-wrap gap-2 w-full lg:w-auto">@csrf @method('PATCH')
+<input type="hidden" name="refus_point" value="{{ $proposition->id }}" />
+<input type="text" name="motif_refus" value="{{ $erreurRefus ? old('motif_refus') : '' }}" required minlength="10" maxlength="500" placeholder="Motif du refus (visible par l'habitant)" class="flex-1 lg:w-72 rounded-lg bg-surface-container border border-outline-variant/40 px-3 py-2 text-on-surface focus:border-primary-container focus:outline-none {{ $erreurRefus && $errors->has('motif_refus') ? 'border-error' : '' }}" />
 <button type="submit" class="px-4 py-2 rounded-lg bg-error text-on-error font-label-md text-label-md font-semibold">Confirmer le refus</button>
 <button type="button" @click="refus = false" class="px-3 py-2 rounded-lg text-on-surface-variant font-label-md text-label-md">Annuler</button>
+@if ($erreurRefus) @error('motif_refus') <p class="w-full font-body-sm text-body-sm text-error flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">error</span>{{ $message }}</p> @enderror @endif
 </form>
 @else
 <span class="font-body-sm text-body-sm text-amber-800">En attente de validation par un administrateur</span>
