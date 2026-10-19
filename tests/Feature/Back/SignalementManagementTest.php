@@ -293,7 +293,8 @@ class SignalementManagementTest extends TestCase
         ]);
         $this->assertDatabaseHas('signalement_analyses', [
             'signalement_id' => $signalement->id,
-            'score_urgence' => 90,
+            // 90 (« personne bloquée ») + 3 (indicateur supplémentaire « danger »).
+            'score_urgence' => 93,
             'urgence_suggeree' => 'vitale',
             'version_modele' => 'regles-v1',
         ]);
