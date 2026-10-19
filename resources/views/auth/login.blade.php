@@ -74,6 +74,20 @@
             <p class="font-body-sm text-body-sm text-on-surface-variant text-center">Habitant → tableau de bord foyer · Gestionnaire / Admin → espace de gestion (redirection automatique).</p>
         </form>
 
+        @if (config('services.faceplusplus.enabled') && filled(config('services.faceplusplus.key')))
+            <div class="flex items-center gap-3">
+                <span class="h-px flex-1 bg-outline-variant/40"></span>
+                <span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">ou</span>
+                <span class="h-px flex-1 bg-outline-variant/40"></span>
+            </div>
+
+            <a href="{{ route('login.face') }}"
+               class="w-full py-2.5 px-4 rounded-lg bg-surface-container-high hover:bg-surface-variant text-on-surface font-label-md text-label-md font-semibold transition-colors flex items-center justify-center gap-2">
+                <span class="material-symbols-outlined text-[20px]">face</span>
+                Se connecter avec mon visage
+            </a>
+        @endif
+
         {{-- Bloc entraide — ancien bouton alert() devenu vrai lien --}}
         <div class="flex flex-col sm:flex-row items-center justify-between gap-3 bg-surface-container-lowest/50 p-3.5 rounded-lg">
             <div class="flex items-center gap-3">

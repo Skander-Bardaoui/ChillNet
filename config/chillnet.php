@@ -34,4 +34,16 @@ return [
     */
     'auth_cookie_secure' => (bool) env('AUTH_COOKIE_SECURE', env('APP_ENV') === 'production'),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Consentement à la reconnaissance faciale
+    |--------------------------------------------------------------------------
+    |
+    | Version du texte de consentement accepté lors de l'inscription du
+    | visage. Permet de tracer quelle formulation l'utilisateur a approuvée
+    | (données biométriques = catégorie particulière au sens du RGPD).
+    |
+    */
+    'face_consent_version' => env('CHILLNET_FACE_CONSENT_VERSION', '2026-10-01'),
+
 ];

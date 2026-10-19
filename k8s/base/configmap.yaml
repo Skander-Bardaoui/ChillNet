@@ -38,3 +38,10 @@ data:
   AI_SERVICE_URL: "http://ai-service:8001"
   AI_SERVICE_TIMEOUT: "2.0"
   AI_DRIVER: "local"
+
+  # Reconnaissance faciale Face++ (clé et secret dans le Secret Kubernetes).
+  FACEPP_ENABLED: "true"
+  FACEPP_BASE_URL: "https://api-us.faceplusplus.com"
+  FACEPP_TIMEOUT: "8.0"
+  FACEPP_LOGIN_THRESHOLD: "80"
+  FACEPP_LOGIN_FAR: "1e-5"

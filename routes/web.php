@@ -1,28 +1,27 @@
 <?php
 
 use App\Http\Controllers\Back\AlerteController as BackAlerteController;
-use App\Http\Controllers\Back\ConseilController as BackConseilController;
 use App\Http\Controllers\Back\AvisController as BackAvisController;
-use App\Http\Controllers\Back\PointFraicheurController as BackPointFraicheurController;
-use App\Http\Controllers\Front\AvisController as FrontAvisController;
-use App\Http\Controllers\Front\PointFraicheurController as FrontPointFraicheurController;
+use App\Http\Controllers\Back\ConseilController as BackConseilController;
 use App\Http\Controllers\Back\CoupureController as BackCoupureController;
 use App\Http\Controllers\Back\DashboardController as BackDashboardController;
 use App\Http\Controllers\Back\EquipementTypeController as BackEquipementTypeController;
+use App\Http\Controllers\Back\PointFraicheurController as BackPointFraicheurController;
 use App\Http\Controllers\Back\QuartierController;
 use App\Http\Controllers\Back\ResidenceController;
 use App\Http\Controllers\Back\SignalementController as BackSignalementController;
 use App\Http\Controllers\Front\AlerteController as FrontAlerteController;
+use App\Http\Controllers\Front\AvisController as FrontAvisController;
 use App\Http\Controllers\Front\ConseilController as FrontConseilController;
 use App\Http\Controllers\Front\CoupureController as FrontCoupureController;
 use App\Http\Controllers\Front\DashboardController;
 use App\Http\Controllers\Front\EquipementController as FrontEquipementController;
 use App\Http\Controllers\Front\HomeController;
 use App\Http\Controllers\Front\LieuController as FrontLieuController;
+use App\Http\Controllers\Front\PointFraicheurController as FrontPointFraicheurController;
 use App\Http\Controllers\Front\SignalementController as FrontSignalementController;
 use App\Http\Controllers\GeocodingController;
 use App\Http\Controllers\ProfileController;
-use App\Models\Residence;
 use App\Support\AuthCookie;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -113,9 +112,9 @@ Route::middleware(['auth', 'role:habitant'])->group(function () {
 Route::get('/auth/status', function (Request $request) {
     return response()->json([
         'authenticated' => auth()->check(),
-        'user'          => auth()->check() ? auth()->user()->only(['id', 'name', 'email']) : null,
-        'cookies'       => [
-            'access_token'  => $request->hasCookie(AuthCookie::ACCESS),
+        'user' => auth()->check() ? auth()->user()->only(['id', 'name', 'email']) : null,
+        'cookies' => [
+            'access_token' => $request->hasCookie(AuthCookie::ACCESS),
             'refresh_token' => $request->hasCookie(AuthCookie::REFRESH),
         ],
         'hint' => 'Les cookies httpOnly se vérifient dans DevTools > Application > Cookies.',
@@ -136,6 +135,11 @@ Route::middleware('auth')->group(function () {
 
     Route::patch('/profile/avatar', [ProfileController::class, 'updateAvatar'])->name('profile.avatar.update');
     Route::delete('/profile/avatar', [ProfileController::class, 'destroyAvatar'])->name('profile.avatar.destroy');
+
+    Route::patch('/profile/face', [ProfileController::class, 'updateFace'])
+        ->middleware('throttle:5,1')->name('profile.face.update');
+    Route::delete('/profile/face', [ProfileController::class, 'destroyFace'])
+        ->middleware('throttle:5,1')->name('profile.face.destroy');
 });
 
 /*

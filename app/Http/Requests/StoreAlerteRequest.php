@@ -24,6 +24,16 @@ class StoreAlerteRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         $user = $this->user();
+        $lieu = trim((string) $this->input('lieu', ''));
+        $nouveauNom = trim((string) $this->input('nouveau_quartier_nom', ''));
+        $nouveauVille = trim((string) $this->input('nouveau_quartier_ville', ''));
+        $nouveauCodePostal = trim((string) $this->input('nouveau_quartier_code_postal', ''));
+
+        $nouveauQuartier = [
+            'nouveau_quartier_nom' => $nouveauNom !== '' ? $nouveauNom : null,
+            'nouveau_quartier_ville' => $nouveauVille !== '' ? $nouveauVille : null,
+            'nouveau_quartier_code_postal' => $nouveauCodePostal !== '' ? $nouveauCodePostal : null,
+        ];
 
         // Un gestionnaire est TOUJOURS ramené à sa zone : on impose son
         // quartier ; à défaut de coordonnées fournies, on centre le cercle
@@ -34,7 +44,8 @@ class StoreAlerteRequest extends FormRequest
             $merge = [
                 'quartier_ids' => [(int) $user->residence->quartier_id],
                 'source_meteo' => $this->input('source_meteo') ?: 'manuel',
-            ];
+                'lieu' => $lieu !== '' ? $lieu : null,
+            ] + $nouveauQuartier;
 
             if (! $this->filled('latitude') && ! $this->filled('longitude') && $quartier?->hasCoordinates()) {
                 $merge['latitude'] = $quartier->latitude;
@@ -56,10 +67,16 @@ class StoreAlerteRequest extends FormRequest
             $ids = $ids === null ? [] : [$ids];
         }
 
+        // La case « nouveau quartier » utilise un identifiant symbolique :
+        // elle ne doit pas atteindre la règle `exists`. Le quartier sera créé
+        // après validation, à partir des champs ci-dessous.
+        $ids = array_values(array_filter(array_map('intval', $ids), fn (int $id): bool => $id > 0));
+
         $this->merge([
-            'quartier_ids' => array_values(array_map('intval', $ids)),
+            'quartier_ids' => $ids,
             'source_meteo' => $this->input('source_meteo') ?: 'manuel',
-        ]);
+            'lieu' => $lieu !== '' ? $lieu : null,
+        ] + $nouveauQuartier);
     }
 
     /**
@@ -78,6 +95,13 @@ class StoreAlerteRequest extends FormRequest
             'latitude' => ['nullable', 'numeric', 'between:-90,90'],
             'longitude' => ['nullable', 'numeric', 'between:-180,180'],
             'rayon_metres' => ['nullable', 'integer', 'between:100,50000'],
+            'lieu' => ['nullable', 'string', 'max:255'],
+
+            // Quartier créé à la volée quand le point cliqué n'est proche
+            // d'aucun quartier connu (nom + ville requis pour le créer).
+            'nouveau_quartier_nom' => ['nullable', 'string', 'min:2', 'max:120'],
+            'nouveau_quartier_ville' => ['nullable', 'string', 'min:2', 'max:120'],
+            'nouveau_quartier_code_postal' => ['nullable', 'string', 'regex:/^[0-9A-Za-z\- ]{3,10}$/'],
 
             'debut' => ['required', 'date'],
             'fin' => ['required', 'date', 'after:debut'],
@@ -188,6 +212,12 @@ class StoreAlerteRequest extends FormRequest
             'latitude.between' => 'La latitude doit être comprise entre -90 et 90.',
             'longitude.between' => 'La longitude doit être comprise entre -180 et 180.',
             'rayon_metres.between' => 'Le rayon doit être compris entre 100 m et 50 km.',
+            'lieu.max' => 'La rue / le lieu précis ne doit pas dépasser 255 caractères.',
+            'nouveau_quartier_nom.min' => 'Le nom du nouveau quartier est trop court.',
+            'nouveau_quartier_nom.max' => 'Le nom du nouveau quartier est trop long.',
+            'nouveau_quartier_ville.min' => 'La ville du nouveau quartier est trop courte.',
+            'nouveau_quartier_ville.max' => 'La ville du nouveau quartier est trop longue.',
+            'nouveau_quartier_code_postal.regex' => 'Le code postal du nouveau quartier n\'est pas valide.',
             'debut.required' => 'La date de début est obligatoire.',
             'debut.date' => 'La date de début n\'est pas valide.',
             'fin.required' => 'La date de fin est obligatoire.',

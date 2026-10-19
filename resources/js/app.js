@@ -2,7 +2,13 @@ import './bootstrap';
 
 import Alpine from 'alpinejs';
 
+import faceCapture from './face-capture';
+
 window.Alpine = Alpine;
+
+// Capture webcam (connexion / enrôlement par visage) : utilisé par les vues
+// auth/face-login et profile/partials/face-enrollment-form.
+Alpine.data('faceCapture', faceCapture);
 
 // Confirmation de suppression unifiée : un seul état partagé pour toute la page.
 // N'importe quel formulaire portant `data-confirm="…"` déclenche la modale

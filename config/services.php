@@ -75,4 +75,25 @@ return [
         'user_agent' => env('NOMINATIM_USER_AGENT', 'ChillNet/1.0 (+'.env('APP_URL', 'http://localhost').')'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Reconnaissance faciale (Face++ / Megvii) — connexion « Face ID »
+    |--------------------------------------------------------------------------
+    |
+    | Les appels sont exclusivement côté serveur : la clé et le secret ne
+    | doivent jamais atteindre le navigateur. Voir FacePlusPlusClient.
+    |
+    */
+
+    'faceplusplus' => [
+        'enabled' => (bool) env('FACEPP_ENABLED', true),
+        'key' => env('FACEPP_API_KEY'),
+        'secret' => env('FACEPP_API_SECRET'),
+        'base_url' => env('FACEPP_BASE_URL', 'https://api-us.faceplusplus.com'),
+        'timeout' => (float) env('FACEPP_TIMEOUT', 8.0),
+        'threshold' => (float) env('FACEPP_LOGIN_THRESHOLD', 80.0),
+        'far' => env('FACEPP_LOGIN_FAR', '1e-5'),
+        'image_max_bytes' => (int) env('FACEPP_IMAGE_MAX_BYTES', 2097152),
+    ],
+
 ];
