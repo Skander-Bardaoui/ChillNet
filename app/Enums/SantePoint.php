@@ -24,6 +24,32 @@ enum SantePoint: string
         };
     }
 
+    /**
+     * Libellé pour les habitants (front office).
+     */
+    public function libellePublic(): string
+    {
+        return match ($this) {
+            self::Bon => 'Bon état prévu',
+            self::ASurveiller => 'À surveiller',
+            self::Degrade => 'Risque de problèmes',
+            self::Critique => 'Problèmes probables',
+        };
+    }
+
+    /**
+     * Message explicatif pour les habitants (front office).
+     */
+    public function messagePublic(): string
+    {
+        return match ($this) {
+            self::Bon => 'Les avis récents sont bons : aucun problème n\'est attendu dans les 14 prochains jours.',
+            self::ASurveiller => 'Quelques avis récents signalent des problèmes : consultez les derniers avis avant de vous déplacer.',
+            self::Degrade => 'Les avis récents se dégradent : des problèmes sont probables dans les prochains jours. Prévoyez une alternative.',
+            self::Critique => 'De nombreux avis récents signalent des problèmes : privilégiez un autre point de fraîcheur.',
+        };
+    }
+
     public function badgeClasses(): string
     {
         return match ($this) {

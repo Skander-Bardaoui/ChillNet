@@ -61,6 +61,19 @@ class RecommandationFraicheurService
     private const FENETRE_AFFLUENCE_JOURS = 30;
 
     /**
+     * Pénalité multiplicative du score selon la santé PRÉDITE du point
+     * (modèle IA du module 3) : un point qui va se dégrader descend dans le
+     * classement sans disparaître.
+     *
+     * @var array<string, float>
+     */
+    public const PENALITES_SANTE = [
+        'a_surveiller' => 0.95,
+        'degrade' => 0.85,
+        'critique' => 0.7,
+    ];
+
+    /**
      * Profils horaires d'affluence (0–1) par type de lieu, heure par heure.
      *
      * @var array<string, array<int, float>>
@@ -118,6 +131,35 @@ class RecommandationFraicheurService
             ->filter(fn (array $reco): bool => $reco['distance_m'] <= $rayonKm * 1000)
             ->sortByDesc('score')
             ->take($limite)
+            ->values();
+    }
+
+    /**
+     * Intègre la santé PRÉDITE (SantePointService, modèle IA) au classement :
+     * score pénalisé pour les points à risque, raison ajoutée, puis re-tri.
+     * Chaque recommandation reçoit une clé `sante` (null si non évaluée).
+     *
+     * @param  Collection<int, array<string, mixed>>  $recommandations
+     * @param  Collection<int, array<string, mixed>>  $santes  indexée par id de point
+     * @return Collection<int, array<string, mixed>>
+     */
+    public function appliquerSante(Collection $recommandations, Collection $santes): Collection
+    {
+        return $recommandations
+            ->map(function (array $reco) use ($santes): array {
+                $sante = $santes->get($reco['point']->id);
+                $reco['sante'] = $sante;
+
+                $penalite = $sante !== null ? (self::PENALITES_SANTE[$sante['niveau']->value] ?? 1.0) : 1.0;
+
+                if ($penalite < 1.0) {
+                    $reco['score'] = (int) round($reco['score'] * $penalite);
+                    $reco['raisons'][] = 'Prévision IA : '.mb_strtolower($sante['niveau']->libellePublic()).' dans les 14 prochains jours';
+                }
+
+                return $reco;
+            })
+            ->sortByDesc('score')
             ->values();
     }
 

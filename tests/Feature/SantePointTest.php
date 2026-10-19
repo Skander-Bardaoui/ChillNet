@@ -11,6 +11,7 @@ use App\Models\PointFraicheur;
 use App\Models\PointSanteSnapshot;
 use App\Models\Quartier;
 use App\Models\User;
+use App\Services\RecommandationFraicheurService;
 use App\Services\SantePointService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
@@ -219,6 +220,52 @@ class SantePointTest extends TestCase
 
         @unlink($dossier.'/fraicheur_real.csv');
         @rmdir($dossier);
+    }
+
+    public function test_le_classement_penalise_les_points_a_risque(): void
+    {
+        $sain = PointFraicheur::factory()->parc()->create(['nom' => 'Parc sain']);
+        $degrade = PointFraicheur::factory()->parc()->create(['nom' => 'Parc degrade']);
+
+        $recommandations = collect([
+            ['point' => $degrade, 'score' => 80, 'raisons' => []],
+            ['point' => $sain, 'score' => 70, 'raisons' => []],
+        ]);
+        $santes = collect([
+            $degrade->id => ['niveau' => SantePoint::Critique],
+            $sain->id => ['niveau' => SantePoint::Bon],
+        ]);
+
+        $classement = app(RecommandationFraicheurService::class)->appliquerSante($recommandations, $santes);
+
+        // 80 × 0,7 = 56 < 70 : le point sain passe devant.
+        $this->assertSame([$sain->id, $degrade->id], $classement->pluck('point.id')->all());
+        $this->assertSame(56, $classement[1]['score']);
+        $this->assertSame(['Prévision IA : problèmes probables dans les 14 prochains jours'], $classement[1]['raisons']);
+        $this->assertSame([], $classement[0]['raisons']);
+    }
+
+    public function test_le_front_affiche_la_prevision_et_une_alternative(): void
+    {
+        $degrade = $this->pointDegrade();
+        $sain = PointFraicheur::factory()->parc()->create(['nom' => 'Parc des Oliviers', 'ouvert_24h' => true]);
+
+        $this->get(route('points.show', $degrade))
+            ->assertOk()
+            ->assertSee('Prévision IA · 14 jours')
+            ->assertSee('Problèmes probables')
+            ->assertSee('Alternative en bon état')
+            ->assertSee('Parc des Oliviers')
+            ->assertDontSee('Programmer un nettoyage du site'); // actions réservées à l'admin
+
+        $this->get(route('points.show', $sain))
+            ->assertOk()
+            ->assertSee('Bon état prévu')
+            ->assertDontSee('Alternative en bon état');
+
+        $this->get(route('refuges.index'))
+            ->assertOk()
+            ->assertSee('Prévision IA : problèmes probables');
     }
 
     public function test_le_back_office_affiche_la_sante_predite(): void

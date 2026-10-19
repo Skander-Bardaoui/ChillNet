@@ -9,6 +9,7 @@ use App\Http\Requests\StorePointFraicheurRequest;
 use App\Models\Avis;
 use App\Models\PointFraicheur;
 use App\Services\RecommandationFraicheurService;
+use App\Services\SantePointService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -19,7 +20,10 @@ use Illuminate\View\View;
  *
  *  - Public / habitant : consulte les points validés proches, avec le
  *    classement IA (position, affluence estimée, préférences PMR / clim /
- *    ombre / eau) et le détail d'un point avec ses avis.
+ *    ombre / eau) et le détail d'un point avec ses avis. La santé PRÉDITE
+ *    (modèle IA : risque de dégradation des avis sous 14 jours) pénalise les
+ *    points à risque dans le classement et s'affiche sur la fiche, avec une
+ *    alternative en bon état.
  *  - Habitant : propose un nouveau point (modéré par l'admin) et suit ses
  *    propositions (modifiables / supprimables tant qu'elles ne sont pas validées).
  */
@@ -28,7 +32,13 @@ class PointFraicheurController extends Controller
     /** Position par défaut : centre de Tunis. */
     private const CENTRE_DEFAUT = [36.8065, 10.1815];
 
-    public function __construct(private RecommandationFraicheurService $reco) {}
+    /** Rayon (km) de recherche d'une alternative à un point à risque. */
+    private const RAYON_ALTERNATIVE_KM = 10.0;
+
+    public function __construct(
+        private RecommandationFraicheurService $reco,
+        private SantePointService $sante,
+    ) {}
 
     public function index(Request $request): View
     {
@@ -61,6 +71,9 @@ class PointFraicheurController extends Controller
         $evalues = $this->reco->recommander(
             $origine[0], $origine[1], $preferences, $filtres['type'] ?? null, $rayon, 200, null, $pression,
         );
+
+        // Santé prédite (un seul appel au modèle) : pénalise les points à risque.
+        $evalues = $this->reco->appliquerSante($evalues, $this->sante->evaluerPlusieurs($evalues->pluck('point')));
 
         $recommandations = $evalues->take(3);
         $proches = $evalues->sortBy('distance_m')->values();
@@ -110,7 +123,32 @@ class PointFraicheurController extends Controller
         $point->load(['avis' => fn ($q) => $q->whereNotNull('affluence')->where('created_at', '>=', now()->subDays(30))]);
         $evaluation = $this->reco->evaluer($point, $origine[0], $origine[1], [], now());
 
-        return view('front.points.show', compact('point', 'avis', 'notes', 'monAvis', 'evaluation'));
+        // Prévision IA (points publiés) + alternative si le point est à risque.
+        $sante = $point->estValide() ? $this->sante->evaluer($point) : null;
+        $alternative = $sante !== null && $sante['niveau']->estARisque()
+            ? $this->alternative($point, $origine)
+            : null;
+
+        return view('front.points.show', compact('point', 'avis', 'notes', 'monAvis', 'evaluation', 'sante', 'alternative'));
+    }
+
+    /**
+     * Meilleur point recommandé autour de l'habitant, autre que $point et en
+     * BON ÉTAT prévu (null si aucun).
+     *
+     * @param  array{0: float, 1: float}  $origine
+     * @return array<string, mixed>|null
+     */
+    private function alternative(PointFraicheur $point, array $origine): ?array
+    {
+        $candidats = $this->reco
+            ->recommander($origine[0], $origine[1], [], null, self::RAYON_ALTERNATIVE_KM, 6)
+            ->reject(fn (array $reco): bool => $reco['point']->is($point))
+            ->values();
+
+        return $this->reco
+            ->appliquerSante($candidats, $this->sante->evaluerPlusieurs($candidats->pluck('point')))
+            ->first(fn (array $reco): bool => $reco['sante'] !== null && ! $reco['sante']['niveau']->estARisque());
     }
 
     public function create(): View
