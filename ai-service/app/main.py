@@ -10,6 +10,7 @@ Lancement : ``uvicorn app.main:app --port 8001`` (depuis ai-service/).
 from __future__ import annotations
 
 import csv
+import logging
 import subprocess
 import sys
 import threading
@@ -47,6 +48,8 @@ from .coupures.schemas import (
     RiskResponse,
     ZoneResultat,
 )
+from .signalements.model import SignalementCategoryModel
+from .signalements.schemas import ClassificationRequest, ClassificationResponse
 from .fraicheur import sante as fraicheur_sante
 from .fraicheur.model import FraicheurSanteModel
 from .fraicheur.schemas import (
@@ -71,6 +74,14 @@ coupures_model = CoupureRiskModel(
 
 # Estimateur ETR (temps de rétablissement) du module 2 — artefact dédié.
 etr_model = CoupureEtrModel(settings.coupures_etr_model_path)
+
+# Modèle de catégories du module signalements. Son artefact est isolé de
+# ceux du module coupures et du modèle canicule.
+signalements_model = SignalementCategoryModel(
+    settings.signalements_model_path, settings.signalements_metadata_path
+)
+
+logger = logging.getLogger(__name__)
 
 # Modèle du module 3 (santé des points de fraîcheur, à partir de leurs avis).
 # Artefacts DÉDIÉS (`artifacts/fraicheur/`) ; repli sur les règles si absent.
@@ -280,6 +291,50 @@ def coupures_etr_endpoint(payload: EtrRequest) -> EtrResponse:
     return EtrResponse(results=resultats)
 
 
+# --------------------------------------------------------------------------- #
+# Module — Signalements
+# --------------------------------------------------------------------------- #
+
+
+@app.post(
+    "/signalements/classify",
+    response_model=ClassificationResponse,
+    dependencies=[Depends(require_token)],
+)
+def signalements_classify_endpoint(
+    payload: ClassificationRequest,
+) -> ClassificationResponse:
+    """Classe une description dans les catégories du module signalements."""
+
+    if not signalements_model.available:
+        raise HTTPException(status_code=503, detail="Modèle signalements indisponible.")
+
+    try:
+        prediction = signalements_model.predict(payload.description)
+    except RuntimeError as error:
+        raise HTTPException(
+            status_code=503,
+            detail="Modèle signalements indisponible.",
+        ) from error
+
+    return ClassificationResponse(**prediction)
+
+
+@app.get("/signalements/model-info", dependencies=[Depends(require_token)])
+def signalements_model_info() -> dict[str, Any]:
+    """État et métriques du modèle de catégories des signalements."""
+
+    metadata = signalements_model.metadata()
+    return {
+        "available": signalements_model.available,
+        "version": signalements_model.version,
+        "trained_at": metadata.get("trained_at"),
+        "classes": metadata.get("classes", []),
+        "metrics": metadata.get("metrics", {}),
+        "n_samples": metadata.get("n_samples"),
+    }
+
+
 @app.get(
     "/coupures/insights",
     response_model=InsightsResponse,
@@ -353,6 +408,7 @@ def reload_model() -> dict[str, Any]:
     disponible = model.reload()
     disponible_coupures = coupures_model.reload()
     disponible_etr = etr_model.reload()
+    disponible_signalements = signalements_model.reload()
     disponible_fraicheur = fraicheur_model.reload()
 
     return {
@@ -360,6 +416,7 @@ def reload_model() -> dict[str, Any]:
         "model_available": disponible,
         "coupures_model_available": disponible_coupures,
         "etr_model_available": disponible_etr,
+        "signalements_model_available": disponible_signalements,
         "fraicheur_model_available": disponible_fraicheur,
     }
 
@@ -414,6 +471,24 @@ def retrain_coupures() -> dict[str, Any]:
     return {"status": "running", "target": "coupures"}
 
 
+@app.post("/retrain-signalements", dependencies=[Depends(require_token)])
+def retrain_signalements() -> dict[str, Any]:
+    """Ré-entraîne et recharge uniquement le modèle des signalements."""
+
+    def _job() -> None:
+        try:
+            subprocess.run(
+                [sys.executable, str(BASE_DIR / "scripts" / "train_signalements.py")],
+                cwd=str(BASE_DIR),
+                check=True,
+            )
+            signalements_model.reload()
+        except Exception:
+            logger.exception("Échec du ré-entraînement du modèle signalements")
+
+    threading.Thread(target=_job, daemon=True).start()
+
+    return {"status": "running", "target": "signalements"}
 @app.post("/retrain-fraicheur", dependencies=[Depends(require_token)])
 def retrain_fraicheur() -> dict[str, Any]:
     """Ré-entraîne le modèle du module 3 (artefacts dédiés) puis le recharge.

@@ -20,6 +20,7 @@ use App\Http\Controllers\Front\HomeController;
 use App\Http\Controllers\Front\LieuController as FrontLieuController;
 use App\Http\Controllers\Front\PointFraicheurController as FrontPointFraicheurController;
 use App\Http\Controllers\Front\SignalementController as FrontSignalementController;
+use App\Http\Controllers\Front\SupportAssistantController;
 use App\Http\Controllers\GeocodingController;
 use App\Http\Controllers\ProfileController;
 use App\Support\AuthCookie;
@@ -56,7 +57,11 @@ Route::get('/points-fraicheur/{point}', [FrontPointFraicheurController::class, '
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth', 'role:habitant'])->group(function () {
-    // Module 1 — alertes canicule validées du quartier de l'habitant.
+    Route::post('/assistant-support/evaluer-urgence', [SupportAssistantController::class, 'estimate'])
+        ->middleware('throttle:20,1')
+        ->name('front.support.estimate');
+
+    // Module 1 : les alertes canicule VALIDÉES et actives du quartier de l'habitant.
     Route::get('/alertes', [FrontAlerteController::class, 'index'])->name('alertes.index');
     Route::get('/alertes/{alerte}', [FrontAlerteController::class, 'show'])
         ->whereNumber('alerte')->name('alertes.show');
@@ -78,6 +83,9 @@ Route::middleware(['auth', 'role:habitant'])->group(function () {
 
     // Module 5 — signalements communautaires.
     Route::get('/signalements', [FrontSignalementController::class, 'index'])->name('signalements.index');
+    Route::post('/signalements/analyser', [FrontSignalementController::class, 'analyze'])
+        ->middleware('throttle:20,1')
+        ->name('front.signalements.analyze');
     Route::post('/signalements', [FrontSignalementController::class, 'store'])->name('front.signalements.store');
     Route::get('/signalements/{signalement}/modifier', [FrontSignalementController::class, 'edit'])->name('front.signalements.edit');
     Route::patch('/signalements/{signalement}', [FrontSignalementController::class, 'update'])->name('front.signalements.update');
