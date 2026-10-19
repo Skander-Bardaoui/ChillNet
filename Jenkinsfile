@@ -11,6 +11,18 @@ pipeline {
     skipDefaultCheckout(true)
   }
 
+  triggers {
+    // Le job ne suit que la branche main (Branch Specifier `*/main` dans sa
+    // configuration SCM). GitHub ne sait pas filtrer les webhooks par branche :
+    // chaque push est relayé, mais githubPush() ne fait qu'un poll SCM du job ;
+    // si main n'a pas bougé, aucun build n'est planifié. Concrètement la CI
+    // part au merge d'une PR dans main, pas sur les pushes de branches.
+    githubPush()
+    // Filet de sécurité si le webhook n'est pas joignable : même filtre (*/main),
+    // polling toutes les 5 min.
+    pollSCM('H/5 * * * *')
+  }
+
   environment {
     REGISTRY    = '192.168.56.12:5000'
     APP_IMAGE   = "${REGISTRY}/chillnet-app"
