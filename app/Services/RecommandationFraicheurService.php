@@ -31,14 +31,12 @@ use Illuminate\Support\Collection;
  * est inutile pour une personne à mobilité réduite). Un point fermé à
  * l'heure demandée est fortement pénalisé. La pression thermique (alerte
  * canicule du module 1 + température live WeatherAPI) gonfle l'affluence et
- * rend prioritaires les lieux climatisés. Groq rédige ensuite le conseil.
+ * rend prioritaires les lieux climatisés. Le conseil affiché est ensuite
+ * composé à partir du classement (déterministe, sans LLM).
  */
 class RecommandationFraicheurService
 {
-    public function __construct(
-        private WeatherService $weather,
-        private GroqFraicheurClient $groq,
-    ) {}
+    public function __construct(private WeatherService $weather) {}
 
     public const POIDS_PROXIMITE = 35;
 
@@ -310,8 +308,9 @@ class RecommandationFraicheurService
     }
 
     /**
-     * Conseil personnalisé rédigé par Groq à partir du classement (le LLM
-     * explique le choix, il ne le fait pas). Repli déterministe. Cache 30 min.
+     * Conseil personnalisé composé à partir du classement (déterministe) :
+     * point n°1, alternative n°2, et conseil pratique selon la chaleur
+     * ressentie et le profil du foyer.
      *
      * @param  Collection<int, array<string, mixed>>  $recommandations
      * @param  array<string, bool>  $preferences
@@ -322,49 +321,26 @@ class RecommandationFraicheurService
             return null;
         }
 
-        $top = $recommandations->take(3)->map(fn (array $r): string => sprintf(
-            '- %s (%s) : score %d/100, %d m, %s, %s, raisons : %s',
-            $r['point']->nom,
-            $r['point']->type?->label(),
-            $r['score'],
-            $r['distance_m'],
-            $r['ouvert'] ? 'ouvert' : 'fermé',
-            mb_strtolower($r['affluence']['libelle']),
-            implode(' ; ', $r['raisons']),
-        ))->implode("\n");
-
-        $profils = $user
-            ? implode(', ', array_map(fn ($p): string => $p->label(), $user->profilsVulnerabilite())) ?: 'aucun profil particulier'
-            : 'visiteur non connecté';
-        $prefs = implode(', ', array_keys(array_filter($preferences))) ?: 'aucune';
-        $temp = $meteo ? number_format($meteo->temperature, 1, ',', '').' °C (ressenti '.number_format($meteo->ressentie ?? $meteo->temperature, 1, ',', '').' °C)' : 'inconnue';
-
-        $cle = 'fraicheur:conseil:'.md5($top.$profils.$prefs.$temp);
-
-        return cache()->remember($cle, now()->addMinutes(30), function () use ($top, $profils, $prefs, $temp, $recommandations): string {
-            $texte = $this->groq->completer(
-                'Tu es l\'assistant canicule de l\'application ChillNet (Tunisie). En 3 phrases maximum, en français, '
-                .'sans markdown, recommande à l\'habitant le point classé n°1 (ne change pas le classement), '
-                .'explique pourquoi en t\'appuyant sur les raisons fournies, cite éventuellement le n°2 en alternative, '
-                .'et donne un conseil pratique adapté à son profil (hydratation, horaire, trajet à l\'ombre).',
-                "Température : {$temp}\nProfil du foyer : {$profils}\nPréférences : {$prefs}\nClassement calculé :\n{$top}",
-                600,
-            );
-
-            return $texte ?? $this->conseilDeSecours($recommandations->first());
-        });
-    }
-
-    /**
-     * @param  array<string, mixed>  $meilleur
-     */
-    private function conseilDeSecours(array $meilleur): string
-    {
-        return sprintf(
-            'Nous vous recommandons « %s » à %d min à pied (%s). Partez avec une bouteille d\'eau et privilégiez les rues ombragées.',
+        $meilleur = $recommandations->first();
+        $texte = sprintf(
+            'Nous vous recommandons « %s » à %d min à pied (%s).',
             $meilleur['point']->nom,
             $meilleur['minutes_marche'],
             mb_strtolower($meilleur['affluence']['libelle']),
         );
+
+        $alternative = $recommandations->get(1);
+        if ($alternative !== null) {
+            $texte .= sprintf(' Alternative : « %s » à %d min.', $alternative['point']->nom, $alternative['minutes_marche']);
+        }
+
+        $ressentie = $meteo !== null ? ($meteo->ressentie ?? $meteo->temperature) : null;
+        $vulnerable = $user !== null && $user->profilsVulnerabilite() !== [];
+
+        return $texte.match (true) {
+            $ressentie !== null && $ressentie >= 38 => ' Forte chaleur : partez tôt, avec une bouteille d\'eau, et empruntez les rues ombragées.',
+            $vulnerable => ' Hydratez-vous régulièrement et évitez de sortir entre 12 h et 16 h.',
+            default => ' Partez avec une bouteille d\'eau et privilégiez les rues ombragées.',
+        };
     }
 }

@@ -9,6 +9,7 @@ use App\Http\Requests\StorePointFraicheurRequest;
 use App\Models\Avis;
 use App\Models\PointFraicheur;
 use App\Models\Quartier;
+use App\Services\SantePointService;
 use App\Services\SentimentAvisService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -22,11 +23,19 @@ use Illuminate\View\View;
  *                   habitants (valider / refuser avec motif).
  *  - Gestionnaire : CRUD sur les points de SA zone (quartier de sa résidence).
  *
- * L'IA (analyse de sentiment) signale les points mal notés de façon récurrente.
+ * IA : l'analyse de sentiment signale les points mal notés de façon récurrente
+ * (constat) et le modèle de santé PRÉDIT les points qui vont se dégrader dans
+ * les 14 prochains jours à partir de leurs avis (anticipation).
  */
 class PointFraicheurController extends Controller
 {
-    public function __construct(private SentimentAvisService $sentiment) {}
+    /** Nombre de points à risque affichés dans la synthèse IA de la liste. */
+    private const POINTS_A_RISQUE_AFFICHES = 6;
+
+    public function __construct(
+        private SentimentAvisService $sentiment,
+        private SantePointService $sante,
+    ) {}
 
     public function index(Request $request): View
     {
@@ -80,10 +89,21 @@ class PointFraicheurController extends Controller
             'lien' => route('back.points.show', $p),
         ])->values();
 
-        // IA : points validés mal notés de manière récurrente.
+        // IA : points validés mal notés de manière récurrente (constat).
         $malNotes = $this->sentiment->pointsMalNotes($this->zoneGestionnaire());
 
-        return view('back.points.index', compact('points', 'stats', 'enAttente', 'marqueurs', 'malNotes', 'filtres'));
+        // IA prédictive : santé à 14 j de tous les points validés du périmètre
+        // (un seul appel au modèle), réutilisée par la colonne « Santé ».
+        $santes = $this->sante->evaluerPlusieurs((clone $perimetre)->valides()->get());
+        $aRisque = $santes
+            ->filter(fn (array $s): bool => $s['niveau']->estARisque())
+            ->sortByDesc('score')
+            ->take(self::POINTS_A_RISQUE_AFFICHES)
+            ->values();
+
+        return view('back.points.index', compact(
+            'points', 'stats', 'enAttente', 'marqueurs', 'malNotes', 'filtres', 'santes', 'aRisque',
+        ));
     }
 
     public function create(): View
@@ -124,11 +144,14 @@ class PointFraicheurController extends Controller
             ->groupBy('note')
             ->pluck('total', 'note');
 
-        // Diagnostic + synthèse IA (Groq) si le point est mal noté.
+        // Diagnostic + synthèse si le point est mal noté (constat).
         $diagnostic = $this->sentiment->pointsMalNotes()->firstWhere('point.id', $point->id);
         $synthese = $diagnostic ? $this->sentiment->synthese($diagnostic) : null;
 
-        return view('back.points.show', compact('point', 'avis', 'repartition', 'notes', 'diagnostic', 'synthese'));
+        // Santé prédite à 14 j (modèle IA + plancher des règles), points publiés.
+        $sante = $point->estValide() ? $this->sante->evaluer($point) : null;
+
+        return view('back.points.show', compact('point', 'avis', 'repartition', 'notes', 'diagnostic', 'synthese', 'sante'));
     }
 
     public function edit(PointFraicheur $point): View

@@ -72,6 +72,10 @@
 </div>
 </div>
 
+@if ($sante)
+@include('back.points._sante', ['sante' => $sante])
+@endif
+
 <div class="rounded-2xl bg-surface-container-low shadow-sm border border-outline-variant/20 p-space-md">
 <h2 class="font-title-md text-title-md text-on-surface font-semibold flex items-center gap-2"><span class="material-symbols-outlined text-primary">auto_awesome</span>Sentiment (IA)</h2>
 <div class="mt-2 flex flex-wrap gap-2">
@@ -83,7 +87,7 @@
 <div class="mt-3 rounded-xl bg-red-50 border border-red-200 p-3">
 <p class="font-label-md text-label-md text-red-900 font-semibold flex items-center gap-1"><span class="material-symbols-outlined text-[18px]">crisis_alert</span>Point mal noté récurrent · gravité {{ $diagnostic['gravite'] }}/100</p>
 <p class="mt-1 font-body-sm text-body-sm text-red-800">{{ $diagnostic['message'] }}</p>
-@if ($synthese)<p class="mt-2 font-body-sm text-body-sm text-on-surface border-t border-red-200 pt-2"><strong>Synthèse IA :</strong> {{ $synthese }}</p>@endif
+@if ($synthese)<p class="mt-2 font-body-sm text-body-sm text-on-surface border-t border-red-200 pt-2"><strong>Synthèse :</strong> {{ $synthese }}</p>@endif
 </div>
 @else
 <p class="mt-3 font-body-sm text-body-sm text-on-surface-variant">Aucun signal négatif récurrent détecté.</p>

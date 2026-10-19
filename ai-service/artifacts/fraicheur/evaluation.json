@@ -1,0 +1,150 @@
+{
+  "n_test": 16929,
+  "taux_positifs": 0.3232,
+  "calibration": [
+    {
+      "bin": 0.05,
+      "n": 3325,
+      "predit": 0.0651,
+      "observe": 0.0644
+    },
+    {
+      "bin": 0.15,
+      "n": 4177,
+      "predit": 0.1451,
+      "observe": 0.1288
+    },
+    {
+      "bin": 0.25,
+      "n": 2326,
+      "predit": 0.2467,
+      "observe": 0.2433
+    },
+    {
+      "bin": 0.35,
+      "n": 1509,
+      "predit": 0.3463,
+      "observe": 0.3307
+    },
+    {
+      "bin": 0.45,
+      "n": 1345,
+      "predit": 0.4478,
+      "observe": 0.4714
+    },
+    {
+      "bin": 0.55,
+      "n": 1088,
+      "predit": 0.5498,
+      "observe": 0.534
+    },
+    {
+      "bin": 0.65,
+      "n": 998,
+      "predit": 0.6486,
+      "observe": 0.6433
+    },
+    {
+      "bin": 0.75,
+      "n": 928,
+      "predit": 0.7484,
+      "observe": 0.7371
+    },
+    {
+      "bin": 0.85,
+      "n": 888,
+      "predit": 0.8493,
+      "observe": 0.8761
+    },
+    {
+      "bin": 0.95,
+      "n": 345,
+      "predit": 0.9263,
+      "observe": 0.971
+    }
+  ],
+  "modele": {
+    "roc_auc": 0.8263,
+    "pr_auc": 0.7226,
+    "brier": 0.15031,
+    "recall_degrade": 0.5566,
+    "par_niveau": {
+      "bon": {
+        "n": 8653,
+        "positifs": 1021,
+        "taux": 0.118
+      },
+      "a_surveiller": {
+        "n": 3971,
+        "positifs": 1405,
+        "taux": 0.3538
+      },
+      "degrade": {
+        "n": 2582,
+        "positifs": 1558,
+        "taux": 0.6034
+      },
+      "critique": {
+        "n": 1723,
+        "positifs": 1487,
+        "taux": 0.863
+      }
+    }
+  },
+  "regles": {
+    "roc_auc": 0.7399,
+    "pr_auc": 0.5631,
+    "brier": 0.19755,
+    "recall_degrade": 0.3968,
+    "par_niveau": {
+      "bon": {
+        "n": 10013,
+        "positifs": 1851,
+        "taux": 0.1849
+      },
+      "a_surveiller": {
+        "n": 3302,
+        "positifs": 1449,
+        "taux": 0.4388
+      },
+      "degrade": {
+        "n": 2226,
+        "positifs": 1238,
+        "taux": 0.5562
+      },
+      "critique": {
+        "n": 1388,
+        "positifs": 933,
+        "taux": 0.6722
+      }
+    }
+  },
+  "final": {
+    "roc_auc": 0.8044,
+    "pr_auc": 0.6672,
+    "brier": 0.16607,
+    "recall_degrade": 0.6286,
+    "par_niveau": {
+      "bon": {
+        "n": 7235,
+        "positifs": 790,
+        "taux": 0.1092
+      },
+      "a_surveiller": {
+        "n": 4114,
+        "positifs": 1242,
+        "taux": 0.3019
+      },
+      "degrade": {
+        "n": 3135,
+        "positifs": 1610,
+        "taux": 0.5136
+      },
+      "critique": {
+        "n": 2445,
+        "positifs": 1829,
+        "taux": 0.7481
+      }
+    }
+  }
+}

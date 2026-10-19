@@ -50,8 +50,8 @@ class Avis extends Model
 
     protected static function booted(): void
     {
-        // Filet de sécurité : si le sentiment n'a pas été fourni par l'IA
-        // (contrôleur → Groq), on applique l'analyse lexicale locale.
+        // Filet de sécurité : si le sentiment n'a pas été fourni par le
+        // contrôleur, on applique l'analyse lexicale locale.
         static::saving(function (self $avis): void {
             if ($avis->isDirty('sentiment')) {
                 return;
