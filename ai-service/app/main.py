@@ -48,6 +48,14 @@ from .coupures.schemas import (
     RiskResponse,
     ZoneResultat,
 )
+from .conseils.model import ConseilRiskModel
+from .conseils.risk import evaluate_batch as conseils_evaluate_batch
+from .conseils.schemas import (
+    RiskRequest as ConseilRiskRequest,
+    RiskResponse as ConseilRiskResponse,
+    InsightsResponse as ConseilInsightsResponse,
+    FoyerResultat as ConseilFoyerResultat,
+)
 from .signalements.model import SignalementCategoryModel
 from .signalements.schemas import ClassificationRequest, ClassificationResponse
 from .fraicheur import sante as fraicheur_sante
@@ -74,6 +82,13 @@ coupures_model = CoupureRiskModel(
 
 # Estimateur ETR (temps de rétablissement) du module 2 — artefact dédié.
 etr_model = CoupureEtrModel(settings.coupures_etr_model_path)
+
+# Modèle du module 4 (conseils / équipements sensibles). Artefacts DÉDIÉS
+# (`artifacts/conseils/`). Même principe : indisponible sans artefact → repli
+# sur les règles déterministes.
+conseils_model = ConseilRiskModel(
+    settings.conseils_model_path, settings.conseils_metadata_path
+)
 
 # Modèle de catégories du module signalements. Son artefact est isolé de
 # ceux du module coupures et du modèle canicule.
@@ -410,6 +425,7 @@ def reload_model() -> dict[str, Any]:
     disponible_etr = etr_model.reload()
     disponible_signalements = signalements_model.reload()
     disponible_fraicheur = fraicheur_model.reload()
+    disponible_conseils = conseils_model.reload()
 
     return {
         "status": "reloaded" if disponible else "unavailable",
@@ -418,6 +434,7 @@ def reload_model() -> dict[str, Any]:
         "etr_model_available": disponible_etr,
         "signalements_model_available": disponible_signalements,
         "fraicheur_model_available": disponible_fraicheur,
+        "conseils_model_available": disponible_conseils,
     }
 
 
@@ -519,3 +536,73 @@ def retrain_fraicheur() -> dict[str, Any]:
     threading.Thread(target=_job, daemon=True).start()
 
     return {"status": "running", "target": "fraicheur"}
+
+
+# --------------------------------------------------------------------------- #
+# Module 4 — Conseils / Équipements sensibles
+# --------------------------------------------------------------------------- #
+
+
+@app.post(
+    "/conseils/risk",
+    response_model=ConseilRiskResponse,
+    dependencies=[Depends(require_token)],
+)
+def conseils_risk_endpoint(payload: ConseilRiskRequest) -> ConseilRiskResponse:
+    """Batch de foyers → niveau de risque équipements (modèle + règles, plancher de sécurité).
+
+    La règle de sécurité absolue s'applique ici : tout foyer avec au moins un
+    équipement de criticité ``vitale`` reçoit ``alerte_vitale=True`` et le
+    niveau final est au moins ``critique``, indépendamment du modèle.
+    """
+    resultats = conseils_evaluate_batch(payload.foyers, conseils_model)
+    return ConseilRiskResponse(results=resultats)
+
+
+@app.get(
+    "/conseils/insights",
+    response_model=ConseilInsightsResponse,
+    dependencies=[Depends(require_token)],
+)
+def conseils_insights_endpoint() -> ConseilInsightsResponse:
+    """Importances des features et métriques du modèle conseils (back-office)."""
+    if not getattr(conseils_model, "available", False):
+        return ConseilInsightsResponse(available=False, model_available=False)
+
+    meta = conseils_model.metadata()
+
+    return ConseilInsightsResponse(
+        available=True,
+        model_available=True,
+        version=meta.get("version"),
+        trained_at=meta.get("trained_at") or meta.get("date"),
+        importances=list(meta.get("importances", [])),
+        metrics=dict(meta.get("metrics", {})),
+        classes=list(meta.get("classes", [])),
+        n_samples=meta.get("n_samples"),
+    )
+
+
+@app.post("/retrain-conseils", dependencies=[Depends(require_token)])
+def retrain_conseils() -> dict[str, Any]:
+    """Ré-entraîne le modèle CONSEILS (artefacts dédiés) puis le recharge."""
+
+    def _job() -> None:
+        try:
+            subprocess.run(
+                [sys.executable, str(BASE_DIR / "scripts" / "simulate_conseils.py")],
+                cwd=str(BASE_DIR),
+                check=True,
+            )
+            subprocess.run(
+                [sys.executable, str(BASE_DIR / "scripts" / "train_conseils.py")],
+                cwd=str(BASE_DIR),
+                check=True,
+            )
+            conseils_model.reload()
+        except Exception:  # noqa: BLE001 — le ré-entraînement ne doit jamais tuer le service
+            pass
+
+    threading.Thread(target=_job, daemon=True).start()
+
+    return {"status": "running", "target": "conseils"}
