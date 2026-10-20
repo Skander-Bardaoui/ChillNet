@@ -101,7 +101,7 @@ pipeline {
               python -m venv .venv
               . .venv/bin/activate
               pip install -q --upgrade pip
-              pip install -q -r requirements.txt pytest-cov
+              pip install -q -r requirements.txt pytest-cov==7.1.0
               pytest --junitxml=build/pytest.xml --cov=app --cov-report=xml:coverage.xml
             '
         '''

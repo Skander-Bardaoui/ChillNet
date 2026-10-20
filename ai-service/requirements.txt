@@ -1,10 +1,14 @@
-fastapi>=0.110
-uvicorn[standard]>=0.27
-pydantic>=2.6
+# Versions figées : sans verrous, pip choisissait la dernière version de
+# chaque paquet à chaque build, ce qui rendait la CI non reproductible
+# (conflit de résolution transitoire constaté le 2026-10-20).
+fastapi==0.151.0
+uvicorn[standard]==0.54.0
+pydantic==2.14.1
 scikit-learn==1.8.0
-numpy>=1.26
-joblib>=1.3
-PyYAML>=6.0
-requests>=2.31
-pytest>=8.0
-httpx>=0.27
+scipy==1.17.1
+numpy==2.4.6
+joblib==1.6.0
+PyYAML==6.0.3
+requests==2.34.2
+pytest==9.1.1
+httpx==0.28.1
