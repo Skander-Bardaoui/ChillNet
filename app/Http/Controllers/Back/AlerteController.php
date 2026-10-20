@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Back;
 
 use App\Enums\NiveauAlerte;
 use App\Enums\ProfilVulnerabilite;
+use App\Http\Controllers\Back\Concerns\QuartiersAccessibles;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\PredictAlerteRequest;
 use App\Http\Requests\StoreAlerteRequest;
@@ -14,7 +15,6 @@ use App\Models\User;
 use App\Services\MeteoActuelle;
 use App\Services\VigilanceAiService;
 use App\Services\WeatherService;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -33,6 +33,8 @@ use Illuminate\Support\Facades\Log;
  */
 class AlerteController extends Controller
 {
+    use QuartiersAccessibles;
+
     public function __construct(
         private WeatherService $meteo,
         private VigilanceAiService $ia,
@@ -493,23 +495,6 @@ class AlerteController extends Controller
         $meteo = $this->meteo->actuel((float) $geo->avg('latitude'), (float) $geo->avg('longitude'));
 
         return [$meteo, null];
-    }
-
-    /**
-     * Quartiers proposés dans le formulaire : le gestionnaire ne voit que le
-     * sien, l'admin les voit tous.
-     *
-     * @return Collection<int, Quartier>
-     */
-    private function quartiersAccessibles()
-    {
-        $user = request()->user();
-
-        if ($user && $user->isGestionnaire()) {
-            return Quartier::whereKey($user->residence?->quartier_id)->orderBy('nom')->get();
-        }
-
-        return Quartier::orderBy('nom')->get();
     }
 
     /**

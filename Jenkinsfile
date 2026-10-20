@@ -151,6 +151,26 @@ pipeline {
           waitForQualityGate abortPipeline: true
         }
       }
+      post {
+        // Diagnostic NON bloquant : une fois l'analyse terminée, imprime les
+        // anomalies du « nouveau code » du projet Laravel pour que le log du
+        // build dise précisément quoi corriger sans ouvrir l'interface.
+        always {
+          withSonarQubeEnv('sonarqube') {
+            sh '''
+              curl -s -u "$SONAR_AUTH_TOKEN:" \
+                "$SONAR_HOST_URL/api/issues/search?componentKeys=chillnet&resolved=false&sinceLeakPeriod=true&ps=100" \
+                -o /tmp/sonar-issues.json || true
+              php -r '
+                $d = json_decode(@file_get_contents("/tmp/sonar-issues.json"), true);
+                foreach ($d["issues"] ?? [] as $i) {
+                    printf("SONAR %s %s:%s %s\\n", $i["rule"], $i["component"], $i["line"] ?? 0, $i["message"]);
+                }
+              ' || true
+            '''
+          }
+        }
+      }
     }
 
     stage('Build images') {

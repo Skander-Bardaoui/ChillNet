@@ -3,7 +3,6 @@
 namespace App\Console\Commands;
 
 use App\Models\PointSanteSnapshot;
-use Illuminate\Console\Command;
 
 /**
  * Exporte les exemples RÉELS du module 3 vers le CSV consommé par
@@ -13,7 +12,7 @@ use Illuminate\Console\Command;
  * (``fraicheur_history.csv``) pour ne JAMAIS les écraser. Les lignes réelles
  * sont sur-pondérées (×5) à l'entraînement.
  */
-class AiExportFraicheur extends Command
+class AiExportFraicheur extends AbstractAiExportCommand
 {
     protected $signature = 'ai:export-fraicheur {--dir= : Dossier de sortie (défaut ai-service/data)}';
 
@@ -46,39 +45,27 @@ class AiExportFraicheur extends Command
 
     public function handle(): int
     {
-        $dossier = (string) ($this->option('dir') ?: base_path('ai-service/data'));
+        $dossier = $this->dossierSortie();
 
-        if (! is_dir($dossier) && ! @mkdir($dossier, 0755, true) && ! is_dir($dossier)) {
-            $this->error("Dossier introuvable et impossible à créer : {$dossier}");
-
+        if ($dossier === null) {
             return self::FAILURE;
         }
 
         $chemin = $dossier.'/fraicheur_real.csv';
-        $handle = fopen($chemin, 'w');
 
-        if ($handle === false) {
-            $this->error("Impossible d'écrire : {$chemin}");
+        $total = $this->exporterCsv(
+            $chemin,
+            ['point_id', 'date', ...self::FEATURES, 'label_14j', 'source'],
+            PointSanteSnapshot::query()
+                ->labelises()
+                ->whereNotNull('features')
+                ->orderBy('captured_at'),
+            fn (PointSanteSnapshot $snapshot): array => $this->ligne($snapshot),
+        );
 
+        if ($total === null) {
             return self::FAILURE;
         }
-
-        fputcsv($handle, ['point_id', 'date', ...self::FEATURES, 'label_14j', 'source']);
-
-        $total = 0;
-
-        PointSanteSnapshot::query()
-            ->labelises()
-            ->whereNotNull('features')
-            ->orderBy('captured_at')
-            ->chunk(500, function ($snapshots) use ($handle, &$total): void {
-                foreach ($snapshots as $snapshot) {
-                    fputcsv($handle, $this->ligne($snapshot));
-                    $total++;
-                }
-            });
-
-        fclose($handle);
 
         $this->info(sprintf('%d exemple(s) réel(s) exporté(s) → %s', $total, $chemin));
 
