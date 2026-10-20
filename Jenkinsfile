@@ -144,7 +144,36 @@ pipeline {
           // waitForQualityGate ne lit qu'un seul report-task.txt (celui de
           // Laravel) : le gate Python est donc contrôlé ici via l'API, et son
           // rapport retiré du workspace pour lever l'ambiguïté.
+          // Le scanner rend la main AVANT le traitement CE : sans attendre la
+          // tâche /api/ce/task, l'API renvoie les résultats de l'analyse
+          // précédente (mêmes chiffres, issue déjà corrigée ressortie).
           sh '''
+            php -r '
+              $id = null;
+              foreach (@file("ai-service/.scannerwork/report-task.txt") ?: [] as $ligne) {
+                  if (str_starts_with($ligne, "ceTaskId=")) {
+                      $id = trim(substr($ligne, 9));
+                  }
+              }
+              if ($id === null) {
+                  fwrite(STDERR, "SONAR AI CE : ceTaskId introuvable\\n");
+                  exit(1);
+              }
+              $ctx = stream_context_create(["http" => ["header" => "Authorization: Basic " . base64_encode(getenv("SONAR_AUTH_TOKEN") . ":"), "timeout" => 20]]);
+              $url = getenv("SONAR_HOST_URL") . "/api/ce/task?id=" . urlencode($id);
+              $statut = "NONE";
+              for ($i = 0; $i < 60; $i++) {
+                  $t = json_decode(@file_get_contents($url, false, $ctx), true);
+                  $statut = $t["task"]["status"] ?? "NONE";
+                  if (in_array($statut, ["SUCCESS", "FAILED", "CANCELED"], true)) {
+                      break;
+                  }
+                  sleep(2);
+              }
+              printf("SONAR AI CE %s\\n", $statut);
+              exit($statut === "SUCCESS" ? 0 : 1);
+            '
+            rm -rf ai-service/.scannerwork
             curl -s -u "$SONAR_AUTH_TOKEN:" \
               "$SONAR_HOST_URL/api/issues/search?componentKeys=chillnet-ai-service&resolved=false&inNewCodePeriod=true&ps=100" \
               -o /tmp/sonar-issues-ai.json || true
@@ -156,7 +185,6 @@ pipeline {
                       $i["severity"], $i["type"], $i["rule"], $i["component"], $i["line"] ?? 0, $i["message"]);
               }
             ' || true
-            rm -rf ai-service/.scannerwork
             php -r '
               $url = getenv("SONAR_HOST_URL") . "/api/qualitygates/project_status?projectKey=chillnet-ai-service";
               $ctx = stream_context_create(["http" => ["header" => "Authorization: Basic " . base64_encode(getenv("SONAR_AUTH_TOKEN") . ":"), "timeout" => 20]]);
