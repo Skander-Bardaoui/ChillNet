@@ -120,6 +120,7 @@ class Settings:
                 "AI_SIGNALEMENTS_EXAMPLES_CSV",
                 DATA_DIR / "signalements_categories.csv",
             )
+        )
         # --- Module 3 : santé des points de fraîcheur (artefacts et données isolés) ---
         self.fraicheur_model_path: Path = Path(
             os.environ.get(

@@ -84,16 +84,27 @@ pipeline {
 
     stage('Test (Python)') {
       steps {
-        dir('ai-service') {
-          sh '''
-            set -eu
-            python3 -m venv .venv
-            . .venv/bin/activate
-            pip install -q --upgrade pip
-            pip install -q -r requirements.txt pytest-cov
-            pytest --junitxml=build/pytest.xml --cov=app --cov-report=xml:coverage.xml
-          '''
-        }
+        // Même base que l'image de production : le Python 3.10 de l'hôte ne peut
+        // pas installer scikit-learn 1.8, version qui charge les .joblib du dépôt.
+        // On monte tout le dépôt : les tests de parité lisent tests/fixtures à
+        // la racine (parents[2] du fichier de test).
+        sh '''
+          set -eu
+          docker run --rm \
+            -u "$(id -u):$(id -g)" \
+            -e HOME=/tmp \
+            -v "$WORKSPACE:/repo" -w /repo/ai-service \
+            python:3.11-slim \
+            sh -c '
+              set -eu
+              rm -rf .venv
+              python -m venv .venv
+              . .venv/bin/activate
+              pip install -q --upgrade pip
+              pip install -q -r requirements.txt pytest-cov
+              pytest --junitxml=build/pytest.xml --cov=app --cov-report=xml:coverage.xml
+            '
+        '''
       }
     }
 
