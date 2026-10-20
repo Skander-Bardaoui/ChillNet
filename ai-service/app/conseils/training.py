@@ -64,7 +64,7 @@ def charger_dataset(path: Path) -> dict[str, np.ndarray]:
             y_rows.append(label)
             groupes.append(foyer)
             horodatages.append(ts)
-            ctx = {n: (0.0 if v != v else v) for n, v in zip(VECTOR_ORDER, ligne)}
+            ctx = {n: (0.0 if np.isnan(v) else v) for n, v in zip(VECTOR_ORDER, ligne)}
             regles.append(label_risque(ctx))
 
     return {
