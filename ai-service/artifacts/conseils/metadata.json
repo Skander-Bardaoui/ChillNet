@@ -1,0 +1,319 @@
+{
+  "version": "2.0.0",
+  "trained_at": "2026-10-20",
+  "date": "2026-10-20",
+  "features": [
+    "nb_equipements",
+    "nb_medicaux",
+    "nb_vitaux",
+    "criticite_max",
+    "a_respirateur",
+    "a_refrigerateur",
+    "a_onduleur",
+    "temperature",
+    "ressentie",
+    "heat_index",
+    "canicule_niveau",
+    "jours_chauds_consecutifs",
+    "coupures_en_cours",
+    "coupures_7j",
+    "duree_moy_coupures_h",
+    "mois",
+    "heure"
+  ],
+  "classes": [
+    "critique",
+    "eleve",
+    "faible",
+    "modere"
+  ],
+  "n_samples": 115200,
+  "modele": "Gradient Boosting",
+  "medians": {
+    "nb_equipements": 2.0,
+    "nb_medicaux": 0.0,
+    "nb_vitaux": 1.0,
+    "criticite_max": 2.0,
+    "a_respirateur": 0.0,
+    "a_refrigerateur": 0.0,
+    "a_onduleur": 0.0,
+    "temperature": 30.3,
+    "ressentie": 31.9,
+    "heat_index": 34.3,
+    "canicule_niveau": 0.0,
+    "jours_chauds_consecutifs": 5.0,
+    "coupures_en_cours": 0.0,
+    "coupures_7j": 2.0,
+    "duree_moy_coupures_h": 2.0,
+    "mois": 7.0,
+    "heure": 14.0
+  },
+  "metrics": {
+    "accuracy": 0.7458,
+    "macro_f1": 0.7577,
+    "precision_par_classe": {
+      "faible": 0.8023,
+      "modere": 0.6637,
+      "eleve": 0.7786,
+      "critique": 0.8237
+    },
+    "recall_par_classe": {
+      "faible": 0.74,
+      "modere": 0.754,
+      "eleve": 0.7258,
+      "critique": 0.7845
+    },
+    "ecart_moyen_niveaux": 0.2555,
+    "a_un_niveau_pres": 0.9987,
+    "sous_estimation": 0.1305,
+    "sur_estimation": 0.1237,
+    "confusion": [
+      [
+        6052,
+        2111,
+        15,
+        0
+      ],
+      [
+        1476,
+        7282,
+        898,
+        2
+      ],
+      [
+        15,
+        1574,
+        5627,
+        537
+      ],
+      [
+        0,
+        5,
+        687,
+        2519
+      ]
+    ],
+    "n_test": 28800,
+    "log_loss": 0.5599,
+    "brier": 0.3457,
+    "macro_f1_cv": {
+      "moyenne": 0.7695,
+      "ecart_type": 0.008
+    },
+    "systeme_final": {
+      "accuracy": 0.5264,
+      "macro_f1": 0.5548,
+      "precision_par_classe": {
+        "faible": 0.9082,
+        "modere": 0.4651,
+        "eleve": 0.3914,
+        "critique": 0.7446
+      },
+      "recall_par_classe": {
+        "faible": 0.5191,
+        "modere": 0.1718,
+        "eleve": 0.8648,
+        "critique": 0.7945
+      },
+      "ecart_moyen_niveaux": 0.5585,
+      "a_un_niveau_pres": 0.9153,
+      "sous_estimation": 0.0481,
+      "sur_estimation": 0.4256,
+      "confusion": [
+        [
+          4245,
+          1613,
+          2313,
+          7
+        ],
+        [
+          427,
+          1659,
+          7455,
+          117
+        ],
+        [
+          2,
+          295,
+          6705,
+          751
+        ],
+        [
+          0,
+          0,
+          660,
+          2551
+        ]
+      ],
+      "n_test": 28800
+    }
+  },
+  "references": {
+    "Classe majoritaire": {
+      "accuracy": 0.284,
+      "macro_f1": 0.1106,
+      "precision_par_classe": {
+        "faible": 0.284,
+        "modere": 0.0,
+        "eleve": 0.0,
+        "critique": 0.0
+      },
+      "recall_par_classe": {
+        "faible": 1.0,
+        "modere": 0.0,
+        "eleve": 0.0,
+        "critique": 0.0
+      },
+      "ecart_moyen_niveaux": 1.2082,
+      "a_un_niveau_pres": 0.6193,
+      "sous_estimation": 0.716,
+      "sur_estimation": 0.0,
+      "confusion": [
+        [
+          8178,
+          0,
+          0,
+          0
+        ],
+        [
+          9658,
+          0,
+          0,
+          0
+        ],
+        [
+          7753,
+          0,
+          0,
+          0
+        ],
+        [
+          3211,
+          0,
+          0,
+          0
+        ]
+      ],
+      "n_test": 28800
+    },
+    "Règles seules (rules.py)": {
+      "accuracy": 0.4906,
+      "macro_f1": 0.4909,
+      "precision_par_classe": {
+        "faible": 0.8837,
+        "modere": 0.4284,
+        "eleve": 0.3734,
+        "critique": 0.768
+      },
+      "recall_par_classe": {
+        "faible": 0.5258,
+        "modere": 0.1667,
+        "eleve": 0.8883,
+        "critique": 0.4145
+      },
+      "ecart_moyen_niveaux": 0.5947,
+      "a_un_niveau_pres": 0.915,
+      "sous_estimation": 0.1051,
+      "sur_estimation": 0.4044,
+      "confusion": [
+        [
+          4300,
+          1559,
+          2312,
+          7
+        ],
+        [
+          560,
+          1610,
+          7373,
+          115
+        ],
+        [
+          6,
+          580,
+          6887,
+          280
+        ],
+        [
+          0,
+          9,
+          1871,
+          1331
+        ]
+      ],
+      "n_test": 28800
+    }
+  },
+  "importances": [
+    {
+      "feature": "heat_index",
+      "importance": 0.2093
+    },
+    {
+      "feature": "nb_vitaux",
+      "importance": 0.20521
+    },
+    {
+      "feature": "coupures_7j",
+      "importance": 0.0947
+    },
+    {
+      "feature": "coupures_en_cours",
+      "importance": 0.09084
+    },
+    {
+      "feature": "criticite_max",
+      "importance": 0.04275
+    },
+    {
+      "feature": "nb_medicaux",
+      "importance": 0.03171
+    },
+    {
+      "feature": "temperature",
+      "importance": 0.02424
+    },
+    {
+      "feature": "nb_equipements",
+      "importance": 0.01868
+    },
+    {
+      "feature": "ressentie",
+      "importance": 0.0157
+    },
+    {
+      "feature": "a_onduleur",
+      "importance": 0.01352
+    },
+    {
+      "feature": "duree_moy_coupures_h",
+      "importance": 0.0075
+    },
+    {
+      "feature": "heure",
+      "importance": 0.00535
+    },
+    {
+      "feature": "a_refrigerateur",
+      "importance": 0.00166
+    },
+    {
+      "feature": "canicule_niveau",
+      "importance": 2e-05
+    },
+    {
+      "feature": "mois",
+      "importance": -0.0003
+    },
+    {
+      "feature": "a_respirateur",
+      "importance": -0.00141
+    },
+    {
+      "feature": "jours_chauds_consecutifs",
+      "importance": -0.00265
+    }
+  ],
+  "evaluation": "foyers jamais vus (GroupShuffleSplit), sélection par CV groupée sur le train",
+  "note": "Données 100 % synthétiques ; étiquette = gravité simulée (variables cachées + bruit)."
+}

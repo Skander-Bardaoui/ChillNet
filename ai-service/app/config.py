@@ -22,6 +22,10 @@ ARTIFACTS_DIR = BASE_DIR / "artifacts"
 # rester distinguable du modèle canicule (artifacts/). Voir app/coupures/.
 COUPURES_ARTIFACTS_DIR = ARTIFACTS_DIR / "coupures"
 
+# Dossier d'artefacts DÉDIÉ au module 4 (conseils / équipements) : chaque
+# modèle a le sien, pour rester distinguable des autres modules.
+CONSEILS_ARTIFACTS_DIR = ARTIFACTS_DIR / "conseils"
+
 
 def load_labeler_config() -> dict[str, Any]:
     """Charge ``config/labeler.yaml`` (règles de labellisation)."""
@@ -82,6 +86,18 @@ class Settings:
         self.coupures_etr_model_path: Path = Path(
             os.environ.get(
                 "AI_COUPURES_ETR_MODEL_PATH", COUPURES_ARTIFACTS_DIR / "etr.joblib"
+            )
+        )
+
+        # --- Module 4 conseils / équipements (artefacts isolés) ---
+        self.conseils_model_path: Path = Path(
+            os.environ.get(
+                "AI_CONSEILS_MODEL_PATH", CONSEILS_ARTIFACTS_DIR / "model.joblib"
+            )
+        )
+        self.conseils_metadata_path: Path = Path(
+            os.environ.get(
+                "AI_CONSEILS_METADATA_PATH", CONSEILS_ARTIFACTS_DIR / "metadata.json"
             )
         )
 
