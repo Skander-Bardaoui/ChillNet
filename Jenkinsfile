@@ -88,11 +88,19 @@ pipeline {
         // pas installer scikit-learn 1.8, version qui charge les .joblib du dépôt.
         // On monte tout le dépôt : les tests de parité lisent tests/fixtures à
         // la racine (parents[2] du fichier de test).
+        //
+        // CACHE PIP PERSISTANT : numpy/scipy/pandas/scikit-learn ≈ 80 Mo de
+        // wheels. Sans cache, chaque build les re-téléchargeait (CDN PyPI à
+        // ~20 Ko/s ici → plus de 45 min de stage). Le cache vit dans le home
+        // Jenkins (uid/gid de l'utilisateur du conteneur) et survit aux builds.
         sh '''
           set -eu
+          mkdir -p "$HOME/.cache/pip-chillnet"
           docker run --rm \
             -u "$(id -u):$(id -g)" \
             -e HOME=/tmp \
+            -e PIP_CACHE_DIR=/pip-cache \
+            -v "$HOME/.cache/pip-chillnet:/pip-cache" \
             -v "$WORKSPACE:/repo" -w /repo/ai-service \
             python:3.11-slim \
             sh -c '
@@ -101,7 +109,7 @@ pipeline {
               python -m venv .venv
               . .venv/bin/activate
               pip install -q --upgrade pip
-              pip install -q -r requirements.txt pytest-cov==7.1.0
+              pip install -q --retries 10 --timeout 120 -r requirements.txt pytest-cov==7.1.0
               pytest --junitxml=build/pytest.xml --cov=app --cov-report=xml:coverage.xml
             '
         '''

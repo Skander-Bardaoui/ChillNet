@@ -133,7 +133,8 @@
 </section>
 
 @if ($marqueurs !== [])
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="anonymous" />
 @include('points-fraicheur._carte-script', [
     'idCarte' => 'carte-quartier',
     'marqueurs' => $marqueurs,

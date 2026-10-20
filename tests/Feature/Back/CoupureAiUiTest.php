@@ -3,6 +3,7 @@
 namespace Tests\Feature\Back;
 
 use App\Enums\Role;
+use App\Models\Coupure;
 use App\Models\Quartier;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -115,7 +116,7 @@ class CoupureAiUiTest extends TestCase
         $quartier = $this->quartier();
 
         // 3 coupures chaudes en cours confirmées → score des règles 51 (élevé).
-        \App\Models\Coupure::factory()
+        Coupure::factory()
             ->count(3)
             ->dansQuartier($quartier)
             ->surcharge()

@@ -41,7 +41,7 @@
                 <label class="font-label-md text-label-md text-on-surface" for="email">Identifiant ou Email résident</label>
                 <div class="relative">
                     <span class="material-symbols-outlined absolute left-3 top-3 text-on-surface-variant text-[20px]">badge</span>
-                    <input id="email" name="email" type="email" value="{{ old('email') }}" x-model="email" required autofocus autocomplete="username" placeholder="ex : nom@domaine.fr"
+                    <input id="email" name="email" type="email" value="{{ old('email') }}" x-model="email" required autocomplete="username" placeholder="ex : nom@domaine.fr"
                         :aria-invalid="erreurs.email ? 'true' : 'false'"
                         :class="erreurs.email ? 'border border-error ring-2 ring-error' : ''"
                         class="w-full bg-surface-container rounded-lg pl-10 pr-4 py-2.5 text-on-surface font-body-md text-body-md placeholder:text-outline-variant focus:outline-none focus:ring-2 focus:ring-primary-container transition-colors" />
