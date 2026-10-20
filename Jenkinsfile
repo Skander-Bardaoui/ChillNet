@@ -141,6 +141,40 @@ pipeline {
               sonarsource/sonar-scanner-cli \
               -Dsonar.working.directory=/usr/src/.scannerwork
           '''
+          // waitForQualityGate ne lit qu'un seul report-task.txt (celui de
+          // Laravel) : le gate Python est donc contrôlé ici via l'API, et son
+          // rapport retiré du workspace pour lever l'ambiguïté.
+          sh '''
+            curl -s -u "$SONAR_AUTH_TOKEN:" \
+              "$SONAR_HOST_URL/api/issues/search?componentKeys=chillnet-ai-service&resolved=false&inNewCodePeriod=true&ps=100" \
+              -o /tmp/sonar-issues-ai.json || true
+            php -r '
+              $d = json_decode(@file_get_contents("/tmp/sonar-issues-ai.json"), true);
+              printf("SONAR AI NEW ISSUES %d\\n", $d["total"] ?? 0);
+              foreach ($d["issues"] ?? [] as $i) {
+                  printf("SONAR AI %s %s %s %s:%s %s\\n",
+                      $i["severity"], $i["type"], $i["rule"], $i["component"], $i["line"] ?? 0, $i["message"]);
+              }
+            ' || true
+            rm -rf ai-service/.scannerwork
+            php -r '
+              $url = getenv("SONAR_HOST_URL") . "/api/qualitygates/project_status?projectKey=chillnet-ai-service";
+              $ctx = stream_context_create(["http" => ["header" => "Authorization: Basic " . base64_encode(getenv("SONAR_AUTH_TOKEN") . ":"), "timeout" => 20]]);
+              $s = "NONE";
+              for ($i = 0; $i < 24; $i++) {
+                  $g = json_decode(@file_get_contents($url, false, $ctx), true);
+                  $s = $g["projectStatus"]["status"] ?? "NONE";
+                  if ($s !== "NONE") { break; }
+                  sleep(5);
+              }
+              printf("SONAR AI GATE %s\\n", $s);
+              foreach ($g["projectStatus"]["conditions"] ?? [] as $c) {
+                  printf("SONAR AI COND %s %s = %s (seuil %s)\\n",
+                      $c["status"], $c["metricKey"], $c["actualValue"] ?? "?", $c["errorThreshold"] ?? "-");
+              }
+              exit($s === "OK" ? 0 : 1);
+            '
+          '''
         }
       }
     }
