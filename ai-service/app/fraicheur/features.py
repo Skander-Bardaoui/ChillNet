@@ -17,6 +17,7 @@ dans les 14 jours qui suivent la capture.
 
 from __future__ import annotations
 
+import math
 from datetime import datetime
 from typing import Any
 
@@ -147,7 +148,7 @@ def _num(value: Any, default: float | None = None) -> float | None:
         resultat = float(value)
     except (TypeError, ValueError):
         return default
-    return resultat if resultat == resultat else default  # NaN → défaut
+    return default if math.isnan(resultat) else resultat
 
 
 def canicule_niveau_depuis_temp(temp: float) -> int:
