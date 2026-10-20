@@ -19,7 +19,7 @@ use Tests\TestCase;
 
 /**
  * Module 3 : points de fraîcheur + avis (CRUD, modération, validation, IA).
- * Les clés Groq / WeatherAPI sont neutralisées : l'IA passe par ses replis.
+ * La clé WeatherAPI est neutralisée : l'IA fonctionne sans réseau.
  */
 class PointFraicheurTest extends TestCase
 {
@@ -29,7 +29,7 @@ class PointFraicheurTest extends TestCase
     {
         parent::setUp();
 
-        config(['services.groq.key' => null, 'services.weather.key' => null]);
+        config(['services.weather.key' => null]);
         Quartier::create(['nom' => 'Centre-Ville', 'ville' => 'Tunis', 'latitude' => 36.8008, 'longitude' => 10.1800]);
     }
 

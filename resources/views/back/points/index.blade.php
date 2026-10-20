@@ -64,7 +64,8 @@
 @php($erreurRefus = (int) old('refus_point') === $proposition->id)
 <form method="POST" action="{{ route('back.points.refuser', $proposition) }}" x-show="refus" x-cloak class="flex flex-col sm:flex-row sm:flex-wrap gap-2 w-full lg:w-auto">@csrf @method('PATCH')
 <input type="hidden" name="refus_point" value="{{ $proposition->id }}" />
-<input type="text" name="motif_refus" value="{{ $erreurRefus ? old('motif_refus') : '' }}" required minlength="10" maxlength="500" placeholder="Motif du refus (visible par l'habitant)" class="flex-1 lg:w-72 rounded-lg bg-surface-container border border-outline-variant/40 px-3 py-2 text-on-surface focus:border-primary-container focus:outline-none {{ $erreurRefus && $errors->has('motif_refus') ? 'border-error' : '' }}" />
+<label for="motif_refus_{{ $proposition->id }}" class="sr-only">Motif du refus (visible par l'habitant)</label>
+<input id="motif_refus_{{ $proposition->id }}" type="text" name="motif_refus" value="{{ $erreurRefus ? old('motif_refus') : '' }}" required minlength="10" maxlength="500" placeholder="Motif du refus (visible par l'habitant)" class="flex-1 lg:w-72 rounded-lg bg-surface-container border border-outline-variant/40 px-3 py-2 text-on-surface focus:border-primary-container focus:outline-none {{ $erreurRefus && $errors->has('motif_refus') ? 'border-error' : '' }}" />
 <button type="submit" class="px-4 py-2 rounded-lg bg-error text-on-error font-label-md text-label-md font-semibold">Confirmer le refus</button>
 <button type="button" @click="refus = false" class="px-3 py-2 rounded-lg text-on-surface-variant font-label-md text-label-md">Annuler</button>
 @if ($erreurRefus) @error('motif_refus') <p class="w-full font-body-sm text-body-sm text-error flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">error</span>{{ $message }}</p> @enderror @endif
@@ -98,6 +99,34 @@
 </div>
 @empty
 <p class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-2"><span class="material-symbols-outlined text-green-700">check_circle</span>Aucun point ne cumule d'avis négatifs récurrents.</p>
+@endforelse
+</section>
+
+{{-- IA prédictive : points qui risquent de se dégrader dans les 14 prochains jours --}}
+<section class="rounded-2xl bg-surface-container-low shadow-md border border-outline-variant/20 p-space-md">
+<div class="flex flex-wrap items-center gap-2 mb-3">
+<span class="material-symbols-outlined text-primary text-[22px]">monitor_heart</span>
+<h2 class="font-title-md text-title-md text-on-surface font-semibold">Points à risque dans les {{ \App\Services\SantePointService::HORIZON_JOURS }} prochains jours <span class="font-body-sm text-body-sm text-on-surface-variant font-normal">(IA prédictive · caractéristiques du point + historique de ses avis)</span></h2>
+@php($sourceSante = $santes->first()['source'] ?? null)
+@if ($sourceSante)
+<span class="ml-auto px-2.5 py-0.5 rounded-full font-label-sm text-label-sm {{ $sourceSante === 'modele' ? 'bg-sky-100 text-sky-800' : 'bg-slate-100 text-slate-700' }}">{{ $sourceSante === 'modele' ? 'Modèle '.($santes->first()['model_version'] ? 'v'.$santes->first()['model_version'] : '') : 'Règles de sécurité' }}</span>
+@endif
+</div>
+@forelse ($aRisque as $s)
+<div class="rounded-xl bg-surface-container p-3 mb-2 flex flex-col sm:flex-row sm:items-center gap-3">
+<span class="material-symbols-outlined text-[26px] shrink-0" style="color: {{ $s['niveau']->couleurHex() }}">{{ $s['niveau']->icone() }}</span>
+<div class="flex-1 min-w-0">
+<p class="font-title-sm text-title-sm text-on-surface font-semibold">{{ $s['point']->nom }} <span class="ml-1 px-2 py-0.5 rounded-full font-label-sm text-label-sm {{ $s['niveau']->badgeClasses() }}">{{ $s['niveau']->label() }}</span></p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">{{ implode(' · ', array_slice($s['facteurs'], 0, 3)) }}</p>
+@if ($s['actions'] !== [])<p class="font-body-sm text-body-sm text-on-surface mt-0.5"><span class="material-symbols-outlined text-[15px] align-middle text-amber-600">task_alt</span> {{ $s['actions'][0] }}</p>@endif
+</div>
+<div class="flex items-center gap-3 shrink-0">
+<div class="w-28"><div class="h-2 rounded-full bg-surface-container-high overflow-hidden"><div class="h-full rounded-full" style="width: {{ $s['score'] }}%; background: {{ $s['niveau']->couleurHex() }}"></div></div><p class="font-label-sm text-label-sm text-on-surface-variant mt-0.5">Risque {{ $s['score'] }}/100 @if ($s['p14'] !== null)· {{ (int) round($s['p14'] * 100) }} %@endif</p></div>
+<a href="{{ route('back.points.show', $s['point']) }}" class="px-3 py-2 rounded-lg bg-surface-container-lowest text-on-surface font-label-md text-label-md hover:bg-white inline-flex items-center gap-1">Détail<span class="material-symbols-outlined text-[16px]">arrow_forward</span></a>
+</div>
+</div>
+@empty
+<p class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-2"><span class="material-symbols-outlined text-green-700">check_circle</span>Aucun point publié ne présente de risque de dégradation.</p>
 @endforelse
 </section>
 
@@ -154,6 +183,7 @@
 <th scope="col" class="px-6 py-3 text-left font-label-sm text-label-sm uppercase text-on-surface-variant">Type</th>
 <th scope="col" class="px-6 py-3 text-left font-label-sm text-label-sm uppercase text-on-surface-variant">Quartier</th>
 <th scope="col" class="px-6 py-3 text-left font-label-sm text-label-sm uppercase text-on-surface-variant">Note</th>
+<th scope="col" class="px-6 py-3 text-left font-label-sm text-label-sm uppercase text-on-surface-variant">Santé (14 j)</th>
 <th scope="col" class="px-6 py-3 text-left font-label-sm text-label-sm uppercase text-on-surface-variant">Statut</th>
 <th scope="col" class="px-6 py-3"><span class="sr-only">Actions</span></th>
 </tr></thead>
@@ -173,6 +203,13 @@
 <span class="font-body-sm text-body-sm text-on-surface-variant">Aucun avis</span>
 @endif
 </td>
+<td class="px-6 py-4 whitespace-nowrap">
+@if ($s = $santes->get($point->id))
+<span class="px-2.5 py-0.5 rounded-full font-label-sm text-label-sm font-semibold inline-flex items-center gap-1 {{ $s['niveau']->badgeClasses() }}" title="Risque {{ $s['score'] }}/100"><span class="material-symbols-outlined text-[14px]">{{ $s['niveau']->icone() }}</span>{{ $s['niveau']->label() }}</span>
+@else
+<span class="font-body-sm text-body-sm text-on-surface-variant">—</span>
+@endif
+</td>
 <td class="px-6 py-4"><span class="px-2.5 py-0.5 rounded-full font-label-sm text-label-sm font-semibold whitespace-nowrap {{ $point->statut->badgeClasses() }}">{{ $point->statut->label() }}</span></td>
 <td class="px-6 py-4 text-right space-x-1 whitespace-nowrap">
 <a href="{{ route('back.points.show', $point) }}" title="Voir" aria-label="Voir" class="inline-flex items-center justify-center h-9 w-9 rounded-lg text-on-surface-variant hover:bg-surface-container-high"><span class="material-symbols-outlined text-[18px]">visibility</span></a>
@@ -181,7 +218,7 @@
 </td>
 </tr>
 @empty
-<tr><td colspan="6" class="px-6 py-10 text-center">
+<tr><td colspan="7" class="px-6 py-10 text-center">
 <p class="font-title-md text-title-md text-on-surface font-medium">Aucun point de fraîcheur</p>
 <p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Ajoutez un parc, une salle climatisée ou une fontaine avec le bouton « Nouveau point ».</p>
 </td></tr>

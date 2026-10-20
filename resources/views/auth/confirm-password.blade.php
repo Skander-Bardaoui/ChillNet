@@ -11,7 +11,7 @@
                 <label class="font-label-md text-label-md text-on-surface" for="password">Mot de passe</label>
                 <div class="relative">
                     <span class="material-symbols-outlined absolute left-3 top-3 text-on-surface-variant text-[20px]">key</span>
-                    <input id="password" name="password" type="password" required autofocus autocomplete="current-password"
+                    <input id="password" name="password" type="password" required autocomplete="current-password"
                            class="w-full bg-surface-container rounded-lg pl-10 pr-4 py-2.5 text-on-surface font-body-md text-body-md placeholder:text-outline-variant focus:outline-none focus:ring-2 focus:ring-primary-container transition-colors" />
                 </div>
                 <x-input-error :messages="$errors->get('password')" class="mt-1" />

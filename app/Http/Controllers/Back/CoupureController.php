@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Back;
 
 use App\Enums\StatutCoupure;
+use App\Http\Controllers\Back\Concerns\QuartiersAccessibles;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreCoupureRequest;
 use App\Models\Coupure;
@@ -23,6 +24,8 @@ use App\Services\CoupureRiskAiService;
  */
 class CoupureController extends Controller
 {
+    use QuartiersAccessibles;
+
     public function __construct(
         private CoupureRiskAiService $risk,
         private CoupureAiClient $iaClient,
@@ -175,21 +178,6 @@ class CoupureController extends Controller
 
         return redirect()->route('back.coupures.index')
             ->with('success', 'Coupure supprimée.');
-    }
-
-    /**
-     * Quartiers proposés dans le formulaire :
-     * le gestionnaire ne voit que le sien, l'admin les voit tous.
-     */
-    private function quartiersAccessibles()
-    {
-        $user = request()->user();
-
-        if ($user && $user->isGestionnaire()) {
-            return Quartier::whereKey($user->residence?->quartier_id)->orderBy('nom')->get();
-        }
-
-        return Quartier::orderBy('nom')->get();
     }
 
     /**

@@ -66,6 +66,28 @@ python scripts/evaluate.py
 > ⚠️ `artifacts/model.joblib` est un objet sérialisé : ne charger que des
 > artefacts produits par `scripts/train.py` (provenance de confiance).
 
+## Module Signalements — classification des catégories
+
+Le classifieur de catégories est isolé dans `app/signalements/` et
+`artifacts/signalements/`. Il classe uniquement la catégorie (`fuite`,
+`panne_locale`, `personne_vulnerable`, `autre`) ; l’urgence et le tri restent
+gérés par leurs mécanismes Laravel existants.
+
+```bash
+python scripts/train_signalements.py
+python scripts/evaluate_signalements.py
+```
+
+L'entraînement utilise `data/signalements_urgence.csv` et les exemples
+complémentaires `data/signalements_categories.csv`. Les variantes `panne locale`
+et `coupure` du jeu historique sont normalisées vers `panne_locale`. Les
+artefacts restent distincts des autres modules. Laravel appelle
+`POST /signalements/classify` et reprend le classifieur local si le service
+Python n'est pas joignable ou ne renvoie pas une catégorie autorisée.
+`POST /retrain-signalements` lance un nouvel entraînement (jeton requis).
+En Laravel, la commande `php artisan ai:retrain-signalements` demande ce
+ré-entraînement au service.
+
 ## Points d'API
 
 | Méthode | Chemin            | Description |
@@ -77,9 +99,37 @@ python scripts/evaluate.py
 | GET     | `/model-info`     | Version, date, métriques, nb corrections |
 | POST    | `/reload`         | Recharge l'artefact à chaud (token) |
 | POST    | `/retrain`        | Lance l'entraînement en tâche de fond (token) |
+| POST    | `/signalements/classify` | Description → catégorie, confiance et probabilités (token) |
+| GET     | `/signalements/model-info` | Disponibilité, version et métriques du classifieur (token) |
+| POST    | `/retrain-signalements` | Ré-entraîne le classifieur de catégories (token) |
 
 La validation est stricte : température hors `[-10, 60]` °C, humidité hors
 `[0, 100]` %, ou plus de 72 prévisions déclenchent une réponse **422**.
+
+## Module 3 — Santé des points de fraîcheur (points + avis)
+
+Prédit si un point de fraîcheur recevra **au moins 2 avis négatifs dans les
+14 prochains jours**, à partir de ses caractéristiques et de l'historique de ses
+avis (code `app/fraicheur/`, artefacts `artifacts/fraicheur/`). Détails :
+[`docs/ai-module-fraicheur.md`](../docs/ai-module-fraicheur.md).
+
+```bash
+# 1. Météo réelle des 24 gouvernorats (export Open-Meteo .xlsx) → data/meteo_gouvernorats.csv
+python scripts/import_meteo.py ../open-meteo-36.87N10.18E9m.xlsx
+
+# 2. Simulation points + avis sur cette météo → data/fraicheur_history.csv
+python scripts/simulate_fraicheur.py
+
+# 3. Entraînement puis évaluation (hold-out temporel, comparaison aux règles)
+python scripts/train_fraicheur.py
+python scripts/evaluate_fraicheur.py
+```
+
+| Méthode | Chemin                | Description |
+|--------:|-----------------------|-------------|
+| POST    | `/fraicheur/sante`    | Points → p14, score final (plancher des règles), niveau, 3 facteurs, actions |
+| GET     | `/fraicheur/insights` | Importances, dépendance partielle, métriques, évaluation |
+| POST    | `/retrain-fraicheur`  | Ré-entraîne (sim + réels `data/fraicheur_real.csv`) puis recharge (token) |
 
 ## Limites assumées
 

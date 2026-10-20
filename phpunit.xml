@@ -43,6 +43,10 @@
              suites qui l'exercent activent le client explicitement et le
              simulent via Http::fake(). -->
         <env name="AI_SERVICE_ENABLED" value="false" force="true"/>
+        <!-- Face++ : jamais joignable pendant les tests ; les suites qui
+             l'exercent activent le client explicitement et le simulent via
+             Http::fake(). -->
+        <env name="FACEPP_ENABLED" value="false" force="true"/>
 
         <server name="APP_ENV" value="testing"/>
         <server name="APP_MAINTENANCE_DRIVER" value="file"/>
@@ -60,5 +64,6 @@
         <server name="TELESCOPE_ENABLED" value="false"/>
         <server name="NIGHTWATCH_ENABLED" value="false"/>
         <server name="AI_SERVICE_ENABLED" value="false"/>
+        <server name="FACEPP_ENABLED" value="false"/>
     </php>
 </phpunit>

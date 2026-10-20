@@ -1,5 +1,9 @@
 <?php
 
+use App\Http\Middleware\EnsureUserHasRole;
+use App\Http\Middleware\RefreshExpiredJwtCookie;
+use App\Support\AuthCookie;
+use Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -12,7 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
-            'role' => \App\Http\Middleware\EnsureUserHasRole::class,
+            'role' => EnsureUserHasRole::class,
         ]);
 
         // Les jetons JWT restent httpOnly (invisibles en JS : c'est normal et
@@ -20,22 +24,24 @@ return Application::configure(basePath: dirname(__DIR__))
         // lisibles tels quels dans Inspecteur > Application > Cookies
         // (valeur eyJ...) et conformes à jwt.decrypt_cookies = false.
         $middleware->encryptCookies(except: [
-            \App\Support\AuthCookie::ACCESS,
-            \App\Support\AuthCookie::REFRESH,
+            AuthCookie::ACCESS,
+            AuthCookie::REFRESH,
         ]);
 
         $middleware->web(append: [
-            \App\Http\Middleware\RefreshExpiredJwtCookie::class,
+            RefreshExpiredJwtCookie::class,
         ]);
 
         // Laravel's middleware-priority sort otherwise runs 'auth' (and its
         // redirect-to-login) BEFORE an unlisted appended middleware gets a
         // chance to silently refresh an expired access token from the cookie.
         $middleware->prependToPriorityList(
-            before: \Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests::class,
-            prepend: \App\Http\Middleware\RefreshExpiredJwtCookie::class,
+            before: AuthenticatesRequests::class,
+            prepend: RefreshExpiredJwtCookie::class,
         );
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        // Une capture biométrique invalide ne doit jamais être renvoyée dans
+        // l'ancienne saisie (session / HTML), même en cas d'erreur de validation.
+        $exceptions->dontFlash(['image']);
     })->create();

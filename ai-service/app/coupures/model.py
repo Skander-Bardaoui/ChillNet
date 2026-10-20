@@ -8,78 +8,20 @@ service retombe alors sur les règles seules (plancher de sécurité).
 
 from __future__ import annotations
 
-import json
-import threading
 from pathlib import Path
 from typing import Any
 
-import joblib
 import numpy as np
 
+from ..model_bundle import JoblibBundle
 from .features import FACTEUR_LABELS, SAFE_DEFAULTS, VECTOR_ORDER, build_zone_features, format_valeur, vector
 
 
-class CoupureRiskModel:
+class CoupureRiskModel(JoblibBundle):
     """Enveloppe thread-safe autour des artefacts scikit-learn du module 2."""
 
     def __init__(self, model_path: Path, metadata_path: Path) -> None:
-        self._lock = threading.Lock()
-        self._model_path = Path(model_path)
-        self._metadata_path = Path(metadata_path)
-        self._bundle: dict[str, Any] | None = None
-        self._meta: dict[str, Any] = {}
-        self.load()
-
-    # ------------------------------------------------------------------ #
-    # Chargement
-    # ------------------------------------------------------------------ #
-
-    def load(self) -> bool:
-        with self._lock:
-            self._bundle = None
-            self._meta = {}
-
-            try:
-                if not self._model_path.exists():
-                    return False
-
-                bundle = joblib.load(self._model_path)
-
-                if not isinstance(bundle, dict) or "model24" not in bundle:
-                    return False
-
-                self._bundle = bundle
-
-                if self._metadata_path.exists():
-                    with open(self._metadata_path, "r", encoding="utf-8") as fh:
-                        self._meta = json.load(fh)
-
-                return True
-            except Exception:  # noqa: BLE001 — jamais bloquant
-                self._bundle = None
-                return False
-
-    def reload(self) -> bool:
-        return self.load()
-
-    @property
-    def available(self) -> bool:
-        return self._bundle is not None
-
-    @property
-    def version(self) -> str | None:
-        return self._meta.get("version")
-
-    def metadata(self) -> dict[str, Any]:
-        return dict(self._meta)
-
-    def _medians(self) -> dict[str, float]:
-        medians = self._meta.get("medians")
-
-        if isinstance(medians, dict) and medians:
-            return {k: float(medians.get(k, SAFE_DEFAULTS[k])) for k in VECTOR_ORDER}
-
-        return dict(SAFE_DEFAULTS)
+        super().__init__(model_path, metadata_path, "model24")
 
     # ------------------------------------------------------------------ #
     # Inférence
@@ -126,7 +68,7 @@ class CoupureRiskModel:
             return []
 
         base = self._probabilite("model24", features)
-        medians = self._medians()
+        medians = self.medians(SAFE_DEFAULTS, VECTOR_ORDER)
 
         contributions: list[tuple[float, str, float]] = []
 

@@ -11,6 +11,18 @@ pipeline {
     skipDefaultCheckout(true)
   }
 
+  triggers {
+    // Le job ne suit que la branche main (Branch Specifier `*/main` dans sa
+    // configuration SCM). GitHub ne sait pas filtrer les webhooks par branche :
+    // chaque push est relayé, mais githubPush() ne fait qu'un poll SCM du job ;
+    // si main n'a pas bougé, aucun build n'est planifié. Concrètement la CI
+    // part au merge d'une PR dans main, pas sur les pushes de branches.
+    githubPush()
+    // Filet de sécurité si le webhook n'est pas joignable : même filtre (*/main),
+    // polling toutes les 5 min.
+    pollSCM('H/5 * * * *')
+  }
+
   environment {
     REGISTRY    = '192.168.56.12:5000'
     APP_IMAGE   = "${REGISTRY}/chillnet-app"
@@ -72,16 +84,27 @@ pipeline {
 
     stage('Test (Python)') {
       steps {
-        dir('ai-service') {
-          sh '''
-            set -eu
-            python3 -m venv .venv
-            . .venv/bin/activate
-            pip install -q --upgrade pip
-            pip install -q -r requirements.txt pytest-cov
-            pytest --junitxml=build/pytest.xml --cov=app --cov-report=xml:coverage.xml
-          '''
-        }
+        // Même base que l'image de production : le Python 3.10 de l'hôte ne peut
+        // pas installer scikit-learn 1.8, version qui charge les .joblib du dépôt.
+        // On monte tout le dépôt : les tests de parité lisent tests/fixtures à
+        // la racine (parents[2] du fichier de test).
+        sh '''
+          set -eu
+          docker run --rm \
+            -u "$(id -u):$(id -g)" \
+            -e HOME=/tmp \
+            -v "$WORKSPACE:/repo" -w /repo/ai-service \
+            python:3.11-slim \
+            sh -c '
+              set -eu
+              rm -rf .venv
+              python -m venv .venv
+              . .venv/bin/activate
+              pip install -q --upgrade pip
+              pip install -q -r requirements.txt pytest-cov==7.1.0
+              pytest --junitxml=build/pytest.xml --cov=app --cov-report=xml:coverage.xml
+            '
+        '''
       }
     }
 
@@ -118,6 +141,68 @@ pipeline {
               sonarsource/sonar-scanner-cli \
               -Dsonar.working.directory=/usr/src/.scannerwork
           '''
+          // waitForQualityGate ne lit qu'un seul report-task.txt (celui de
+          // Laravel) : le gate Python est donc contrôlé ici via l'API, et son
+          // rapport retiré du workspace pour lever l'ambiguïté.
+          // Le scanner rend la main AVANT le traitement CE : sans attendre la
+          // tâche /api/ce/task, l'API renvoie les résultats de l'analyse
+          // précédente (mêmes chiffres, issue déjà corrigée ressortie).
+          sh '''
+            php -r '
+              $id = null;
+              foreach (@file("ai-service/.scannerwork/report-task.txt") ?: [] as $ligne) {
+                  if (str_starts_with($ligne, "ceTaskId=")) {
+                      $id = trim(substr($ligne, 9));
+                  }
+              }
+              if ($id === null) {
+                  fwrite(STDERR, "SONAR AI CE : ceTaskId introuvable\\n");
+                  exit(1);
+              }
+              $ctx = stream_context_create(["http" => ["header" => "Authorization: Basic " . base64_encode(getenv("SONAR_AUTH_TOKEN") . ":"), "timeout" => 20]]);
+              $url = getenv("SONAR_HOST_URL") . "/api/ce/task?id=" . urlencode($id);
+              $statut = "NONE";
+              for ($i = 0; $i < 60; $i++) {
+                  $t = json_decode(@file_get_contents($url, false, $ctx), true);
+                  $statut = $t["task"]["status"] ?? "NONE";
+                  if (in_array($statut, ["SUCCESS", "FAILED", "CANCELED"], true)) {
+                      break;
+                  }
+                  sleep(2);
+              }
+              printf("SONAR AI CE %s\\n", $statut);
+              exit($statut === "SUCCESS" ? 0 : 1);
+            '
+            rm -rf ai-service/.scannerwork
+            curl -s -u "$SONAR_AUTH_TOKEN:" \
+              "$SONAR_HOST_URL/api/issues/search?componentKeys=chillnet-ai-service&resolved=false&inNewCodePeriod=true&ps=100" \
+              -o /tmp/sonar-issues-ai.json || true
+            php -r '
+              $d = json_decode(@file_get_contents("/tmp/sonar-issues-ai.json"), true);
+              printf("SONAR AI NEW ISSUES %d\\n", $d["total"] ?? 0);
+              foreach ($d["issues"] ?? [] as $i) {
+                  printf("SONAR AI %s %s %s %s:%s %s\\n",
+                      $i["severity"], $i["type"], $i["rule"], $i["component"], $i["line"] ?? 0, $i["message"]);
+              }
+            ' || true
+            php -r '
+              $url = getenv("SONAR_HOST_URL") . "/api/qualitygates/project_status?projectKey=chillnet-ai-service";
+              $ctx = stream_context_create(["http" => ["header" => "Authorization: Basic " . base64_encode(getenv("SONAR_AUTH_TOKEN") . ":"), "timeout" => 20]]);
+              $s = "NONE";
+              for ($i = 0; $i < 24; $i++) {
+                  $g = json_decode(@file_get_contents($url, false, $ctx), true);
+                  $s = $g["projectStatus"]["status"] ?? "NONE";
+                  if ($s !== "NONE") { break; }
+                  sleep(5);
+              }
+              printf("SONAR AI GATE %s\\n", $s);
+              foreach ($g["projectStatus"]["conditions"] ?? [] as $c) {
+                  printf("SONAR AI COND %s %s = %s (seuil %s)\\n",
+                      $c["status"], $c["metricKey"], $c["actualValue"] ?? "?", $c["errorThreshold"] ?? "-");
+              }
+              exit($s === "OK" ? 0 : 1);
+            '
+          '''
         }
       }
     }
@@ -126,6 +211,37 @@ pipeline {
       steps {
         timeout(time: 5, unit: 'MINUTES') {
           waitForQualityGate abortPipeline: true
+        }
+      }
+      post {
+        // Diagnostic NON bloquant : une fois l'analyse terminée, imprime les
+        // anomalies du « nouveau code » du projet Laravel pour que le log du
+        // build dise précisément quoi corriger sans ouvrir l'interface.
+        always {
+          withSonarQubeEnv('sonarqube') {
+            sh '''
+              curl -s -u "$SONAR_AUTH_TOKEN:" \
+                "$SONAR_HOST_URL/api/qualitygates/project_status?projectKey=chillnet" \
+                -o /tmp/sonar-gate.json || true
+              curl -s -u "$SONAR_AUTH_TOKEN:" \
+                "$SONAR_HOST_URL/api/issues/search?componentKeys=chillnet&resolved=false&inNewCodePeriod=true&ps=100" \
+                -o /tmp/sonar-issues.json || true
+              php -r '
+                $g = json_decode(@file_get_contents("/tmp/sonar-gate.json"), true);
+                printf("SONAR GATE %s\\n", $g["projectStatus"]["status"] ?? "INCONNU");
+                foreach ($g["projectStatus"]["conditions"] ?? [] as $c) {
+                    printf("SONAR COND %s %s = %s (seuil %s)\\n",
+                        $c["status"], $c["metricKey"], $c["actualValue"] ?? "?", $c["errorThreshold"] ?? "-");
+                }
+                $d = json_decode(@file_get_contents("/tmp/sonar-issues.json"), true);
+                printf("SONAR NEW ISSUES %d\\n", $d["total"] ?? 0);
+                foreach ($d["issues"] ?? [] as $i) {
+                    printf("SONAR %s %s %s %s:%s %s\\n",
+                        $i["severity"], $i["type"], $i["rule"], $i["component"], $i["line"] ?? 0, $i["message"]);
+                }
+              ' || true
+            '''
+          }
         }
       }
     }

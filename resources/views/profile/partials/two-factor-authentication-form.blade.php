@@ -138,7 +138,7 @@
                     @csrf
                     <label for="two_factor_code" class="font-label-sm text-label-sm text-on-surface-variant">Code à 6 chiffres fourni par l'application</label>
                     <div class="flex items-center gap-3">
-                        <input id="two_factor_code" name="code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" autofocus
+                        <input id="two_factor_code" name="code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6"
                                class="w-40 rounded-xl bg-surface-container border border-outline-variant/40 px-3 py-2.5 text-center tracking-widest text-on-surface focus:border-primary-container focus:outline-none" />
                         <x-primary-button>Valider et activer</x-primary-button>
                     </div>

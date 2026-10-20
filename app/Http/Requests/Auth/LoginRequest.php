@@ -3,7 +3,6 @@
 namespace App\Http\Requests\Auth;
 
 use App\Models\User;
-use Illuminate\Auth\Events\Lockout;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
@@ -13,6 +12,8 @@ use Illuminate\Validation\ValidationException;
 
 class LoginRequest extends FormRequest
 {
+    use ThrottlesLogins;
+
     /**
      * Determine if the user is authorized to make this request.
      */
@@ -57,29 +58,6 @@ class LoginRequest extends FormRequest
         RateLimiter::clear($this->throttleKey());
 
         return Auth::guard('web')->getLastAttempted();
-    }
-
-    /**
-     * Ensure the login request is not rate limited.
-     *
-     * @throws ValidationException
-     */
-    public function ensureIsNotRateLimited(): void
-    {
-        if (! RateLimiter::tooManyAttempts($this->throttleKey(), 5)) {
-            return;
-        }
-
-        event(new Lockout($this));
-
-        $seconds = RateLimiter::availableIn($this->throttleKey());
-
-        throw ValidationException::withMessages([
-            'email' => trans('auth.throttle', [
-                'seconds' => $seconds,
-                'minutes' => ceil($seconds / 60),
-            ]),
-        ]);
     }
 
     /**

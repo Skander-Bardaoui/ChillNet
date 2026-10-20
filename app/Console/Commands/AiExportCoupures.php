@@ -5,7 +5,6 @@ namespace App\Console\Commands;
 use App\Enums\StatutCoupure;
 use App\Models\Coupure;
 use App\Models\CoupureRiskSnapshot;
-use Illuminate\Console\Command;
 
 /**
  * Exporte les exemples RÉELS du module 2 vers les CSV consommés par
@@ -18,7 +17,7 @@ use Illuminate\Console\Command;
  *
  * Les lignes réelles sont sur-pondérées (×5) à l'entraînement.
  */
-class AiExportCoupures extends Command
+class AiExportCoupures extends AbstractAiExportCommand
 {
     protected $signature = 'ai:export-coupures {--dir= : Dossier de sortie (défaut ai-service/data)}';
 
@@ -41,11 +40,9 @@ class AiExportCoupures extends Command
 
     public function handle(): int
     {
-        $dossier = (string) ($this->option('dir') ?: base_path('ai-service/data'));
+        $dossier = $this->dossierSortie();
 
-        if (! is_dir($dossier) && ! @mkdir($dossier, 0755, true) && ! is_dir($dossier)) {
-            $this->error("Dossier introuvable et impossible à créer : {$dossier}");
-
+        if ($dossier === null) {
             return self::FAILURE;
         }
 
@@ -67,32 +64,15 @@ class AiExportCoupures extends Command
      */
     private function exporteRisque(string $chemin): ?int
     {
-        $handle = fopen($chemin, 'w');
-
-        if ($handle === false) {
-            $this->error("Impossible d'écrire : {$chemin}");
-
-            return null;
-        }
-
-        fputcsv($handle, self::COLONNES);
-
-        $total = 0;
-
-        CoupureRiskSnapshot::query()
-            ->labelises()
-            ->whereNotNull('features')
-            ->orderBy('captured_at')
-            ->chunk(500, function ($snapshots) use ($handle, &$total): void {
-                foreach ($snapshots as $snapshot) {
-                    fputcsv($handle, $this->ligneRisque($snapshot));
-                    $total++;
-                }
-            });
-
-        fclose($handle);
-
-        return $total;
+        return $this->exporterCsv(
+            $chemin,
+            self::COLONNES,
+            CoupureRiskSnapshot::query()
+                ->labelises()
+                ->whereNotNull('features')
+                ->orderBy('captured_at'),
+            fn (CoupureRiskSnapshot $snapshot): array => $this->ligneRisque($snapshot),
+        );
     }
 
     /**
@@ -136,60 +116,51 @@ class AiExportCoupures extends Command
      */
     private function exporteEtr(string $chemin): ?int
     {
-        $handle = fopen($chemin, 'w');
+        return $this->exporterCsv(
+            $chemin,
+            [
+                'zone_id', 'timestamp', 'type', 'heure', 'jour_semaine',
+                'temp', 'heat_index', 'charge_zone', 'confirmations', 'duration_min', 'source',
+            ],
+            Coupure::query()
+                ->where('statut', StatutCoupure::Resolue->value)
+                ->whereNotNull('fin')
+                ->whereNotNull('debut')
+                ->orderBy('debut'),
+            fn (Coupure $coupure): ?array => $this->ligneEtr($coupure),
+        );
+    }
 
-        if ($handle === false) {
-            $this->error("Impossible d'écrire : {$chemin}");
-
+    /**
+     * @return list<int|float|string|null>|null
+     */
+    private function ligneEtr(Coupure $coupure): ?array
+    {
+        if ($coupure->fin === null || $coupure->debut === null) {
             return null;
         }
 
-        fputcsv($handle, [
-            'zone_id', 'timestamp', 'type', 'heure', 'jour_semaine',
-            'temp', 'heat_index', 'charge_zone', 'confirmations', 'duration_min', 'source',
-        ]);
+        $minutes = (float) $coupure->debut->diffInMinutes($coupure->fin);
 
-        $total = 0;
+        if ($minutes <= 0) {
+            return null;
+        }
 
-        Coupure::query()
-            ->where('statut', StatutCoupure::Resolue->value)
-            ->whereNotNull('fin')
-            ->whereNotNull('debut')
-            ->orderBy('debut')
-            ->chunk(500, function ($coupures) use ($handle, &$total): void {
-                foreach ($coupures as $coupure) {
-                    if ($coupure->fin === null || $coupure->debut === null) {
-                        continue;
-                    }
+        $meteo = $this->meteoPourCoupure($coupure);
 
-                    $minutes = (float) $coupure->debut->diffInMinutes($coupure->fin);
-
-                    if ($minutes <= 0) {
-                        continue;
-                    }
-
-                    $meteo = $this->meteoPourCoupure($coupure);
-
-                    fputcsv($handle, [
-                        $coupure->quartier_id,
-                        $coupure->debut->format('Y-m-d H:i:s'),
-                        $coupure->type?->value,
-                        (int) $coupure->debut->hour,
-                        (int) $coupure->debut->dayOfWeekIso - 1,
-                        $meteo['temp'],
-                        $meteo['heat_index'],
-                        $meteo['charge_zone'],
-                        (int) $coupure->confirmations,
-                        round($minutes, 2),
-                        'reel',
-                    ]);
-                    $total++;
-                }
-            });
-
-        fclose($handle);
-
-        return $total;
+        return [
+            $coupure->quartier_id,
+            $coupure->debut->format('Y-m-d H:i:s'),
+            $coupure->type?->value,
+            (int) $coupure->debut->hour,
+            (int) $coupure->debut->dayOfWeekIso - 1,
+            $meteo['temp'],
+            $meteo['heat_index'],
+            $meteo['charge_zone'],
+            (int) $coupure->confirmations,
+            round($minutes, 2),
+            'reel',
+        ];
     }
 
     /**

@@ -7,7 +7,6 @@ use App\Enums\Role;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use App\Models\Equipement;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -68,6 +67,16 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
     public function residence(): BelongsTo
     {
         return $this->belongsTo(Residence::class, 'residence_id');
+    }
+
+    /**
+     * Signalements créés par cet habitant.
+     *
+     * @return HasMany<Signalement, $this>
+     */
+    public function signalements(): HasMany
+    {
+        return $this->hasMany(Signalement::class, 'user_id');
     }
 
     /**
@@ -164,6 +173,7 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
         'remember_token',
         'two_factor_secret',
         'two_factor_recovery_codes',
+        'face_reference_image',
     ];
 
     /**
@@ -181,7 +191,22 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
             'two_factor_secret' => 'encrypted',
             'two_factor_recovery_codes' => 'encrypted:array',
             'two_factor_confirmed_at' => 'datetime',
+            'face_reference_image' => 'encrypted',
+            'face_enrolled_at' => 'datetime',
+            'face_consent_at' => 'datetime',
         ];
+    }
+
+    /**
+     * La connexion par visage est-elle active pour cet utilisateur ?
+     * Vérifie la valeur brute : le déchiffrement peut échouer après une
+     * rotation d'APP_KEY, la connexion par mot de passe reste alors possible.
+     */
+    public function hasFaceEnrollment(): bool
+    {
+        return ! is_null($this->face_enrolled_at)
+            && is_string($this->getRawOriginal('face_reference_image'))
+            && $this->getRawOriginal('face_reference_image') !== '';
     }
 
     /**

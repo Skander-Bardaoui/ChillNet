@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Back;
 
 use App\Enums\NiveauAlerte;
 use App\Enums\ProfilVulnerabilite;
+use App\Http\Controllers\Back\Concerns\QuartiersAccessibles;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\PredictAlerteRequest;
 use App\Http\Requests\StoreAlerteRequest;
@@ -32,6 +33,8 @@ use Illuminate\Support\Facades\Log;
  */
 class AlerteController extends Controller
 {
+    use QuartiersAccessibles;
+
     public function __construct(
         private WeatherService $meteo,
         private VigilanceAiService $ia,
@@ -70,7 +73,8 @@ class AlerteController extends Controller
         $marqueurs = [];
         foreach ((clone $query)->orderByDesc('debut')->get() as $alerte) {
             $detail = ($alerte->niveau?->label() ?? '').' · '.rtrim(rtrim(number_format((float) $alerte->seuil_temperature, 1, ',', ''), '0'), ',').'°C · '
-                .($alerte->debut?->format('d/m H:i') ?? '?').' → '.($alerte->fin?->format('d/m H:i') ?? '—');
+                .($alerte->debut?->format('d/m H:i') ?? '?').' → '.($alerte->fin?->format('d/m H:i') ?? '—')
+                .($alerte->lieu ? ' · '.$alerte->lieu : '');
 
             if ($alerte->hasCoordinates()) {
                 $marqueurs[] = [
@@ -168,7 +172,7 @@ class AlerteController extends Controller
         $data['user_id'] = $request->user()?->id;
 
         $alerte = Alerte::create($data);
-        $alerte->quartiers()->sync($this->quartierIds($request->user(), (array) $request->input('quartier_ids', [])));
+        $this->syncQuartiers($alerte, $request);
 
         // Boucle de retour : le gestionnaire a-t-il suivi la suggestion IA ?
         $this->finaliserPrediction($request, $alerte);
@@ -195,7 +199,7 @@ class AlerteController extends Controller
 
         $alerte = Alerte::findOrFail($id);
         $alerte->update($this->donnees($request));
-        $alerte->quartiers()->sync($this->quartierIds($request->user(), (array) $request->input('quartier_ids', [])));
+        $this->syncQuartiers($alerte, $request);
 
         $this->finaliserPrediction($request, $alerte);
 
@@ -494,23 +498,6 @@ class AlerteController extends Controller
     }
 
     /**
-     * Quartiers proposés dans le formulaire : le gestionnaire ne voit que le
-     * sien, l'admin les voit tous.
-     *
-     * @return \Illuminate\Database\Eloquent\Collection<int, Quartier>
-     */
-    private function quartiersAccessibles()
-    {
-        $user = request()->user();
-
-        if ($user && $user->isGestionnaire()) {
-            return Quartier::whereKey($user->residence?->quartier_id)->orderBy('nom')->get();
-        }
-
-        return Quartier::orderBy('nom')->get();
-    }
-
-    /**
      * Un gestionnaire ne touche que les alertes qui couvrent sa zone.
      */
     private function authorizeAlerte(int $id): void
@@ -534,13 +521,66 @@ class AlerteController extends Controller
     private function donnees(StoreAlerteRequest $request): array
     {
         $data = $request->validated();
-        unset($data['quartier_ids'], $data['ai_prediction_id']);
+        unset(
+            $data['quartier_ids'],
+            $data['ai_prediction_id'],
+            $data['nouveau_quartier_nom'],
+            $data['nouveau_quartier_ville'],
+            $data['nouveau_quartier_code_postal'],
+        );
 
         if (empty($data['source_meteo'])) {
             $data['source_meteo'] = 'manuel';
         }
 
         return $data;
+    }
+
+    /**
+     * Rattache l'alerte à ses quartiers. Quand le point cliqué n'est proche
+     * d'aucun quartier connu, le quartier proposé par la carte est créé ici
+     * (après validation, donc jamais sur un formulaire invalide).
+     */
+    private function syncQuartiers(Alerte $alerte, StoreAlerteRequest $request): void
+    {
+        $user = $request->user();
+
+        if ($user?->isGestionnaire() && $user->residence?->quartier_id) {
+            $alerte->quartiers()->sync([(int) $user->residence->quartier_id]);
+
+            return;
+        }
+
+        $ids = $this->quartierIds($user, (array) $request->input('quartier_ids', []));
+
+        if ($nouveau = $this->creerQuartierDepuisPoint($request)) {
+            $ids[] = $nouveau->id;
+        }
+
+        $alerte->quartiers()->sync(array_values(array_unique($ids)));
+    }
+
+    /**
+     * Crée (ou réutilise) le quartier décrit par le géocodage du point posé.
+     * Nom et ville sont obligatoires ; sans coordonnées, rien n'est créé.
+     */
+    private function creerQuartierDepuisPoint(StoreAlerteRequest $request): ?Quartier
+    {
+        $nom = trim((string) $request->input('nouveau_quartier_nom', ''));
+        $ville = trim((string) $request->input('nouveau_quartier_ville', ''));
+
+        if ($nom === '' || $ville === '' || ! $request->filled('latitude') || ! $request->filled('longitude')) {
+            return null;
+        }
+
+        return Quartier::firstOrCreate(
+            ['nom' => $nom, 'ville' => $ville],
+            [
+                'code_postal' => trim((string) $request->input('nouveau_quartier_code_postal', '')),
+                'latitude' => (float) $request->input('latitude'),
+                'longitude' => (float) $request->input('longitude'),
+            ],
+        );
     }
 
     /**
@@ -556,6 +596,9 @@ class AlerteController extends Controller
             return [(int) $user->residence->quartier_id];
         }
 
-        return array_values(array_map('intval', $ids));
+        return array_values(array_filter(
+            array_map('intval', $ids),
+            fn (int $id): bool => $id > 0,
+        ));
     }
 }

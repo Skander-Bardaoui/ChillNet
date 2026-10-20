@@ -11,7 +11,7 @@
                                    └────────┬────────┘
                                             │ webhook / poll SCM
         ┌───────────────────────────────────┼──────────────────────────────────┐
-        │  CI  (job chillnet-ci)            ▼                                  │
+        │  CI  (job ChillNet)               ▼                                  │
         │  ┌──────────────┐   analyse   ┌───────────────┐                      │
         │  │   Jenkins    │────────────▶│   SonarQube   │   quality gate       │
         │  │ 192.168.56.10│◀────────────│ 192.168.56.11 │   + webhook          │
@@ -100,11 +100,130 @@ vagrant ssh k8s -c "curl -s http://localhost:5000/v2/_catalog"
    contenant le fichier `k8s/base/.env` (voir §6), et id `chillnet-monitoring-env`
    contenant `k8s/monitoring/.env` (`GRAFANA_ADMIN_PASSWORD`). Utilisés par le job **CD**.
 6. **Deux jobs** (*New Item → Pipeline* ; *Pipeline script from SCM* → Git → ce dépôt) :
-   - `chillnet-ci` — *Script Path* `Jenkinsfile` (CI : tests, analyse, images).
+   - `ChillNet` — *Script Path* `Jenkinsfile` (CI : tests, analyse, images).
    - `chillnet-cd` — *Script Path* `Jenkinsfile.cd` (CD : déploiement k3s).
    Le nom du job CD **doit** être `chillnet-cd` : la CI le référence en dur dans
    `build job: 'chillnet-cd'`. Cocher *This project is parameterized* n'est pas requis
    (le paramètre `IMAGE_TAG` est déclaré dans le `Jenkinsfile.cd` lui-même).
+
+### Déclenchement automatique (webhook GitHub)
+
+Le job `ChillNet` déclare désormais :
+
+```groovy
+triggers {
+  githubPush()               // webhook GitHub -> build immédiat
+  pollSCM('H/5 * * * *')     // repli : vérifie le dépôt toutes les 5 min
+}
+```
+
+**Contrainte réseau** : Jenkins écoute sur `192.168.56.10`, une adresse **privée**.
+GitHub.com **ne peut pas la joindre** : un webhook pointant directement sur
+`http://192.168.56.10:8080/github-webhook/` ne sera jamais délivré. Il faut exposer
+Jenkins via un relais ou un tunnel.
+
+**Quelles branches déclenchent la CI ?**
+
+GitHub ne permet **pas** de filtrer un webhook par branche : chaque push, sur
+n'importe quelle branche, est délivré. Le filtrage se fait côté Jenkins :
+
+- le job `ChillNet` a pour *Branch Specifier* **`*/main`** (idem pour `chillnet-cd`) ;
+- `githubPush()` réagit à la livraison en lançant simplement un **poll SCM** du job ;
+  si `main` n'a pas changé, aucun build n'est planifié.
+
+Résultat : un push sur une branche de feature est ignoré ; la CI part uniquement
+quand `main` avance, c'est-à-dire au **merge d'une pull request** (ou à un push
+direct sur `main`). Pour interdire le push direct et n'autoriser que les merges :
+GitHub → *Settings → Branches → Add branch protection rule* → branche `main` →
+*Require a pull request before merging*.
+
+> **Premier déclenchement** : les triggers sont enregistrés dans le job par le
+> premier build qui exécute ce `Jenkinsfile`. Tant que le bloc `triggers` n'a
+> jamais été construit sur `main` (`<triggers/>` vide dans la config du job),
+> lancer **Build Now** une fois après le merge. Les merges suivants déclencheront
+> la CI automatiquement.
+
+**Option A — relais smee.io (recommandé en lab, aucun port entrant)**
+
+Implémenté sur la VM `jenkins` : canal
+`https://smee.io/Bgiiv4tBR4Sytcjd`, client `smee-client@5` installé
+globalement (`/usr/bin/smee`), service systemd `smee-chillnet` qui
+le maintient actif au démarrage.
+
+1. Créer un canal sur <https://smee.io> (redirection 307 de `/new`) → URL
+   `https://smee.io/<id>`.
+2. Installer le client :
+   ```bash
+   sudo npm install -g smee-client
+   ```
+3. Vérifier l'URL cible : `http://localhost:8080/github-webhook/`
+   (**slash final obligatoire**). Le client v5 supprime ce slash
+   (`trimTrailingSlash` dans `index.js`) : Jenkins répond alors
+   `302 → /github-webhook/`, et `fetch` rejoue la redirection en **GET**,
+   d'où un `405`. Correctif appliqué sur la VM :
+   ```bash
+   sudo sed -i 's|this.#target = trimTrailingSlash(new URL(target).toString());|this.#target = new URL(target).toString();|' \
+     /usr/lib/node_modules/smee-client/index.js
+   ```
+   Après mise à jour du paquet, **réappliquer ce correctif**.
+4. Service systemd `/etc/systemd/system/smee-chillnet.service` :
+   ```ini
+   [Unit]
+   Description=Smee.io relay -> Jenkins GitHub webhook
+   After=network-online.target jenkins.service
+   Wants=network-online.target
+
+   [Service]
+   Type=simple
+   ExecStart=/usr/bin/smee --url https://smee.io/Bgiiv4tBR4Sytcjd --target http://localhost:8080/github-webhook/
+   Restart=always
+   RestartSec=5
+   User=vagrant
+
+   [Install]
+   WantedBy=multi-user.target
+   ```
+   ```bash
+   sudo systemctl daemon-reload && sudo systemctl enable --now smee-chillnet
+   sudo journalctl -u smee-chillnet -f   # doit afficher « - 200 » par événement
+   ```
+   (`smee-client` v5 n'accepte plus `--events` : le filtrage se fait côté GitHub.)
+5. GitHub → dépôt → *Settings → Webhooks → Add webhook* :
+   - **Payload URL** : `https://smee.io/Bgiiv4tBR4Sytcjd`
+   - **Content type** : `application/json`
+   - **Which events** : *Just the push event*
+   - **Active** : coché
+
+Test manuel du relais (simule GitHub, doit répondre `200` dans le journal
+du service) :
+```bash
+curl -X POST https://smee.io/Bgiiv4tBR4Sytcjd \
+  -H 'Content-Type: application/json' -H 'X-GitHub-Event: ping' \
+  -H 'X-GitHub-Delivery: test-1' \
+  -d '{"zen":"x","hook_id":1,"repository":{"full_name":"a/b"}}'
+```
+
+**Option B — tunnel cloudflared**
+
+```bash
+curl -L -o /tmp/cloudflared https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64
+chmod +x /tmp/cloudflared
+/tmp/cloudflared tunnel --url http://localhost:8080
+```
+
+→ URL publique `https://<random>.trycloudflare.com` (change à chaque redémarrage).
+Webhook GitHub : `https://<random>.trycloudflare.com/github-webhook/`
+(le **slash final est obligatoire**), content type `application/json`, événement *push*.
+
+**Option C — polling seul** : `pollSCM('H/5 * * * *')` suffit à déclencher un build
+dans les 5 min suivant un push, sans aucune exposition. Si le plugin `github` n'est
+pas installé, retirer `githubPush()` (sinon la syntaxe du pipeline n'est pas reconnue).
+
+**Plugin** : `github` (ajouté à `jenkins/plugins.txt`) — l'installer puis redémarrer
+Jenkins **avant** de relancer le job.
+
+> Important : le CD n'est déclenché que depuis la branche **`main`** (stage `Trigger CD`).
+> Un push sur une autre branche lance la CI (tests/Sonar) mais pas le déploiement.
 
 ## 5. Les pipelines (CI `Jenkinsfile` · CD `Jenkinsfile.cd`)
 
@@ -112,7 +231,7 @@ La CI et le CD sont **séparés** : la CI ne déploie jamais, le CD ne compile n
 La CI déclenche le CD en fin de build réussi (branche `main` uniquement) via
 `build job: 'chillnet-cd'`, en lui transmettant le tag d'image.
 
-### CI (`Jenkinsfile` → job `chillnet-ci`)
+### CI (`Jenkinsfile` → job `ChillNet`)
 
 | Stage | Rôle |
 |-------|------|

@@ -3,11 +3,16 @@
 namespace App\Http\Controllers\Front;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\AnalyzeSignalementRequest;
 use App\Http\Requests\StoreSignalementRequest;
 use App\Models\Residence;
 use App\Models\Signalement;
 use App\Notifications\SignalementNotification;
+use App\Services\SignalementClassifier;
+use App\Services\SignalementTriageService;
+use App\Services\SignalementUrgencyDetector;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
@@ -16,8 +21,8 @@ class SignalementController extends Controller
 {
     public function index(): View
     {
-        $signalements = Signalement::with(['residence', 'residence.quartier'])
-            ->where('user_id', auth()->id())
+        $signalements = auth()->user()->signalements()
+            ->with(['residence', 'residence.quartier'])
             ->latest()
             ->get();
         $notifications = auth()->user()->notifications()->latest()->get();
@@ -27,7 +32,23 @@ class SignalementController extends Controller
         return view('front.signalements', compact('signalements', 'notifications', 'unreadNotificationsCount', 'residences'));
     }
 
-    public function store(StoreSignalementRequest $request): RedirectResponse
+    public function analyze(
+        AnalyzeSignalementRequest $request,
+        SignalementClassifier $classifier,
+        SignalementUrgencyDetector $urgencyDetector,
+    ): JsonResponse {
+        $description = $request->validated('description');
+
+        return response()->json([
+            ...$classifier->classer($description),
+            'termes_urgents' => $urgencyDetector->detecter($description),
+        ]);
+    }
+
+    public function store(
+        StoreSignalementRequest $request,
+        SignalementTriageService $triageService,
+    ): RedirectResponse
     {
         $user = $request->user();
         $today = now()->toDateString();
@@ -55,6 +76,7 @@ class SignalementController extends Controller
         unset($data['photo']);
 
         $signalement = Signalement::create($data);
+        $triageService->actualiser();
         $user->notify(new SignalementNotification($signalement, 'created'));
 
         return to_route('signalements.index')->with('success', 'Votre signalement a été envoyé.');
@@ -67,8 +89,11 @@ class SignalementController extends Controller
         return view('front.signalements-edit', compact('signalement'));
     }
 
-    public function update(StoreSignalementRequest $request, Signalement $signalement): RedirectResponse
-    {
+    public function update(
+        StoreSignalementRequest $request,
+        Signalement $signalement,
+        SignalementTriageService $triageService,
+    ): RedirectResponse {
         abort_unless($signalement->user_id === auth()->id(), 403);
 
         $data = $request->validated();
@@ -83,18 +108,22 @@ class SignalementController extends Controller
 
         unset($data['photo']);
         $signalement->update($data);
+        $triageService->actualiser();
 
         return to_route('signalements.index')->with('success', 'Votre signalement a été modifié.');
     }
 
-    public function destroy(Signalement $signalement): RedirectResponse
-    {
+    public function destroy(
+        Signalement $signalement,
+        SignalementTriageService $triageService,
+    ): RedirectResponse {
         abort_unless($signalement->user_id === auth()->id(), 403);
 
         if ($signalement->photo_path) {
             Storage::disk('public')->delete($signalement->photo_path);
         }
         $signalement->delete();
+        $triageService->actualiser();
 
         return to_route('signalements.index')->with('success', 'Votre signalement a été supprimé.');
     }

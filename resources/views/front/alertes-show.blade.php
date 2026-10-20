@@ -101,6 +101,9 @@
 @if ($alerte->quartiers->isNotEmpty())
 <p class="text-on-surface-variant">Quartiers : <span class="text-on-surface font-medium">{{ $alerte->quartiers->pluck('nom')->implode(', ') }}</span></p>
 @endif
+@if ($alerte->lieu)
+<p class="text-on-surface-variant">Rue / lieu : <span class="text-on-surface font-medium">{{ $alerte->lieu }}</span></p>
+@endif
 @if ($alerte->hasCoordinates())
 <p class="text-on-surface-variant">Cercle de {{ rtrim(rtrim(number_format($alerte->rayonMetres() / 1000, 1, ',', ''), '0'), ',') }} km autour du point {{ number_format((float) $alerte->latitude, 4) }}, {{ number_format((float) $alerte->longitude, 4) }}.</p>
 @elseif ($alerte->quartiers->isEmpty())

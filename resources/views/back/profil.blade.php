@@ -28,6 +28,10 @@
     </div>
 
     <div class="rounded-2xl bg-surface-container-low shadow-md border border-outline-variant/20 p-space-md">
+        @include('profile.partials.face-enrollment-form', ['user' => $user])
+    </div>
+
+    <div class="rounded-2xl bg-surface-container-low shadow-md border border-outline-variant/20 p-space-md">
         @include('profile.partials.update-password-form')
     </div>
 

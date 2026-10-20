@@ -69,6 +69,10 @@
 
 {{-- Déposer / gérer mon avis --}}
 <aside class="flex flex-col gap-space-sm lg:sticky lg:top-24">
+@if ($sante)
+@include('front.points._prevision', ['sante' => $sante, 'alternative' => $alternative])
+@endif
+
 <div class="rounded-2xl bg-surface-container-low p-space-md shadow-sm">
 <h2 class="font-title-md text-title-md text-on-surface font-semibold mb-2">Répartition des notes</h2>
 @for ($n = 5; $n >= 1; $n--)

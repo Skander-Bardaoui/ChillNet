@@ -1,7 +1,7 @@
 {
-  "version": "1.0.1",
-  "n_train": 856,
-  "n_test": 215,
+  "version": "1.0.2",
+  "n_train": 20456,
+  "n_test": 5115,
   "n_corrections": 0,
   "classes": [
     "jaune",
@@ -10,77 +10,77 @@
     "rouge"
   ],
   "model": {
-    "accuracy": 0.9535,
-    "macro_f1": 0.7888,
+    "accuracy": 0.9615,
+    "macro_f1": 0.9046,
     "recall_par_classe": {
-      "normal": 0.0,
-      "jaune": 0.8,
-      "orange": 0.5556,
-      "rouge": 0.9751
+      "normal": 0.9782,
+      "jaune": 0.9203,
+      "orange": 0.8649,
+      "rouge": 0.9438
     },
     "confusion": [
       [
-        0,
-        0,
+        3504,
+        78,
         0,
         0
       ],
       [
-        0,
-        4,
-        1,
+        3,
+        485,
+        39,
         0
       ],
       [
         0,
-        0,
-        5,
-        4
+        17,
+        224,
+        18
       ],
       [
         0,
         0,
-        5,
-        196
+        42,
+        705
       ]
     ],
-    "n_test": 215
+    "n_test": 5115
   },
   "rules": {
-    "accuracy": 0.8791,
-    "macro_f1": 0.4835,
+    "accuracy": 0.1507,
+    "macro_f1": 0.2176,
     "recall_par_classe": {
       "normal": 0.0,
-      "jaune": 1.0,
-      "orange": 0.1111,
-      "rouge": 0.9104
+      "jaune": 0.7704,
+      "orange": 0.2741,
+      "rouge": 0.3936
     },
     "confusion": [
       [
         0,
-        0,
-        0,
+        1930,
+        1652,
         0
       ],
       [
         0,
-        5,
-        0,
+        406,
+        121,
         0
       ],
       [
         0,
-        7,
-        1,
+        187,
+        71,
         1
       ],
       [
         0,
-        8,
-        10,
-        183
+        285,
+        168,
+        294
       ]
     ],
-    "n_test": 215
+    "n_test": 5115
   }
 }

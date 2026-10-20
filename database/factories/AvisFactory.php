@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
  * Avis d'un habitant. Le sentiment est calculé par le modèle (analyse
- * lexicale locale) à l'enregistrement : aucun appel Groq pendant le seed.
+ * lexicale locale) à l'enregistrement, sans aucun appel réseau.
  *
  * @extends Factory<Avis>
  */

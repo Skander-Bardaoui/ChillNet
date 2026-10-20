@@ -1,0 +1,386 @@
+{
+  "version": "1.0.0",
+  "date": "2026-10-19",
+  "trained_at": "2026-10-19",
+  "cible": "au moins 2 avis négatifs dans les 14 jours suivants",
+  "features": [
+    "type_code",
+    "capacite",
+    "climatise",
+    "ombrage",
+    "eau_potable",
+    "accessible_pmr",
+    "heures_ouverture_jour",
+    "anciennete_jours",
+    "a_photo",
+    "note_moyenne",
+    "nb_avis_30j",
+    "note_moyenne_30j",
+    "evolution_note_30j",
+    "part_negatifs_30j",
+    "jours_depuis_dernier_negatif",
+    "part_affluence_forte_30j",
+    "sentiment_moyen_30j",
+    "plaintes_proprete_30j",
+    "plaintes_chaleur_30j",
+    "plaintes_equipements_30j",
+    "temperature",
+    "canicule_niveau",
+    "mois"
+  ],
+  "monotonic_features": {
+    "part_negatifs_30j": 1,
+    "plaintes_proprete_30j": 1,
+    "plaintes_chaleur_30j": 1,
+    "plaintes_equipements_30j": 1,
+    "canicule_niveau": 1,
+    "note_moyenne": -1,
+    "note_moyenne_30j": -1
+  },
+  "medians": {
+    "type_code": 1.0,
+    "capacite": 85.0,
+    "climatise": 0.0,
+    "ombrage": 1.0,
+    "eau_potable": 1.0,
+    "accessible_pmr": 1.0,
+    "heures_ouverture_jour": 13.0,
+    "anciennete_jours": 902.0,
+    "a_photo": 1.0,
+    "note_moyenne": 3.594,
+    "nb_avis_30j": 7.0,
+    "note_moyenne_30j": 3.5,
+    "evolution_note_30j": 0.0,
+    "part_negatifs_30j": 0.2,
+    "jours_depuis_dernier_negatif": 16.0,
+    "part_affluence_forte_30j": 0.0,
+    "sentiment_moyen_30j": 0.1032,
+    "plaintes_proprete_30j": 0.0,
+    "plaintes_chaleur_30j": 0.0,
+    "plaintes_equipements_30j": 0.0,
+    "temperature": 24.9,
+    "canicule_niveau": 0.0,
+    "mois": 5.0
+  },
+  "n_samples": 33857,
+  "n_train": 16928,
+  "n_test": 16929,
+  "n_reel": 0,
+  "reel_weight": 5.0,
+  "taux_positifs": 0.3058,
+  "classes": [
+    0,
+    1
+  ],
+  "calibration": "sigmoid",
+  "metrics": {
+    "log_loss": 0.46524,
+    "brier": 0.15031,
+    "roc_auc": 0.82633
+  },
+  "comparaison_regles": {
+    "modele": {
+      "roc_auc": 0.8263,
+      "brier": 0.15031
+    },
+    "regles": {
+      "roc_auc": 0.7399,
+      "brier": 0.19755
+    },
+    "final": {
+      "roc_auc": 0.8044,
+      "brier": 0.16607
+    }
+  },
+  "importances": [
+    {
+      "feature": "note_moyenne",
+      "importance": 0.05372
+    },
+    {
+      "feature": "nb_avis_30j",
+      "importance": 0.02519
+    },
+    {
+      "feature": "temperature",
+      "importance": 0.01839
+    },
+    {
+      "feature": "mois",
+      "importance": 0.01082
+    },
+    {
+      "feature": "jours_depuis_dernier_negatif",
+      "importance": 0.01001
+    },
+    {
+      "feature": "note_moyenne_30j",
+      "importance": 0.00306
+    },
+    {
+      "feature": "part_affluence_forte_30j",
+      "importance": 0.00106
+    },
+    {
+      "feature": "evolution_note_30j",
+      "importance": 0.00054
+    },
+    {
+      "feature": "accessible_pmr",
+      "importance": 0.00053
+    },
+    {
+      "feature": "ombrage",
+      "importance": 0.00052
+    },
+    {
+      "feature": "anciennete_jours",
+      "importance": 0.00052
+    },
+    {
+      "feature": "plaintes_equipements_30j",
+      "importance": 0.00017
+    },
+    {
+      "feature": "type_code",
+      "importance": 0.00014
+    },
+    {
+      "feature": "plaintes_chaleur_30j",
+      "importance": 6e-05
+    },
+    {
+      "feature": "a_photo",
+      "importance": 1e-05
+    },
+    {
+      "feature": "part_negatifs_30j",
+      "importance": -0.0
+    },
+    {
+      "feature": "canicule_niveau",
+      "importance": 0.0
+    },
+    {
+      "feature": "capacite",
+      "importance": -2e-05
+    },
+    {
+      "feature": "plaintes_proprete_30j",
+      "importance": -7e-05
+    },
+    {
+      "feature": "heures_ouverture_jour",
+      "importance": -0.00013
+    },
+    {
+      "feature": "climatise",
+      "importance": -0.00032
+    },
+    {
+      "feature": "eau_potable",
+      "importance": -0.00045
+    },
+    {
+      "feature": "sentiment_moyen_30j",
+      "importance": -0.00075
+    }
+  ],
+  "partial_dependence": [
+    {
+      "feature": "part_negatifs_30j",
+      "valeur": 0.0,
+      "p14": 0.33
+    },
+    {
+      "feature": "part_negatifs_30j",
+      "valeur": 0.1,
+      "p14": 0.33
+    },
+    {
+      "feature": "part_negatifs_30j",
+      "valeur": 0.2,
+      "p14": 0.33
+    },
+    {
+      "feature": "part_negatifs_30j",
+      "valeur": 0.3,
+      "p14": 0.3304
+    },
+    {
+      "feature": "part_negatifs_30j",
+      "valeur": 0.4,
+      "p14": 0.3304
+    },
+    {
+      "feature": "part_negatifs_30j",
+      "valeur": 0.5,
+      "p14": 0.3304
+    },
+    {
+      "feature": "part_negatifs_30j",
+      "valeur": 0.6,
+      "p14": 0.3304
+    },
+    {
+      "feature": "part_negatifs_30j",
+      "valeur": 0.8,
+      "p14": 0.3304
+    },
+    {
+      "feature": "part_negatifs_30j",
+      "valeur": 1.0,
+      "p14": 0.3304
+    }
+  ],
+  "evaluation": {
+    "n_test": 16929,
+    "taux_positifs": 0.3232,
+    "calibration": [
+      {
+        "bin": 0.05,
+        "n": 3325,
+        "predit": 0.0651,
+        "observe": 0.0644
+      },
+      {
+        "bin": 0.15,
+        "n": 4177,
+        "predit": 0.1451,
+        "observe": 0.1288
+      },
+      {
+        "bin": 0.25,
+        "n": 2326,
+        "predit": 0.2467,
+        "observe": 0.2433
+      },
+      {
+        "bin": 0.35,
+        "n": 1509,
+        "predit": 0.3463,
+        "observe": 0.3307
+      },
+      {
+        "bin": 0.45,
+        "n": 1345,
+        "predit": 0.4478,
+        "observe": 0.4714
+      },
+      {
+        "bin": 0.55,
+        "n": 1088,
+        "predit": 0.5498,
+        "observe": 0.534
+      },
+      {
+        "bin": 0.65,
+        "n": 998,
+        "predit": 0.6486,
+        "observe": 0.6433
+      },
+      {
+        "bin": 0.75,
+        "n": 928,
+        "predit": 0.7484,
+        "observe": 0.7371
+      },
+      {
+        "bin": 0.85,
+        "n": 888,
+        "predit": 0.8493,
+        "observe": 0.8761
+      },
+      {
+        "bin": 0.95,
+        "n": 345,
+        "predit": 0.9263,
+        "observe": 0.971
+      }
+    ],
+    "modele": {
+      "roc_auc": 0.8263,
+      "pr_auc": 0.7226,
+      "brier": 0.15031,
+      "recall_degrade": 0.5566,
+      "par_niveau": {
+        "bon": {
+          "n": 8653,
+          "positifs": 1021,
+          "taux": 0.118
+        },
+        "a_surveiller": {
+          "n": 3971,
+          "positifs": 1405,
+          "taux": 0.3538
+        },
+        "degrade": {
+          "n": 2582,
+          "positifs": 1558,
+          "taux": 0.6034
+        },
+        "critique": {
+          "n": 1723,
+          "positifs": 1487,
+          "taux": 0.863
+        }
+      }
+    },
+    "regles": {
+      "roc_auc": 0.7399,
+      "pr_auc": 0.5631,
+      "brier": 0.19755,
+      "recall_degrade": 0.3968,
+      "par_niveau": {
+        "bon": {
+          "n": 10013,
+          "positifs": 1851,
+          "taux": 0.1849
+        },
+        "a_surveiller": {
+          "n": 3302,
+          "positifs": 1449,
+          "taux": 0.4388
+        },
+        "degrade": {
+          "n": 2226,
+          "positifs": 1238,
+          "taux": 0.5562
+        },
+        "critique": {
+          "n": 1388,
+          "positifs": 933,
+          "taux": 0.6722
+        }
+      }
+    },
+    "final": {
+      "roc_auc": 0.8044,
+      "pr_auc": 0.6672,
+      "brier": 0.16607,
+      "recall_degrade": 0.6286,
+      "par_niveau": {
+        "bon": {
+          "n": 7235,
+          "positifs": 790,
+          "taux": 0.1092
+        },
+        "a_surveiller": {
+          "n": 4114,
+          "positifs": 1242,
+          "taux": 0.3019
+        },
+        "degrade": {
+          "n": 3135,
+          "positifs": 1610,
+          "taux": 0.5136
+        },
+        "critique": {
+          "n": 2445,
+          "positifs": 1829,
+          "taux": 0.7481
+        }
+      }
+    }
+  }
+}

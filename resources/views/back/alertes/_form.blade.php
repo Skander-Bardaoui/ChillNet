@@ -16,6 +16,19 @@
 {{-- Trace IA : identifiant de la prédiction à rattacher à l'enregistrement. --}}
 <input type="hidden" name="ai_prediction_id" :value="predictionId" />
 
+{{-- Récapitulatif des erreurs détectées avant l'envoi : garantit un retour
+     visible même quand la validation native du navigateur est désactivée. --}}
+<template x-if="Object.keys(erreurs).length">
+<div role="alert" class="rounded-xl bg-error-container text-on-error-container px-space-md py-space-sm flex flex-col gap-1">
+<p class="font-title-md text-title-md font-semibold flex items-center gap-2"><span class="material-symbols-outlined">report</span>Corrigez les champs suivants</p>
+<ul class="list-disc pl-8 font-body-sm text-body-sm">
+<template x-for="(message, champ) in erreurs" :key="champ">
+<li x-text="message"></li>
+</template>
+</ul>
+</div>
+</template>
+
 {{-- Bandeau IA : pré-remplit la météo + classe le niveau + rédige le message --}}
 <div class="rounded-xl border border-primary-container/30 bg-primary-container/5 p-4 flex flex-col gap-3">
 <div class="flex items-start gap-3">
@@ -84,6 +97,7 @@
 <label for="titre" class="font-label-md text-label-md text-on-surface font-medium">Titre de l'alerte <span class="text-error">*</span></label>
 <input type="text" id="titre" name="titre" value="{{ old('titre', $alerte?->titre ?? '') }}" required maxlength="150" placeholder="Ex. : Vigilance forte chaleur" class="w-full rounded-xl bg-surface-container border border-outline-variant/40 px-3 py-2.5 text-on-surface placeholder:text-outline focus:border-primary-container focus:outline-none @error('titre') border-error @enderror" />
 @error('titre') <p class="font-body-sm text-body-sm text-error flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">error</span>{{ $message }}</p> @enderror
+<p x-show="erreurs.titre" class="font-body-sm text-body-sm text-error flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">error</span><span x-text="erreurs.titre"></span></p>
 </div>
 <div class="flex flex-col gap-1">
 <label for="niveau" class="font-label-md text-label-md text-on-surface font-medium">Niveau de vigilance <span class="text-error">*</span></label>
@@ -98,6 +112,7 @@
 <label for="seuil_temperature" class="font-label-md text-label-md text-on-surface font-medium">Seuil de température (°C) <span class="text-error">*</span></label>
 <input type="number" step="0.5" min="30" max="55" id="seuil_temperature" name="seuil_temperature" value="{{ old('seuil_temperature', $alerte?->seuil_temperature ?? 40) }}" required class="w-full rounded-xl bg-surface-container border border-outline-variant/40 px-3 py-2.5 text-on-surface focus:border-primary-container focus:outline-none @error('seuil_temperature') border-error @enderror" />
 @error('seuil_temperature') <p class="font-body-sm text-body-sm text-error flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">error</span>{{ $message }}</p> @enderror
+<p x-show="erreurs.seuil_temperature" class="font-body-sm text-body-sm text-error flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">error</span><span x-text="erreurs.seuil_temperature"></span></p>
 </div>
 </div>
 </fieldset>
@@ -107,10 +122,14 @@
 <legend class="px-2 font-title-md text-title-md text-on-surface font-semibold flex items-center gap-2"><span class="material-symbols-outlined text-primary text-[20px]">location_on</span>Rattachement aux quartiers <span class="font-body-sm text-body-sm text-on-surface-variant font-normal">(facultatif)</span></legend>
 @error('quartier_ids') <p class="mb-2 font-body-sm text-body-sm text-error flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">error</span>{{ $message }}</p> @enderror
 @error('quartier_ids.*') <p class="mb-2 font-body-sm text-body-sm text-error flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">error</span>{{ $message }}</p> @enderror
-<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+<p id="quartier-erreur-alerte" x-show="erreurs.quartier_ids" class="mb-2 font-body-sm text-body-sm text-error flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">error</span><span x-text="erreurs.quartier_ids"></span></p>
+<div id="liste-quartiers-alerte" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
 @forelse ($quartiers as $q)
 <label class="flex items-center gap-2 rounded-lg bg-surface-container border border-outline-variant/30 px-3 py-2 cursor-pointer hover:bg-surface-container-high transition-colors">
-<input type="checkbox" name="quartier_ids[]" value="{{ $q->id }}" @checked(in_array($q->id, $selectedQ, true)) class="h-4 w-4 rounded accent-primary-container" />
+<input type="checkbox" name="quartier_ids[]" value="{{ $q->id }}" @checked(in_array($q->id, $selectedQ, true)) class="peer sr-only" />
+<span class="flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 border-outline-variant/60 bg-surface-container text-transparent peer-checked:border-primary peer-checked:text-primary peer-focus-visible:ring-2 peer-focus-visible:ring-primary/40 transition-colors">
+<span class="material-symbols-outlined text-[16px] leading-none">check</span>
+</span>
 <span class="font-body-md text-body-md text-on-surface">{{ $q->nom }} <span class="font-body-sm text-body-sm text-on-surface-variant">({{ $q->ville }})</span></span>
 </label>
 @empty
@@ -121,6 +140,34 @@
 <p class="mt-2 font-body-sm text-body-sm text-on-surface-variant">Votre périmètre : votre zone uniquement — l'enregistrement force votre quartier.</p>
 @else
 <p class="mt-2 font-body-sm text-body-sm text-on-surface-variant">Optionnel : un ou plusieurs quartiers. La cible principale est le cercle ci-dessous.</p>
+
+{{-- Quartier proposé automatiquement quand le point cliqué n'est proche d'aucun
+     quartier connu : il rejoint la liste des cases (cochée) et sera créé en base
+     à l'enregistrement de l'alerte. --}}
+<div id="bloc-nouveau-quartier-alerte" class="hidden mt-3 rounded-xl border border-primary/30 bg-primary-container/10 p-3 flex flex-col gap-3">
+<p class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1"><span class="material-symbols-outlined text-primary text-[18px]">add_location_alt</span>Aucun quartier connu à proximité : ce nouveau quartier sera ajouté à la liste et créé à l'enregistrement.</p>
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+<div class="flex flex-col gap-1">
+<label for="nouveau_quartier_nom" class="font-label-md text-label-md text-on-surface font-medium">Nom du quartier</label>
+<input type="text" id="nouveau_quartier_nom" name="nouveau_quartier_nom" value="{{ old('nouveau_quartier_nom') }}" maxlength="120" class="w-full rounded-xl bg-surface-container border border-outline-variant/40 px-3 py-2.5 text-on-surface focus:border-primary-container focus:outline-none" />
+@error('nouveau_quartier_nom') <p class="font-body-sm text-body-sm text-error flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">error</span>{{ $message }}</p> @enderror
+<p x-show="erreurs.nouveau_quartier_nom" class="font-body-sm text-body-sm text-error flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">error</span><span x-text="erreurs.nouveau_quartier_nom"></span></p>
+</div>
+<div class="flex flex-col gap-1">
+<label for="nouveau_quartier_ville" class="font-label-md text-label-md text-on-surface font-medium">Ville</label>
+<input type="text" id="nouveau_quartier_ville" name="nouveau_quartier_ville" value="{{ old('nouveau_quartier_ville') }}" maxlength="120" class="w-full rounded-xl bg-surface-container border border-outline-variant/40 px-3 py-2.5 text-on-surface focus:border-primary-container focus:outline-none" />
+@error('nouveau_quartier_ville') <p class="font-body-sm text-body-sm text-error flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">error</span>{{ $message }}</p> @enderror
+<p x-show="erreurs.nouveau_quartier_ville" class="font-body-sm text-body-sm text-error flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">error</span><span x-text="erreurs.nouveau_quartier_ville"></span></p>
+</div>
+<div class="flex flex-col gap-1">
+<label for="nouveau_quartier_code_postal" class="font-label-md text-label-md text-on-surface font-medium">Code postal</label>
+<input type="text" id="nouveau_quartier_code_postal" name="nouveau_quartier_code_postal" value="{{ old('nouveau_quartier_code_postal') }}" maxlength="10" class="w-full rounded-xl bg-surface-container border border-outline-variant/40 px-3 py-2.5 text-on-surface focus:border-primary-container focus:outline-none" />
+@error('nouveau_quartier_code_postal') <p class="font-body-sm text-body-sm text-error flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">error</span>{{ $message }}</p> @enderror
+<p x-show="erreurs.nouveau_quartier_code_postal" class="font-body-sm text-body-sm text-error flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">error</span><span x-text="erreurs.nouveau_quartier_code_postal"></span></p>
+</div>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Champs pré-remplis par le géocodage — vous pouvez les corriger avant d'enregistrer.</p>
+</div>
 @endif
 </fieldset>
 
@@ -134,6 +181,18 @@
 <input type="hidden" id="longitude" name="longitude" value="{{ old('longitude', $alerte?->longitude) }}" />
 @error('latitude') <p class="mt-1 font-body-sm text-body-sm text-error flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">error</span>{{ $message }}</p> @enderror
 @error('longitude') <p class="mt-1 font-body-sm text-body-sm text-error flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">error</span>{{ $message }}</p> @enderror
+<p x-show="erreurs.latitude" class="mt-1 font-body-sm text-body-sm text-error flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">error</span><span x-text="erreurs.latitude"></span></p>
+<p x-show="erreurs.longitude" class="mt-1 font-body-sm text-body-sm text-error flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">error</span><span x-text="erreurs.longitude"></span></p>
+
+<div class="mt-3 flex flex-col gap-1">
+<label for="lieu" class="font-label-md text-label-md text-on-surface font-medium">Rue / lieu précis <span class="font-body-sm text-body-sm text-on-surface-variant font-normal">(optionnel — rempli automatiquement au clic sur la carte)</span></label>
+<input type="text" id="lieu" name="lieu" value="{{ old('lieu', $alerte?->lieu ?? '') }}" maxlength="255" placeholder="Ex. : avenue Habib Bourguiba" class="w-full rounded-xl bg-surface-container border border-outline-variant/40 px-3 py-2.5 text-on-surface placeholder:text-outline focus:border-primary-container focus:outline-none @error('lieu') border-error @enderror" />
+<p id="lieu-spinner-alerte" class="hidden flex font-body-sm text-body-sm text-on-surface-variant items-center gap-1"><span class="material-symbols-outlined text-[16px] animate-spin">progress_activity</span>Recherche de l'adresse…</p>
+@error('lieu') <p class="font-body-sm text-body-sm text-error flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">error</span>{{ $message }}</p> @enderror
+<p x-show="erreurs.lieu" class="font-body-sm text-body-sm text-error flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">error</span><span x-text="erreurs.lieu"></span></p>
+<p id="info-localisation-alerte" class="hidden font-body-sm text-body-sm text-on-surface-variant"></p>
+</div>
+
 <div class="mt-3 flex flex-wrap items-end gap-3">
 <div class="flex flex-col gap-1">
 <label for="rayon_metres" class="font-label-md text-label-md text-on-surface font-medium">Rayon (mètres)</label>
@@ -153,11 +212,13 @@
 <label for="debut" class="font-label-md text-label-md text-on-surface font-medium">Début <span class="text-error">*</span></label>
 <input type="datetime-local" id="debut" name="debut" value="{{ old('debut', $alerte?->debut?->format('Y-m-d\TH:i') ?? now()->format('Y-m-d\TH:i')) }}" required class="w-full rounded-xl bg-surface-container border border-outline-variant/40 px-3 py-2.5 text-on-surface focus:border-primary-container focus:outline-none @error('debut') border-error @enderror" />
 @error('debut') <p class="font-body-sm text-body-sm text-error flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">error</span>{{ $message }}</p> @enderror
+<p x-show="erreurs.debut" class="font-body-sm text-body-sm text-error flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">error</span><span x-text="erreurs.debut"></span></p>
 </div>
 <div class="flex flex-col gap-1">
 <label for="fin" class="font-label-md text-label-md text-on-surface font-medium">Fin <span class="text-error">*</span></label>
 <input type="datetime-local" id="fin" name="fin" value="{{ old('fin', $alerte?->fin?->format('Y-m-d\TH:i') ?? now()->addDay()->format('Y-m-d\TH:i')) }}" required class="w-full rounded-xl bg-surface-container border border-outline-variant/40 px-3 py-2.5 text-on-surface focus:border-primary-container focus:outline-none @error('fin') border-error @enderror" />
 @error('fin') <p class="font-body-sm text-body-sm text-error flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">error</span>{{ $message }}</p> @enderror
+<p x-show="erreurs.fin" class="font-body-sm text-body-sm text-error flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">error</span><span x-text="erreurs.fin"></span></p>
 </div>
 </div>
 <p class="mt-2 font-body-sm text-body-sm text-on-surface-variant">La fin doit être postérieure au début. Le statut (Programmée / Active / Terminée) est calculé automatiquement.</p>
@@ -171,16 +232,19 @@
 <label for="temperature_actuelle" class="font-label-md text-label-md text-on-surface font-medium">Température (°C)</label>
 <input type="number" step="0.1" min="-10" max="60" id="temperature_actuelle" name="temperature_actuelle" value="{{ old('temperature_actuelle', $alerte?->temperature_actuelle) }}" placeholder="Météo live si vide" class="w-full rounded-xl bg-surface-container border border-outline-variant/40 px-3 py-2.5 text-on-surface placeholder:text-outline focus:border-primary-container focus:outline-none @error('temperature_actuelle') border-error @enderror" />
 @error('temperature_actuelle') <p class="font-body-sm text-body-sm text-error flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">error</span>{{ $message }}</p> @enderror
+<p x-show="erreurs.temperature_actuelle" class="font-body-sm text-body-sm text-error flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">error</span><span x-text="erreurs.temperature_actuelle"></span></p>
 </div>
 <div class="flex flex-col gap-1">
 <label for="temperature_ressentie" class="font-label-md text-label-md text-on-surface font-medium">Ressentie (°C)</label>
 <input type="number" step="0.1" min="-10" max="70" id="temperature_ressentie" name="temperature_ressentie" value="{{ old('temperature_ressentie', $alerte?->temperature_ressentie) }}" class="w-full rounded-xl bg-surface-container border border-outline-variant/40 px-3 py-2.5 text-on-surface focus:border-primary-container focus:outline-none @error('temperature_ressentie') border-error @enderror" />
 @error('temperature_ressentie') <p class="font-body-sm text-body-sm text-error flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">error</span>{{ $message }}</p> @enderror
+<p x-show="erreurs.temperature_ressentie" class="font-body-sm text-body-sm text-error flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">error</span><span x-text="erreurs.temperature_ressentie"></span></p>
 </div>
 <div class="flex flex-col gap-1">
 <label for="humidite" class="font-label-md text-label-md text-on-surface font-medium">Humidité (%)</label>
 <input type="number" step="1" min="0" max="100" id="humidite" name="humidite" value="{{ old('humidite', $alerte?->humidite) }}" class="w-full rounded-xl bg-surface-container border border-outline-variant/40 px-3 py-2.5 text-on-surface focus:border-primary-container focus:outline-none @error('humidite') border-error @enderror" />
 @error('humidite') <p class="font-body-sm text-body-sm text-error flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">error</span>{{ $message }}</p> @enderror
+<p x-show="erreurs.humidite" class="font-body-sm text-body-sm text-error flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">error</span><span x-text="erreurs.humidite"></span></p>
 </div>
 </div>
 <input type="hidden" name="source_meteo" value="{{ old('source_meteo', $alerte?->source_meteo ?? 'manuel') }}" />
@@ -208,12 +272,30 @@
 const QUARTIERS_GEO = JSON.parse(document.getElementById('carte-alerte-form').dataset.quartiersGeo);
 const CENTRE_DEFAUT_ALERTE = [36.8065, 10.1815];
 
+// Même comportement que le formulaire de coupure : un point posé sur la carte
+// sélectionne le quartier le plus proche (rayon 3 km) et pré-remplit la rue.
+const RAYON_QUARTIER_ALERTE_KM = 3;
+const ADRESSE_URL_ALERTE = @json(route('geocodage.inverse'));
+
+// Distance orthodromique (Haversine) en km — même formule que App\Support\Geo.
+function distanceKmAlerte(lat1, lng1, lat2, lng2) {
+    const rayon = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLng = (lng2 - lng1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) ** 2
+        + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+    return 2 * rayon * Math.asin(Math.min(1, Math.sqrt(a)));
+}
+
 function alerteForm() {
     return {
         chargement: false,
         retour: null,
         predictionId: '',
         carte: null,
+        // Erreurs détectées côté navigateur : affichées en rouge avant l'envoi,
+        // la validation Laravel restant la référence (chevauchements, etc.).
+        erreurs: {},
         // Drapeau : la température n'est envoyée à l'IA que si l'utilisateur l'a
         // saisie à la main. Une valeur auto-remplie par un pré-remplissage
         // précédent ne doit pas se transformer en override permanent (sinon la
@@ -227,6 +309,8 @@ function alerteForm() {
         },
         init() {
             const form = this.$root;
+            form.closest('form')?.addEventListener('submit', (event) => this.valider(event));
+
             const latInput = form.querySelector('[name="latitude"]');
             const lngInput = form.querySelector('[name="longitude"]');
             const rayonInput = form.querySelector('[name="rayon_metres"]');
@@ -248,6 +332,185 @@ function alerteForm() {
             let marqueur = null;
             const rayon = () => Math.max(100, parseInt(rayonInput.value || '1000', 10) || 1000);
 
+            const lieuInput = form.querySelector('[name="lieu"]');
+            const spinnerAdresse = document.getElementById('lieu-spinner-alerte');
+            const infoLocalisation = document.getElementById('info-localisation-alerte');
+            const casesQuartiers = () => Array.from(form.querySelectorAll('input[name="quartier_ids[]"]'));
+            const grilleQuartiers = document.getElementById('liste-quartiers-alerte');
+            const blocNouveauQuartier = document.getElementById('bloc-nouveau-quartier-alerte');
+            const nomNouveauQuartier = form.querySelector('[name="nouveau_quartier_nom"]');
+            const villeNouveauQuartier = form.querySelector('[name="nouveau_quartier_ville"]');
+            const cpNouveauQuartier = form.querySelector('[name="nouveau_quartier_code_postal"]');
+            let requeteAdresse = 0;
+
+            const afficherInfo = (texte) => {
+                if (! infoLocalisation) return;
+                infoLocalisation.textContent = texte;
+                infoLocalisation.classList.remove('hidden');
+            };
+
+            const masquerInfo = () => {
+                if (! infoLocalisation) return;
+                infoLocalisation.textContent = '';
+                infoLocalisation.classList.add('hidden');
+            };
+
+            const quartierLePlusProche = (lat, lng) => {
+                let meilleur = null;
+                let distance = Infinity;
+
+                QUARTIERS_GEO.forEach((q) => {
+                    const d = distanceKmAlerte(lat, lng, parseFloat(q.lat), parseFloat(q.lng));
+                    if (d < distance) {
+                        distance = d;
+                        meilleur = q;
+                    }
+                });
+
+                return distance <= RAYON_QUARTIER_ALERTE_KM ? meilleur : null;
+            };
+
+            const masquerNouveauQuartier = () => {
+                if (blocNouveauQuartier) {
+                    blocNouveauQuartier.classList.add('hidden');
+                }
+                [nomNouveauQuartier, villeNouveauQuartier, cpNouveauQuartier].forEach((el) => {
+                    if (el) el.value = '';
+                });
+                document.getElementById('case-nouveau-quartier-alerte')?.remove();
+            };
+
+            // Point loin de tout quartier connu : le géocodage propose un nom et
+            // une ville, la case correspondante est ajoutée cochée à la liste.
+            const proposerNouveauQuartier = (donnees) => {
+                const nom = (donnees?.quartier ?? '').trim();
+                const ville = (donnees?.ville ?? '').trim();
+
+                if (! grilleQuartiers || ! blocNouveauQuartier || nom === '' || ville === '') {
+                    return false;
+                }
+
+                if (nomNouveauQuartier) nomNouveauQuartier.value = nom;
+                if (villeNouveauQuartier) villeNouveauQuartier.value = ville;
+                if (cpNouveauQuartier) cpNouveauQuartier.value = (donnees?.code_postal ?? '').trim();
+
+                let caseEl = document.getElementById('case-nouveau-quartier-alerte');
+                const libelle = nom + ' (' + ville + ') — nouveau';
+
+                if (! caseEl) {
+                    caseEl = document.createElement('label');
+                    caseEl.id = 'case-nouveau-quartier-alerte';
+                    caseEl.className = 'flex items-center gap-2 rounded-lg bg-primary-container/10 border border-primary/40 px-3 py-2 cursor-pointer hover:bg-primary-container/20 transition-colors';
+
+                    const cb = document.createElement('input');
+                    cb.type = 'checkbox';
+                    cb.name = 'quartier_ids[]';
+                    cb.value = 'nouveau';
+                    cb.checked = true;
+                    cb.className = 'peer sr-only';
+                    cb.addEventListener('change', () => {
+                        if (! cb.checked) masquerNouveauQuartier();
+                    });
+
+                    const boite = document.createElement('span');
+                    boite.className = 'flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 border-outline-variant/60 bg-surface-container text-transparent peer-checked:border-primary peer-checked:text-primary peer-focus-visible:ring-2 peer-focus-visible:ring-primary/40 transition-colors';
+                    const icone = document.createElement('span');
+                    icone.className = 'material-symbols-outlined text-[16px] leading-none';
+                    icone.textContent = 'check';
+                    boite.appendChild(icone);
+
+                    const texte = document.createElement('span');
+                    texte.className = 'font-body-md text-body-md text-on-surface';
+                    texte.dataset.libelle = 'nouveau-quartier';
+                    texte.textContent = libelle;
+
+                    caseEl.append(cb, boite, texte);
+                    grilleQuartiers.appendChild(caseEl);
+                } else {
+                    const cb = caseEl.querySelector('input');
+                    if (cb) cb.checked = true;
+                    const texte = caseEl.querySelector('[data-libelle="nouveau-quartier"]');
+                    if (texte) texte.textContent = libelle;
+                }
+
+                blocNouveauQuartier.classList.remove('hidden');
+                this.oublierErreur('quartier_ids');
+
+                return true;
+            };
+
+            // Point posé (clic, repère déplacé, géolocalisation) → quartier le plus
+            // proche coché automatiquement + rue pré-remplie par géocodage inverse.
+            const remplirDepuisPoint = async (lat, lng) => {
+                const proche = quartierLePlusProche(lat, lng);
+
+                if (proche) {
+                    const caseQuartier = casesQuartiers().find((c) => String(c.value) === String(proche.id));
+
+                    if (caseQuartier) {
+                        caseQuartier.checked = true;
+                        this.oublierErreur('quartier_ids');
+                        masquerNouveauQuartier();
+                        afficherInfo('Quartier « ' + proche.nom + ' » sélectionné automatiquement.');
+                    } else {
+                        afficherInfo('Le quartier le plus proche n\'est pas dans votre périmètre.');
+                    }
+                } else {
+                    afficherInfo('Aucun quartier connu à moins de 3 km : recherche d\'un quartier à créer…');
+                }
+
+                if (! lieuInput) {
+                    return;
+                }
+
+                const sequence = ++requeteAdresse;
+
+                if (spinnerAdresse) {
+                    spinnerAdresse.classList.remove('hidden');
+                }
+
+                try {
+                    const url = new URL(ADRESSE_URL_ALERTE, window.location.origin);
+                    url.searchParams.set('latitude', lat);
+                    url.searchParams.set('longitude', lng);
+
+                    const reponse = await fetch(url, { headers: { Accept: 'application/json' } });
+                    if (! reponse.ok) {
+                        if (! proche) {
+                            afficherInfo('Aucun quartier connu à moins de 3 km : le cercle reste la cible principale.');
+                        }
+                        return;
+                    }
+
+                    const donnees = await reponse.json();
+
+                    // Un clic plus récent a déjà lancé une autre recherche : on ignore.
+                    if (sequence !== requeteAdresse) return;
+                    if (donnees && donnees.adresse) {
+                        lieuInput.value = donnees.adresse;
+                    }
+
+                    if (proche) {
+                        return;
+                    }
+
+                    if (donnees && proposerNouveauQuartier(donnees)) {
+                        afficherInfo('Nouveau quartier « ' + donnees.quartier + ' » (' + donnees.ville + ') ajouté à la liste et coché.');
+                    } else {
+                        afficherInfo('Aucun quartier connu à moins de 3 km : le cercle reste la cible principale.');
+                    }
+                } catch (e) {
+                    // Silencieux : la rue reste saisissable à la main.
+                    if (sequence === requeteAdresse && ! proche) {
+                        afficherInfo('Aucun quartier connu à moins de 3 km : le cercle reste la cible principale.');
+                    }
+                } finally {
+                    if (sequence === requeteAdresse && spinnerAdresse) {
+                        spinnerAdresse.classList.add('hidden');
+                    }
+                }
+            };
+
             const majCercle = () => {
                 if (latInput.value === '' || lngInput.value === '') {
                     return;
@@ -261,17 +524,27 @@ function alerteForm() {
                 if (marqueur) {
                     marqueur.setLatLng(pos);
                 } else {
-                    marqueur = L.circleMarker(pos, { radius: 7, color: '#1b77ba', fillColor: '#1b77ba', fillOpacity: 1, weight: 3 }).addTo(this.carte);
+                    marqueur = L.marker(pos, { draggable: true }).addTo(this.carte);
+                    marqueur.on('dragend', () => {
+                        const p = marqueur.getLatLng();
+                        poser(p.lat, p.lng, true);
+                    });
                 }
             };
 
-            const poser = (lat, lng) => {
+            const poser = (lat, lng, auto = false) => {
                 latInput.value = lat.toFixed(7);
                 lngInput.value = lng.toFixed(7);
+                this.oublierErreur('latitude');
+                this.oublierErreur('longitude');
                 majCercle();
+
+                if (auto) {
+                    remplirDepuisPoint(lat, lng);
+                }
             };
 
-            this.carte.on('click', (e) => poser(e.latlng.lat, e.latlng.lng));
+            this.carte.on('click', (e) => poser(e.latlng.lat, e.latlng.lng, true));
             rayonInput.addEventListener('input', majCercle);
             majCercle();
 
@@ -287,7 +560,7 @@ function alerteForm() {
                     btnLoc.disabled = true;
                     navigator.geolocation.getCurrentPosition((p) => {
                         this.carte.setView([p.coords.latitude, p.coords.longitude], 15);
-                        poser(p.coords.latitude, p.coords.longitude);
+                        poser(p.coords.latitude, p.coords.longitude, true);
                         btnLoc.disabled = false;
                     }, () => { btnLoc.disabled = false; });
                 });
@@ -300,6 +573,8 @@ function alerteForm() {
                     lngInput.value = '';
                     if (cercle) { this.carte.removeLayer(cercle); cercle = null; }
                     if (marqueur) { this.carte.removeLayer(marqueur); marqueur = null; }
+                    masquerNouveauQuartier();
+                    masquerInfo();
                 });
             }
 
@@ -309,13 +584,131 @@ function alerteForm() {
                     if (! cb.checked) {
                         return;
                     }
+                    this.oublierErreur('quartier_ids');
                     const q = QUARTIERS_GEO.find((x) => String(x.id) === String(cb.value));
                     if (! q) {
                         return;
                     }
                     this.carte.setView([q.lat, q.lng], 14);
                     poser(q.lat, q.lng);
+                    afficherInfo('Quartier « ' + q.nom + ' » sélectionné.');
                 });
+            });
+
+            // Une correction efface immédiatement le message rouge correspondant.
+            ['titre', 'seuil_temperature', 'debut', 'fin', 'lieu', 'temperature_actuelle', 'temperature_ressentie', 'humidite', 'nouveau_quartier_nom', 'nouveau_quartier_ville', 'nouveau_quartier_code_postal'].forEach((name) => {
+                form.querySelectorAll('[name="' + name + '"]').forEach((el) => {
+                    el.addEventListener('input', () => this.oublierErreur(name));
+                });
+            });
+        },
+        oublierErreur(name) {
+            if (! this.erreurs[name]) {
+                return;
+            }
+            const copie = { ...this.erreurs };
+            delete copie[name];
+            this.erreurs = copie;
+        },
+        valider(event) {
+            const form = this.$root;
+            const valeur = (name) => (form.querySelector('[name="' + name + '"]')?.value ?? '').trim();
+            const nombre = (name) => {
+                const brut = valeur(name);
+                return brut === '' ? null : Number(brut);
+            };
+            const erreurs = {};
+
+            const titre = valeur('titre');
+            if (titre === '') {
+                erreurs.titre = 'Le titre de l\'alerte est obligatoire.';
+            } else if (titre.length < 3) {
+                erreurs.titre = 'Le titre est trop court (3 caractères minimum).';
+            }
+
+            const seuil = nombre('seuil_temperature');
+            if (seuil === null || Number.isNaN(seuil)) {
+                erreurs.seuil_temperature = 'Le seuil de température est obligatoire.';
+            } else if (seuil < 30 || seuil > 55) {
+                erreurs.seuil_temperature = 'Le seuil de température doit être compris entre 30 et 55 °C.';
+            }
+
+            const debut = valeur('debut');
+            const fin = valeur('fin');
+            if (debut === '') {
+                erreurs.debut = 'La date de début est obligatoire.';
+            }
+            if (fin === '') {
+                erreurs.fin = 'La date de fin est obligatoire.';
+            } else if (debut !== '' && new Date(fin) <= new Date(debut)) {
+                erreurs.fin = 'La date de fin doit être postérieure à la date de début.';
+            }
+
+            const latitude = valeur('latitude');
+            const longitude = valeur('longitude');
+            const quartiers = form.querySelectorAll('input[name="quartier_ids[]"]:checked');
+
+            if ((latitude === '') !== (longitude === '')) {
+                const manquant = latitude === '' ? 'latitude' : 'longitude';
+                erreurs[manquant] = 'Un point sur la carte exige une latitude ET une longitude.';
+            } else if (latitude === '' && quartiers.length === 0) {
+                erreurs.quartier_ids = 'Ciblez l\'alerte : cochez au moins un quartier ou posez un point sur la carte.';
+            }
+
+            const temperature = nombre('temperature_actuelle');
+            if (temperature !== null && (Number.isNaN(temperature) || temperature < -10 || temperature > 60)) {
+                erreurs.temperature_actuelle = 'La température doit être comprise entre -10 et 60 °C.';
+            }
+
+            const ressentie = nombre('temperature_ressentie');
+            if (ressentie !== null && (Number.isNaN(ressentie) || ressentie < -10 || ressentie > 70)) {
+                erreurs.temperature_ressentie = 'La température ressentie doit être comprise entre -10 et 70 °C.';
+            }
+
+            const humidite = nombre('humidite');
+            if (humidite !== null && (! Number.isInteger(humidite) || humidite < 0 || humidite > 100)) {
+                erreurs.humidite = 'L\'humidité doit être comprise entre 0 et 100 %.';
+            }
+
+            if (valeur('lieu').length > 255) {
+                erreurs.lieu = 'La rue / le lieu précis ne doit pas dépasser 255 caractères.';
+            }
+
+            const blocNouveau = document.getElementById('bloc-nouveau-quartier-alerte');
+            const nouveauVisible = blocNouveau !== null && ! blocNouveau.classList.contains('hidden');
+
+            if (nouveauVisible) {
+                if (valeur('nouveau_quartier_nom').length < 2) {
+                    erreurs.nouveau_quartier_nom = 'Le nom du nouveau quartier est requis (2 caractères minimum).';
+                }
+                if (valeur('nouveau_quartier_ville').length < 2) {
+                    erreurs.nouveau_quartier_ville = 'La ville du nouveau quartier est requise (2 caractères minimum).';
+                }
+                const codePostal = valeur('nouveau_quartier_code_postal');
+                if (codePostal !== '' && ! /^[0-9A-Za-z\- ]{3,10}$/.test(codePostal)) {
+                    erreurs.nouveau_quartier_code_postal = 'Le code postal du nouveau quartier n\'est pas valide.';
+                }
+            }
+
+            this.erreurs = erreurs;
+
+            if (Object.keys(erreurs).length === 0) {
+                return;
+            }
+
+            event.preventDefault();
+
+            this.$nextTick(() => {
+                const premier = Object.keys(erreurs)[0];
+                const cible = premier === 'quartier_ids'
+                    ? form.querySelector('#quartier-erreur-alerte')
+                    : form.querySelector('[name="' + premier + '"]');
+
+                (cible ?? this.$root).scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+                if (cible && typeof cible.focus === 'function') {
+                    cible.focus({ preventScroll: true });
+                }
             });
         },
         async prefill(avecMessage) {

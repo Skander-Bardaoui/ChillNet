@@ -8,6 +8,7 @@ use App\Models\Residence;
 use App\Models\Signalement;
 use App\Models\User;
 use App\Notifications\SignalementNotification;
+use App\Services\SignalementTriageService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -16,7 +17,7 @@ use Illuminate\View\View;
 
 class SignalementController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request, SignalementTriageService $triageService): View
     {
         $stats = $this->accessibleSignalements($request)
             ->selectRaw(
@@ -30,12 +31,20 @@ class SignalementController extends Controller
 
         $signalements = $this->accessibleSignalements($request)
             ->with(['habitant', 'residence'])
-            ->when($request->filled('categorie'), fn ($query) => $query->where('categorie', $request->string('categorie')))
-            ->when($request->filled('urgence'), fn ($query) => $query->where('urgence', $request->string('urgence')))
-            ->when($request->filled('statut'), fn ($query) => $query->where('statut', $request->string('statut')))
             ->orderByRaw("CASE urgence WHEN 'vitale' THEN 1 WHEN 'prioritaire' THEN 2 ELSE 3 END")
             ->latest()
             ->get();
+
+        $signalements = $triageService->trier($signalements);
+        $signalements = $signalements
+            ->filter(fn (Signalement $signalement): bool => (
+                ! $request->filled('categorie') || $signalement->categorie === $request->input('categorie')
+            ) && (
+                ! $request->filled('urgence') || $signalement->urgence === $request->input('urgence')
+            ) && (
+                ! $request->filled('statut') || $signalement->statut === $request->input('statut')
+            ))
+            ->values();
 
         return view('back.signalements.index', [
             'signalements' => $signalements,
@@ -55,7 +64,7 @@ class SignalementController extends Controller
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, SignalementTriageService $triageService): RedirectResponse
     {
         $this->ensureManagerHasResidence($request);
         $data = $this->validateReport($request);
@@ -66,6 +75,7 @@ class SignalementController extends Controller
         unset($data['photo']);
 
         $signalement = Signalement::create($data);
+        $triageService->actualiser();
         $signalement->habitant->notify(new SignalementNotification($signalement, 'created'));
 
         return to_route('back.signalements.index')->with('success', 'Signalement créé avec succès.');
@@ -82,7 +92,11 @@ class SignalementController extends Controller
         ]);
     }
 
-    public function update(Request $request, Signalement $signalement): RedirectResponse
+    public function update(
+        Request $request,
+        Signalement $signalement,
+        SignalementTriageService $triageService,
+    ): RedirectResponse
     {
         $this->authorizeSignalement($request, $signalement);
         $data = $this->validateReport($request);
@@ -97,6 +111,7 @@ class SignalementController extends Controller
 
         $statutChanged = $signalement->statut !== $data['statut'];
         $signalement->update($data);
+        $triageService->actualiser();
 
         if ($request->hasFile('photo') && $anciennePhoto) {
             Storage::disk('public')->delete($anciennePhoto);
@@ -108,7 +123,11 @@ class SignalementController extends Controller
         return to_route('back.signalements.index')->with('success', 'Signalement mis à jour avec succès.');
     }
 
-    public function destroy(Request $request, Signalement $signalement): RedirectResponse
+    public function destroy(
+        Request $request,
+        Signalement $signalement,
+        SignalementTriageService $triageService,
+    ): RedirectResponse
     {
         $this->authorizeSignalement($request, $signalement);
 
@@ -116,11 +135,16 @@ class SignalementController extends Controller
             Storage::disk('public')->delete($signalement->photo_path);
         }
         $signalement->delete();
+        $triageService->actualiser();
 
         return to_route('back.signalements.index')->with('success', 'Signalement supprimé.');
     }
 
-    public function updateTreatment(Request $request, Signalement $signalement): RedirectResponse
+    public function updateTreatment(
+        Request $request,
+        Signalement $signalement,
+        SignalementTriageService $triageService,
+    ): RedirectResponse
     {
         $this->authorizeSignalement($request, $signalement);
         $data = $request->validate([
@@ -130,6 +154,7 @@ class SignalementController extends Controller
 
         $statutChanged = $signalement->statut !== $data['statut'];
         $signalement->update($data);
+        $triageService->actualiser();
         if ($statutChanged) {
             $signalement->habitant->notify(new SignalementNotification($signalement, 'status_changed'));
         }

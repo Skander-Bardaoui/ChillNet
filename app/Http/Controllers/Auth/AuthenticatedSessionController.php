@@ -11,6 +11,7 @@ use Illuminate\View\View;
 
 class AuthenticatedSessionController extends Controller
 {
+    use CompletesLogin;
     use IssuesJwtCookies;
 
     /**
@@ -26,33 +27,7 @@ class AuthenticatedSessionController extends Controller
      */
     public function store(LoginRequest $request): RedirectResponse
     {
-        $user = $request->authenticate();
-
-        // Mot de passe correct mais 2FA active : on diffère la connexion réelle
-        // (pas de cookie émis) jusqu'à validation du second facteur.
-        if ($user->hasEnabledTwoFactorAuthentication()) {
-            $request->session()->put([
-                'login.id' => $user->getKey(),
-                'login.remember' => $request->boolean('remember'),
-            ]);
-
-            $request->session()->regenerate();
-
-            return redirect()->route('two-factor.challenge');
-        }
-
-        Auth::guard('web')->setUser($user);
-        $request->session()->regenerate();
-
-        $cookies = $this->issueAuthCookies($user, $request->boolean('remember'));
-
-        $response = redirect()->intended(route('dashboard', absolute: false));
-
-        foreach ($cookies as $cookie) {
-            $response->withCookie($cookie);
-        }
-
-        return $response;
+        return $this->completeLogin($request, $request->authenticate());
     }
 
     /**
