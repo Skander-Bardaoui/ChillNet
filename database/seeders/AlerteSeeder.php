@@ -57,8 +57,8 @@ class AlerteSeeder extends Seeder
                 'rayon_metres' => 1500,
                 'message' => 'Vigilance rouge canicule en cours sur Centre-Ville : pic attendu à 41°C cet après-midi. '
                     .'Restez dans la pièce la plus fraîche, buvez régulièrement sans attendre la soif et évitez toute '
-                    .'sortie entre 11h et 17h. Prenez des nouvelles de vos voisins isolés. Urgences : 190 / 198, '
-                    .'plateforme canicule 0800 06 66 66.',
+                    .'sortie entre 11h et 17h. Prenez des nouvelles de vos voisins isolés. Urgences : '
+                    .'190 (SAMU) / 198 (Protection Civile).',
                 'validee' => true,
                 'quartiers' => [$centreVille->id],
             ],

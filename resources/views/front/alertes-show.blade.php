@@ -2,7 +2,7 @@
 <x-slot name="header">
 <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
 <div>
-<p class="font-label-sm text-label-sm text-primary uppercase tracking-wider font-semibold">Module canicule — Détail de l'alerte</p>
+<p class="font-label-sm text-label-sm text-primary uppercase tracking-wider font-semibold">Alerte canicule — Détail</p>
 <h1 class="font-headline-lg text-headline-lg text-on-surface">{{ $alerte->titre }}</h1>
 <div class="flex items-center gap-2 flex-wrap mt-1">
 <span class="px-2 py-0.5 rounded-full {{ $alerte->niveau?->badgeClasses() }} font-label-sm text-label-sm uppercase tracking-wider font-semibold inline-flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">{{ $alerte->niveau?->icone() }}</span>{{ $alerte->niveau?->label() }}</span>
@@ -118,7 +118,7 @@
 {{-- Rappel numéros --}}
 <section class="rounded-xl bg-surface-container-low p-space-md shadow-sm flex flex-wrap items-center gap-space-md">
 <span class="material-symbols-outlined text-primary text-[22px]">info</span>
-<p class="font-body-sm text-body-sm text-on-surface-variant">En cas de malaise : appelez le <a href="tel:190" class="text-primary font-semibold hover:underline">190</a> ou le <a href="tel:198" class="text-primary font-semibold hover:underline">198</a>. Plateforme canicule : <a href="tel:0800066666" class="text-primary font-semibold hover:underline">0800 06 66 66</a>.</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">En cas de malaise : appelez le <a href="tel:190" class="text-primary font-semibold hover:underline">190 (SAMU)</a> ou le <a href="tel:198" class="text-primary font-semibold hover:underline">198 (Protection Civile)</a>.</p>
 </section>
 
 @if ($marqueurs !== [])

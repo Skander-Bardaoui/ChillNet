@@ -1,7 +1,7 @@
 {
-  "version": "1.0.0",
-  "date": "2026-10-19",
-  "trained_at": "2026-10-19",
+  "version": "1.0.1",
+  "date": "2026-10-20",
+  "trained_at": "2026-10-20",
   "cible": "au moins 2 avis négatifs dans les 14 jours suivants",
   "features": [
     "type_code",

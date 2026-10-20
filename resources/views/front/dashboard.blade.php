@@ -105,7 +105,7 @@ Jusqu'au {{ $alerteActive->fin?->format('d/m à H:i') }}
 <div class="flex items-center gap-space-sm w-full lg:w-auto shrink-0 pt-2 lg:pt-0">
 <a href="tel:190" class="flex-1 lg:flex-initial px-space-md py-2.5 rounded-lg bg-surface-container text-primary font-label-md text-label-md hover:bg-surface-variant transition-colors flex items-center justify-center gap-2">
 <span class="material-symbols-outlined text-[18px]">radio</span>
-<span>Point de Situation — 15</span>
+<span>SAMU — 190</span>
 </a>
 <a href="{{ route('alertes.index') }}" class="flex-1 lg:flex-initial px-space-md py-2.5 rounded-lg bg-primary-container text-on-primary-container font-label-md text-label-md hover:opacity-95 shadow-md flex items-center justify-center gap-2 font-semibold">
 <span class="material-symbols-outlined text-[18px]">shield</span>
@@ -137,7 +137,7 @@ Restez informé : une alerte s'affichera ici automatiquement dès sa publication
 <div class="flex items-center gap-space-sm w-full lg:w-auto shrink-0 pt-2 lg:pt-0">
 <a href="tel:190" class="flex-1 lg:flex-initial px-space-md py-2.5 rounded-lg bg-surface-container text-primary font-label-md text-label-md hover:bg-surface-variant transition-colors flex items-center justify-center gap-2">
 <span class="material-symbols-outlined text-[18px]">radio</span>
-<span>Point de Situation — 15</span>
+<span>SAMU — 190</span>
 </a>
 <a href="{{ route('alertes.index') }}" class="flex-1 lg:flex-initial px-space-md py-2.5 rounded-lg bg-primary-container text-on-primary-container font-label-md text-label-md hover:opacity-95 shadow-md flex items-center justify-center gap-2 font-semibold">
 <span class="material-symbols-outlined text-[18px]">shield</span>
@@ -189,45 +189,54 @@ Restez informé : une alerte s'affichera ici automatiquement dès sa publication
 
 <div class="relative overflow-hidden rounded-xl bg-surface-container/70 backdrop-blur-md p-space-md flex flex-col justify-between shadow-md">
 <div class="flex items-center justify-between text-on-surface-variant">
-<span class="font-label-md text-label-md uppercase tracking-wider text-on-surface-variant">Tension Réseau</span>
-<span class="px-2 py-0.5 rounded-md bg-tertiary-container/15 text-tertiary-fixed font-label-sm text-label-sm font-semibold">Éco-Vigilance</span>
+<span class="font-label-md text-label-md uppercase tracking-wider text-on-surface-variant">Coupures dans ma zone</span>
+<span class="px-2 py-0.5 rounded-md {{ $coupuresEnCours->isNotEmpty() ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800' }} font-label-sm text-label-sm font-semibold">{{ $coupuresEnCours->isNotEmpty() ? 'En cours' : 'Sous contrôle' }}</span>
 </div>
 <div class="my-space-sm flex items-baseline gap-space-xs">
-<span class="font-display-lg text-display-lg text-on-surface tracking-tighter">88</span>
-<span class="font-title-md text-title-md text-on-surface-variant font-medium">%</span>
-<span class="ml-auto font-body-sm text-body-sm text-on-surface-variant">Capacité Max : 9.4 GW</span>
+<span class="font-display-lg text-display-lg text-on-surface tracking-tighter">{{ $coupuresEnCours->count() }}</span>
+<span class="font-title-md text-title-md text-on-surface-variant font-medium">en cours</span>
+<span class="ml-auto font-body-sm text-body-sm text-on-surface-variant">{{ $coupuresZone->count() }} dans le quartier</span>
 </div>
-<div class="pt-2 flex flex-col gap-1">
-<div class="w-full bg-surface-variant h-2.5 rounded-full overflow-hidden flex">
-<div class="bg-primary-container h-full w-[65%]"></div>
-<div class="bg-tertiary-fixed-dim h-full w-[23%] animate-pulse"></div>
-<div class="bg-surface-variant h-full w-[12%]"></div>
-</div>
-<div class="flex justify-between items-center text-on-surface-variant font-body-sm text-body-sm pt-0.5">
-<span>Seuil Nominal &lt;75%</span>
-<span class="text-tertiary-container font-semibold">Seuil Critique 92%</span>
-</div>
+<div class="pt-2 flex flex-col gap-1 text-on-surface-variant font-body-sm text-body-sm">
+@if ($coupuresEnCours->isNotEmpty())
+@php $premiere = $coupuresEnCours->first(); @endphp
+<span class="text-on-surface font-medium">{{ $premiere->lieu ?? 'Zone non précisée' }}</span>
+<span>Depuis {{ $premiere->debut?->format('H:i') }} · rétablissement prévu {{ $premiere->fin?->format('H:i') ?? 'non communiqué' }}</span>
+@else
+<span>Aucune coupure en cours dans votre quartier.</span>
+@endif
+<a href="{{ route('coupures.index') }}" class="text-primary hover:underline pt-1">Voir le détail →</a>
 </div>
 </div>
 
 <div class="relative overflow-hidden rounded-xl bg-surface-container/70 backdrop-blur-md p-space-md flex flex-col justify-between shadow-md">
 <div class="flex items-center justify-between text-on-surface-variant">
-<span class="font-label-md text-label-md uppercase tracking-wider text-on-surface-variant">Risque Délestage</span>
+<span class="font-label-md text-label-md uppercase tracking-wider text-on-surface-variant">Prochaine coupure programmée</span>
+@if ($prochaineCoupure)
 <span class="flex items-center gap-1.5 text-on-surface-variant font-label-sm text-label-sm">
-<span class="w-2 h-2 rounded-full bg-tertiary-container animate-ping"></span> Modéré
+<span class="w-2 h-2 rounded-full bg-tertiary-container animate-ping"></span> Planifiée
 </span>
+@else
+<span class="font-label-sm text-label-sm text-on-surface-variant">Aucune</span>
+@endif
 </div>
 <div class="my-space-sm flex flex-col">
+@if ($prochaineCoupure)
 <div class="flex items-baseline gap-2">
-<span class="font-headline-lg text-headline-lg text-tertiary-fixed font-semibold tracking-tight">18h00 — 20h00</span>
+<span class="font-headline-lg text-headline-lg text-tertiary-fixed font-semibold tracking-tight">{{ $prochaineCoupure->debut?->format('d/m H:i') }}</span>
 </div>
-<span class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Secteur : Bâtonnier &amp; Faubourg Nord</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">{{ $prochaineCoupure->lieu ?? 'Zone non précisée' }} · {{ $prochaineCoupure->type?->label() }}</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">{{ \Illuminate\Support\Str::limit($prochaineCoupure->description, 90) }}</p>
+@else
+<span class="font-headline-lg text-headline-lg text-on-surface font-semibold tracking-tight">—</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Aucune coupure programmée dans votre quartier.</span>
+@endif
 </div>
 <div class="pt-2 flex items-center justify-between bg-surface-container-high px-space-sm py-1.5 rounded-lg text-on-surface-variant font-body-sm text-body-sm">
 <span class="flex items-center gap-1 text-primary">
-<span class="material-symbols-outlined text-[16px]">battery_charging_full</span> Batterie secteur
+<span class="material-symbols-outlined text-[16px]">schedule</span> Coupures suivies
 </span>
-<span class="font-semibold text-on-surface">94% chargée</span>
+<a href="{{ route('coupures.index') }}" class="font-semibold text-on-surface hover:underline">Consulter</a>
 </div>
 </div>
 
@@ -358,55 +367,59 @@ Aucun refuge référencé dans un rayon de 800 m pour le moment.
 </div>
 
 {{-- Fil direct citoyen --}}
+@php
+    $catSignalement = ['fuite' => 'Fuite', 'panne_locale' => 'Panne locale', 'personne_vulnerable' => 'Personne vulnérable', 'autre' => 'Autre'];
+    $urgClasses = ['vitale' => 'bg-red-100 text-red-800', 'prioritaire' => 'bg-orange-100 text-orange-800', 'normale' => 'bg-surface-variant text-on-surface-variant'];
+    $urgLabels = ['vitale' => 'Vitale', 'prioritaire' => 'Prioritaire', 'normale' => 'Normale'];
+@endphp
 <div class="rounded-xl bg-surface-container/70 backdrop-blur-md p-space-md md:p-space-lg shadow-md flex flex-col gap-space-md">
 <div class="flex items-center justify-between">
 <div class="flex items-center gap-2">
 <span class="material-symbols-outlined text-primary text-[22px]">feed</span>
-<h3 class="font-headline-sm text-headline-sm text-on-surface">Fil Direct Citoyen &amp; Municipal</h3>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Fil direct de mon quartier</h3>
 </div>
-<span class="px-2 py-0.5 rounded-full bg-surface-variant font-label-sm text-label-sm text-on-surface-variant">4 nouveaux messages</span>
+<span class="px-2 py-0.5 rounded-full bg-surface-variant font-label-sm text-label-sm text-on-surface-variant">{{ $filSignalements->count() + $filCoupures->count() }} publication(s)</span>
 </div>
 <div class="flex flex-col gap-space-sm divide-y-0">
+@forelse ($filSignalements as $signalement)
 <div class="flex items-start gap-space-md p-space-sm rounded-lg bg-surface-container-high/40 hover:bg-surface-container-high/80 transition-colors">
 <div class="w-9 h-9 rounded-lg bg-primary-container/20 text-primary flex items-center justify-center shrink-0">
-<span class="material-symbols-outlined text-[20px]">account_balance</span>
+<span class="material-symbols-outlined text-[20px]">report</span>
 </div>
 <div class="flex flex-col flex-1 gap-0.5">
-<div class="flex items-center justify-between">
-<span class="font-title-md text-title-md text-on-surface font-medium">Cellule de Crise Municipale</span>
-<span class="font-label-sm text-label-sm text-on-surface-variant">Il y a 12 min</span>
+<div class="flex items-center justify-between gap-2">
+<span class="font-title-md text-title-md text-on-surface font-medium">{{ $catSignalement[$signalement->categorie] ?? ucfirst($signalement->categorie) }} — {{ $signalement->residence?->nom ?? 'Sans résidence' }}</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant whitespace-nowrap">{{ $signalement->created_at?->diffForHumans() }}</span>
 </div>
-<p class="font-body-md text-body-md text-on-surface-variant">La médiathèque municipale climatisée reste exceptionnellement ouverte ce soir jusqu'à <strong class="text-on-surface">22h00</strong>. Distribution d'eau fraîche et prises électriques accessibles.</p>
-</div>
-</div>
-<div class="flex items-start gap-space-md p-space-sm rounded-lg bg-surface-container-high/40 hover:bg-surface-container-high/80 transition-colors">
-<div class="w-9 h-9 rounded-lg bg-tertiary-container/20 text-tertiary-fixed flex items-center justify-center shrink-0">
-<span class="material-symbols-outlined text-[20px]">volunteer_activism</span>
-</div>
-<div class="flex flex-col flex-1 gap-0.5">
-<div class="flex items-center justify-between">
-<span class="font-title-md text-title-md text-on-surface font-medium">Claire D. — Résidence Les Micocouliers</span>
-<span class="font-label-sm text-label-sm text-on-surface-variant">Il y a 28 min</span>
-</div>
-<p class="font-body-md text-body-md text-on-surface-variant">Pièce fraîche en sous-sol disponible pour les personnes âgées du secteur ou isolées sans ventilateur (étage R-1 avec brumisateur). N'hésitez pas à toquer au n°14.</p>
-<div class="flex items-center gap-2 pt-1">
-<a href="{{ route('conseils') }}" class="px-2 py-0.5 rounded bg-surface-variant text-primary font-label-sm text-label-sm hover:underline">Entraide Voisinage</a>
-<span class="text-on-surface-variant font-body-sm text-body-sm">3 voisins ont remercié</span>
+<p class="font-body-md text-body-md text-on-surface-variant">{{ \Illuminate\Support\Str::limit($signalement->description, 150) }}</p>
+<div class="flex items-center gap-2 pt-1 flex-wrap">
+<span class="px-2 py-0.5 rounded-full {{ $urgClasses[$signalement->urgence] ?? 'bg-surface-variant text-on-surface-variant' }} font-label-sm text-label-sm font-semibold">{{ $urgLabels[$signalement->urgence] ?? ucfirst($signalement->urgence) }}</span>
+<span class="text-on-surface-variant font-body-sm text-body-sm">Signalé par {{ $signalement->habitant?->name ?? 'un habitant' }}</span>
 </div>
 </div>
 </div>
+@empty
+@endforelse
+@foreach ($filCoupures as $coupure)
 <div class="flex items-start gap-space-md p-space-sm rounded-lg bg-surface-container-high/40 hover:bg-surface-container-high/80 transition-colors">
 <div class="w-9 h-9 rounded-lg bg-secondary-container/30 text-secondary flex items-center justify-center shrink-0">
 <span class="material-symbols-outlined text-[20px]">electric_bolt</span>
 </div>
 <div class="flex flex-col flex-1 gap-0.5">
-<div class="flex items-center justify-between">
-<span class="font-title-md text-title-md text-on-surface font-medium">Régie Énergie Territoire</span>
-<span class="font-label-sm text-label-sm text-on-surface-variant">Il y a 54 min</span>
+<div class="flex items-center justify-between gap-2">
+<span class="font-title-md text-title-md text-on-surface font-medium">{{ $coupure->type?->label() }} — {{ $coupure->lieu ?? $coupure->quartier?->nom ?? 'Zone non précisée' }}</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant whitespace-nowrap">{{ $coupure->debut?->diffForHumans() }}</span>
 </div>
-<p class="font-body-md text-body-md text-on-surface-variant">Transformateur Rue Haute stabilisé. La baisse collective de consommation opérée par 420 foyers a permis d'éviter la bascule en délestage tournant. Merci pour vos gestes éco-responsables !</p>
+<p class="font-body-md text-body-md text-on-surface-variant">{{ \Illuminate\Support\Str::limit($coupure->description, 150) }}</p>
+<div class="flex items-center gap-2 pt-1">
+<span class="text-on-surface-variant font-body-sm text-body-sm">{{ $coupure->statut?->label() }} · {{ $coupure->confirmations }} confirmation(s)</span>
 </div>
 </div>
+</div>
+@endforeach
+@if ($filSignalements->isEmpty() && $filCoupures->isEmpty())
+<div class="p-space-sm rounded-lg bg-surface-container-high/40 text-on-surface-variant font-body-sm text-body-sm">Aucune publication récente dans votre quartier.</div>
+@endif
 </div>
 </div>
 </div>
@@ -416,149 +429,81 @@ Aucun refuge référencé dans un rayon de 800 m pour le moment.
 <div class="rounded-xl bg-gradient-to-b from-surface-container-high to-surface-container p-space-md md:p-space-lg shadow-xl relative overflow-hidden">
 <div class="absolute -right-12 -top-12 w-40 h-40 bg-primary-container/20 rounded-full blur-3xl pointer-events-none"></div>
 <div class="flex flex-col gap-space-sm">
-<span class="font-label-sm text-label-sm text-primary uppercase tracking-wider font-semibold">Dispositif d'Urgence Foyer</span>
-<h3 class="font-headline-sm text-headline-sm text-on-surface">Mode Vigilance Énergie</h3>
-<p class="font-body-sm text-body-sm text-on-surface-variant">En un clic, basculez vos objets connectés, éteignez les veilles et modulez votre rafraîchissement pour alléger le réseau local de <strong class="text-primary font-medium">-35%</strong>.</p>
-<div class="mt-space-sm p-space-sm rounded-xl bg-surface-container-lowest/80 flex items-center justify-between gap-space-sm">
-<div class="flex items-center gap-space-sm">
-<div class="w-10 h-10 rounded-lg bg-primary-container/20 text-primary flex items-center justify-center" id="status-bulb">
-<span class="material-symbols-outlined text-[24px]">energy_savings_leaf</span>
+<span class="font-label-sm text-label-sm text-primary uppercase tracking-wider font-semibold">Prévention canicule</span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Conseils du moment</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Recommandations publiées par l'équipe ChillNet pour votre foyer.</p>
+<div class="mt-space-sm flex flex-col gap-2">
+@forelse ($conseils as $conseil)
+<div class="p-space-sm rounded-xl bg-surface-container-lowest/80 flex items-start gap-space-sm">
+<div class="w-9 h-9 rounded-lg bg-primary-container/20 text-primary flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[20px]">{{ $conseil->icone ?: 'lightbulb' }}</span>
 </div>
 <div class="flex flex-col">
-<span class="font-title-md text-title-md text-on-surface font-semibold" id="status-title">Mode Actif</span>
-<span class="font-body-sm text-body-sm text-primary" id="status-desc">Consommation réduite de 35%</span>
+<span class="font-title-sm text-title-sm text-on-surface font-semibold">{{ $conseil->titre }}</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">{{ \Illuminate\Support\Str::limit($conseil->contenu, 130) }}</span>
 </div>
 </div>
-<button aria-checked="true" class="relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full bg-primary-container p-0.5 transition-colors duration-200 ease-in-out focus:outline-none" id="toggle-energy-mode" role="switch">
-<span class="pointer-events-none inline-block h-6 w-6 transform translate-x-5 rounded-full bg-on-primary-container shadow ring-0 transition duration-200 ease-in-out" id="toggle-knob"></span>
-</button>
+@empty
+<p class="font-body-sm text-body-sm text-on-surface-variant">Aucun conseil publié pour le moment.</p>
+@endforelse
 </div>
-<div class="flex items-center justify-between text-body-sm font-body-sm text-on-surface-variant pt-1 px-1">
-<span>Économie estimée : <strong>~1.4 kWh/jour</strong></span>
-<span class="text-tertiary-fixed font-medium">Impact réseau : Fort</span>
-</div>
-<a href="{{ route('conseils') }}" class="font-body-sm text-body-sm text-primary hover:underline">Voir le protocole complet →</a>
+<a href="{{ route('conseils') }}" class="font-body-sm text-body-sm text-primary hover:underline">Voir tous les conseils →</a>
 </div>
 </div>
 
 <div class="rounded-xl bg-surface-container/70 backdrop-blur-md p-space-md md:p-space-lg shadow-md flex flex-col gap-space-md">
 <div class="flex items-center justify-between">
-<h3 class="font-title-md text-title-md text-on-surface">Actions Réflexes du Foyer</h3>
-<span class="font-label-sm text-label-sm px-2 py-0.5 rounded-full bg-surface-container-high text-primary font-semibold" id="checklist-counter">2 / 4 faits</span>
+<h3 class="font-title-md text-title-md text-on-surface">Mes équipements sensibles</h3>
+<span class="font-label-sm text-label-sm px-2 py-0.5 rounded-full bg-surface-container-high text-primary font-semibold">{{ $equipements->count() }} déclaré(s)</span>
 </div>
-<p class="font-body-sm text-body-sm text-on-surface-variant">Gestes essentiels validés par la sécurité civile pour maintenir votre logement tempéré sans surcharger la ligne.</p>
-<div class="flex flex-col gap-space-sm" id="action-list">
-<label class="group flex items-start gap-space-sm p-space-sm rounded-lg bg-surface-container-high/60 hover:bg-surface-container-high cursor-pointer transition-colors">
-<input checked class="mt-1 h-5 w-5 rounded bg-surface-container-lowest text-primary-container focus:ring-0 accent-primary-container cursor-pointer" type="checkbox" />
+<p class="font-body-sm text-body-sm text-on-surface-variant">Équipements suivis pour être priorisés en cas de coupure.</p>
+<div class="flex flex-col gap-space-sm">
+@forelse ($equipements as $equipement)
+<div class="flex items-start gap-space-sm p-space-sm rounded-lg bg-surface-container-high/60">
+<span class="material-symbols-outlined text-primary text-[20px] shrink-0">{{ $equipement->criticite?->value === 'vitale' ? 'emergency' : 'power' }}</span>
 <div class="flex flex-col flex-1">
-<span class="font-body-md text-body-md text-on-surface font-medium group-hover:text-primary transition-colors">Fermer volets et stores dès 10h00</span>
-<span class="font-body-sm text-body-sm text-on-surface-variant">Bloque jusqu'à 70% de la chaleur radiative directe.</span>
+<span class="font-body-md text-body-md text-on-surface font-medium">{{ $equipement->nom }}</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">{{ $equipement->type?->nom ?? 'Type non précisé' }}@if ($equipement->notes) · {{ $equipement->notes }}@endif</span>
 </div>
-<span class="material-symbols-outlined text-primary text-[20px] shrink-0">check_circle</span>
-</label>
-<label class="group flex items-start gap-space-sm p-space-sm rounded-lg bg-surface-container-high/60 hover:bg-surface-container-high cursor-pointer transition-colors">
-<input checked class="mt-1 h-5 w-5 rounded bg-surface-container-lowest text-primary-container focus:ring-0 accent-primary-container cursor-pointer" type="checkbox" />
-<div class="flex flex-col flex-1">
-<span class="font-body-md text-body-md text-on-surface font-medium group-hover:text-primary transition-colors">Remplir réserves d'eau fraîche &amp; glaces</span>
-<span class="font-body-sm text-body-sm text-on-surface-variant">2L par personne stockés au frais avant le pic.</span>
+<span class="px-2 py-0.5 rounded-full bg-surface-variant text-on-surface-variant font-label-sm text-label-sm font-semibold whitespace-nowrap">{{ $equipement->criticite?->label() }}</span>
 </div>
-<span class="material-symbols-outlined text-primary text-[20px] shrink-0">check_circle</span>
-</label>
-<label class="group flex items-start gap-space-sm p-space-sm rounded-lg bg-surface-container-high/60 hover:bg-surface-container-high cursor-pointer transition-colors">
-<input class="mt-1 h-5 w-5 rounded bg-surface-container-lowest text-primary-container focus:ring-0 accent-primary-container cursor-pointer" type="checkbox" />
-<div class="flex flex-col flex-1">
-<span class="font-body-md text-body-md text-on-surface font-medium group-hover:text-primary transition-colors">Décaler le lave-linge &amp; four après 22h00</span>
-<span class="font-body-sm text-body-sm text-on-surface-variant">Soulage le créneau haute tension de 18h-20h.</span>
-</div>
-<span class="material-symbols-outlined text-outline-variant text-[20px] shrink-0">radio_button_unchecked</span>
-</label>
-<label class="group flex items-start gap-space-sm p-space-sm rounded-lg bg-surface-container-high/60 hover:bg-surface-container-high cursor-pointer transition-colors">
-<input class="mt-1 h-5 w-5 rounded bg-surface-container-lowest text-primary-container focus:ring-0 accent-primary-container cursor-pointer" type="checkbox" />
-<div class="flex flex-col flex-1">
-<span class="font-body-md text-body-md text-on-surface font-medium group-hover:text-primary transition-colors">Prendre des nouvelles d'un voisin vulnérable</span>
-<span class="font-body-sm text-body-sm text-on-surface-variant">S'assurer de l'hydratation et du ventilateur en marche.</span>
-</div>
-<span class="material-symbols-outlined text-outline-variant text-[20px] shrink-0">radio_button_unchecked</span>
-</label>
+@empty
+<p class="font-body-sm text-body-sm text-on-surface-variant">Aucun équipement déclaré.</p>
+@endforelse
 </div>
 <div class="mt-space-xs p-space-sm rounded-lg bg-surface-container-lowest flex items-center justify-between">
 <div class="flex items-center gap-2">
 <span class="material-symbols-outlined text-error text-[20px]">phone_in_talk</span>
 <div class="flex flex-col">
-<span class="font-label-sm text-label-sm text-on-surface font-semibold">Numéro Vert Canicule Ville</span>
-<span class="font-body-sm text-body-sm text-on-surface-variant">0 800 06 66 66 (Appel gratuit)</span>
+<span class="font-label-sm text-label-sm text-on-surface font-semibold">Urgences Santé</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">SAMU 190 · Protection civile 198</span>
 </div>
 </div>
-<a class="px-2.5 py-1 rounded bg-surface-variant text-on-surface font-label-sm text-label-sm hover:bg-surface-bright transition-colors font-medium" href="tel:0800066666">Appeler</a>
+<a class="px-2.5 py-1 rounded bg-surface-variant text-on-surface font-label-sm text-label-sm hover:bg-surface-bright transition-colors font-medium" href="tel:190">Appeler</a>
 </div>
 </div>
 
-<div class="relative overflow-hidden rounded-xl bg-surface-container-low shadow-md group">
-<div class="w-full h-44 bg-cover bg-center transition-transform duration-500 group-hover:scale-105" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuANSt3QqGftuyYqv_H51fODIGAhdEDsHStizB2vqO7_dKIqP4mbmRv99DkXI326US4MtY-BJAyr3bOvXO8X3N0q_bMMPJMsjYbsZxwiAjBn8PcJlk6lgnUdUPa-ZvTMyMGrwc41hAJ6xK9yKsStRDXGi9bc-iGjT1ompWaVOCgCw7mr1qjzVQpCq-Yv7hZOIPEkaJUsMYAehUwRQ4zXWP7lEtf8jOihr5R4JWkL-R0F0VBSmv5bLqC4zA')">
-<div class="w-full h-full bg-gradient-to-t from-surface-container-lowest via-surface-container-lowest/50 to-transparent p-space-md flex flex-col justify-end">
+<div class="relative overflow-hidden rounded-xl bg-surface-container-low shadow-md">
+<div class="p-space-md md:p-space-lg flex flex-col gap-2 bg-gradient-to-br from-primary-container/20 via-surface-container-low to-surface-container-high">
 <div class="flex items-center gap-1.5 text-primary font-label-sm text-label-sm font-semibold uppercase">
-<span class="material-symbols-outlined text-[16px]">park</span> Oasis Fraîcheur Active
+<span class="material-symbols-outlined text-[16px]">park</span> Refuge le plus proche
 </div>
-<h4 class="font-title-md text-title-md text-on-surface font-semibold">Parc des Remparts &amp; Canopée</h4>
-<p class="font-body-sm text-body-sm text-on-surface-variant">Brumisateurs en service continu • Wifi &amp; recharge solaire</p>
-<a href="{{ route('refuges.index') }}" class="mt-1 font-body-sm text-body-sm text-primary hover:underline">Rejoindre ce refuge →</a>
+@if ($refuges->isNotEmpty())
+@php $refuge = $refuges->first(); @endphp
+<h4 class="font-title-md text-title-md text-on-surface font-semibold">{{ $refuge['nom'] }}</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant">{{ $refuge['adresse'] ?? 'Adresse non renseignée' }} · {{ $refuge['distanceM'] }} m</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">{{ $refuge['climatisee'] ? 'Salle climatisée' : 'Zone d\'ombre / point de fraîcheur' }}</p>
+<a href="{{ route('refuges.index') }}" class="mt-1 font-body-sm text-body-sm text-primary hover:underline">Voir la carte des refuges →</a>
+@else
+<h4 class="font-title-md text-title-md text-on-surface font-semibold">Aucun refuge répertorié</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Aucun point de fraîcheur à moins de 800 m de votre foyer.</p>
+<a href="{{ route('refuges.index') }}" class="mt-1 font-body-sm text-body-sm text-primary hover:underline">Explorer les refuges →</a>
+@endif
 </div>
 </div>
 </div>
 </div>
 </div>
-</div>
-
-<script>
-(function initDashboard() {
-  const toggleBtn = document.getElementById('toggle-energy-mode');
-  const knob = document.getElementById('toggle-knob');
-  const bulb = document.getElementById('status-bulb');
-  const title = document.getElementById('status-title');
-  const desc = document.getElementById('status-desc');
-  let isActive = true;
-  if (toggleBtn) {
-    toggleBtn.addEventListener('click', () => {
-      isActive = !isActive;
-      toggleBtn.setAttribute('aria-checked', isActive ? 'true' : 'false');
-      if (isActive) {
-        toggleBtn.className = 'relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full bg-primary-container p-0.5 transition-colors duration-200 ease-in-out focus:outline-none';
-        knob.className = 'pointer-events-none inline-block h-6 w-6 transform translate-x-5 rounded-full bg-on-primary-container shadow ring-0 transition duration-200 ease-in-out';
-        bulb.className = 'w-10 h-10 rounded-lg bg-primary-container/20 text-primary flex items-center justify-center';
-        title.textContent = 'Mode Actif';
-        desc.textContent = 'Consommation réduite de 35%';
-        desc.className = 'font-body-sm text-body-sm text-primary';
-      } else {
-        toggleBtn.className = 'relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full bg-surface-variant p-0.5 transition-colors duration-200 ease-in-out focus:outline-none';
-        knob.className = 'pointer-events-none inline-block h-6 w-6 transform translate-x-0 rounded-full bg-on-surface-variant shadow ring-0 transition duration-200 ease-in-out';
-        bulb.className = 'w-10 h-10 rounded-lg bg-surface-variant text-on-surface-variant flex items-center justify-center';
-        title.textContent = 'Mode Standard';
-        desc.textContent = 'Aucune restriction automatique';
-        desc.className = 'font-body-sm text-body-sm text-on-surface-variant';
-      }
-    });
-  }
-  const actionList = document.getElementById('action-list');
-  const counterEl = document.getElementById('checklist-counter');
-  if (actionList && counterEl) {
-    const checkboxes = actionList.querySelectorAll('input[type="checkbox"]');
-    function updateChecklist() {
-      let checkedCount = 0;
-      checkboxes.forEach(cb => {
-        const icon = cb.parentElement.querySelector('.material-symbols-outlined');
-        if (cb.checked) {
-          checkedCount++;
-          if (icon) { icon.textContent = 'check_circle'; icon.className = 'material-symbols-outlined text-primary text-[20px] shrink-0'; }
-        } else {
-          if (icon) { icon.textContent = 'radio_button_unchecked'; icon.className = 'material-symbols-outlined text-outline-variant text-[20px] shrink-0'; }
-        }
-      });
-      counterEl.textContent = `${checkedCount} / ${checkboxes.length} faits`;
-    }
-    checkboxes.forEach(cb => { cb.addEventListener('change', updateChecklist); });
-  }
-})();
-</script>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>

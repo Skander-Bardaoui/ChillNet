@@ -519,7 +519,7 @@ class ConseilRiskService
             'badge'  => self::BADGE_CLASSES[$niveauCombine],
             'action' => $niveauCombine === 'critique'
                 ? 'Urgence absolue — 190 (SAMU) ou 198 (Protection Civile).'
-                : 'Refugiez-vous dans un point de fraîcheur. Appelez le 0800 06 66 66.',
+                : 'Refugiez-vous dans un point de fraîcheur. En urgence, appelez le 190 ou le 198.',
         ];
 
         return $scenarios;

@@ -14,7 +14,7 @@
 <div class="flex items-start gap-3 flex-1">
 <div class="p-3 rounded-xl bg-red-100 text-red-800 shrink-0"><span class="material-symbols-outlined text-[28px]">power_off</span></div>
 <div class="flex flex-col gap-2">
-<p class="font-label-sm text-label-sm uppercase tracking-widest text-on-surface-variant font-semibold">Module 2 · Coupure de courant</p>
+<p class="font-label-sm text-label-sm uppercase tracking-widest text-on-surface-variant font-semibold">Coupure de courant · Détail</p>
 <h1 class="font-headline-md text-headline-md text-on-surface font-bold">{{ $coupure->quartier?->nom ?? $coupure->lieu ?? 'Point sur la carte' }}</h1>
 <div class="flex items-center gap-2 flex-wrap">
 <span class="px-2.5 py-0.5 rounded-full bg-surface-container-high text-on-surface font-label-sm text-label-sm font-semibold">{{ $coupure->type?->label() ?? $coupure->type }}</span>

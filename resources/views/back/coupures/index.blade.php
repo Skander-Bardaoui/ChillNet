@@ -6,7 +6,7 @@
 <div class="flex items-start gap-3 flex-1">
 <div class="p-3 rounded-xl bg-red-100 text-red-800 shrink-0"><span class="material-symbols-outlined text-[28px]">power_off</span></div>
 <div>
-<p class="font-label-sm text-label-sm uppercase tracking-widest text-on-surface-variant font-semibold">Module 2 · @if(auth()->user()->isGestionnaire()) Votre zone uniquement @else Référentiel global @endif</p>
+<p class="font-label-sm text-label-sm uppercase tracking-widest text-on-surface-variant font-semibold">Coupures de courant · @if(auth()->user()->isGestionnaire()) Votre zone uniquement @else Référentiel global @endif</p>
 <p class="font-body-md text-body-md text-on-surface-variant mt-1">Publiez les coupures <strong>prévues</strong> (maintenance, délestage programmé), suivez celles <strong>en cours</strong> signalées par les habitants, et clôturez en <strong>résolue</strong>.</p>
 </div>
 </div>
@@ -92,8 +92,16 @@
 </div>
 </div>
 @endif
-@if (! empty($risque['desaccord']))
-<span class="self-start px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 font-label-sm text-label-sm font-semibold inline-flex items-center gap-1" title="Le modèle et les règles ne proposent pas le même niveau ; le plus grave est conservé."><span class="material-symbols-outlined text-[14px]">compare_arrows</span>IA et règles en désaccord</span>
+@php
+    $rangNiveau = ['faible' => 0, 'modere' => 1, 'eleve' => 2, 'critique' => 3];
+    // Le badge ne signale que l'ESCALADE du modèle : un modèle moins sévère que
+    // les règles est le comportement attendu du plancher de sécurité.
+    $escaladeIa = ! empty($risque['desaccord'])
+        && ($rangNiveau[$risque['niveau_modele']?->value ?? 'faible'] ?? 0)
+            > ($rangNiveau[$risque['niveau_regles']?->value ?? 'faible'] ?? 0);
+@endphp
+@if ($escaladeIa)
+<span class="self-start px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 font-label-sm text-label-sm font-semibold inline-flex items-center gap-1" title="Le modèle relève le niveau au-dessus des règles ; le plus grave est conservé."><span class="material-symbols-outlined text-[14px]">compare_arrows</span>IA et règles en désaccord</span>
 @endif
 <p class="font-body-sm text-body-sm text-on-surface-variant">Score {{ $risque['score'] }}/100 · {{ $risque['raison'] }}</p>
 @if (! empty($risque['facteurs']))

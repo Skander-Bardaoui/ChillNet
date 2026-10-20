@@ -2,7 +2,7 @@
 <x-slot name="header">
 <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
 <div>
-<p class="font-label-sm text-label-sm text-primary uppercase tracking-wider font-semibold">{{ $vue === 'general' ? 'Module canicule — Alertes générales' : 'Module canicule — Alertes de mes lieux' }}</p>
+<p class="font-label-sm text-label-sm text-primary uppercase tracking-wider font-semibold">{{ $vue === 'general' ? 'Alertes canicule — Alertes générales' : 'Alertes canicule — Alertes de mes lieux' }}</p>
 <h1 class="font-headline-lg text-headline-lg text-on-surface">{{ $vue === 'general' ? 'Alertes générales' : 'Alertes & vigilance' }}</h1>
 <p class="font-body-sm text-body-sm text-on-surface-variant mt-1">
 @if ($vue === 'general')
@@ -378,6 +378,6 @@ stroke="rgb(var(--md-primary-container))" stroke-width="2" stroke-opacity="0.9" 
 {{-- Rappel numéros (conservé) --}}
 <section class="rounded-xl bg-surface-container-low p-space-md shadow-sm flex flex-wrap items-center gap-space-md">
 <span class="material-symbols-outlined text-primary text-[22px]">info</span>
-<p class="font-body-sm text-body-sm text-on-surface-variant">En cas de malaise : appelez le <a href="tel:190" class="text-primary font-semibold hover:underline">190</a> ou le <a href="tel:198" class="text-primary font-semibold hover:underline">198</a>. Plateforme canicule : <a href="tel:0800066666" class="text-primary font-semibold hover:underline">0800 06 66 66</a>.</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">En cas de malaise : appelez le <a href="tel:190" class="text-primary font-semibold hover:underline">190 (SAMU)</a> ou le <a href="tel:198" class="text-primary font-semibold hover:underline">198 (Protection Civile)</a>.</p>
 </section>
 </x-app-layout>

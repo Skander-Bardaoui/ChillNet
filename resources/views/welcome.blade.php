@@ -213,18 +213,22 @@
 
     {{-- ==================== ALERTE DU MOMENT (connectés uniquement) ==================== --}}
     @auth
+    @if ($alerteActive)
     <section id="alertes" class="ln-panel mt-4 bg-ln-bg-alt px-6 md:px-12 lg:px-16 py-6 scroll-mt-28">
         <div class="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center gap-4 justify-between rounded-2xl border border-orange-400/25 bg-orange-500/5 px-6 py-5">
             <div class="flex items-start gap-4">
                 <span class="relative flex h-3 w-3 mt-1.5 shrink-0"><span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-orange-400 opacity-75"></span><span class="relative inline-flex h-3 w-3 rounded-full bg-orange-400"></span></span>
                 <div>
-                    <p class="text-xs font-mono uppercase tracking-widest text-ln-warn font-semibold mb-1">Vigilance orange canicule</p>
-                    <p class="text-sm text-ln-body font-normal">Pic de chaleur attendu à 16h30. Restez au frais, hydratez-vous et prenez des nouvelles de vos voisins.</p>
+                    <p class="text-xs font-mono uppercase tracking-widest text-ln-warn font-semibold mb-1">{{ $alerteActive->niveau?->label() }} — alerte canicule</p>
+                    <p class="text-sm text-ln-body font-normal font-semibold">{{ $alerteActive->titre }}</p>
+                    <p class="text-sm text-ln-body font-normal">{{ $alerteActive->message ?: 'Restez au frais, hydratez-vous et prenez des nouvelles de vos voisins.' }}</p>
+                    <p class="text-xs text-ln-muted mt-1">Du {{ $alerteActive->debut?->format('d/m à H:i') }} au {{ $alerteActive->fin?->format('d/m à H:i') }}</p>
                 </div>
             </div>
             <a href="{{ route('alertes.index') }}" class="shrink-0 text-sm font-mono text-ln-accent hover:text-ln-accent-strong transition-colors">Toutes les alertes →</a>
         </div>
     </section>
+    @endif
     @endauth
 
     {{-- ==================== MISSION ==================== --}}
@@ -294,7 +298,7 @@
                         </div>
                         <h3 class="font-display text-2xl lg:text-3xl font-medium tracking-tight text-ln-heading mb-3">Alertes canicule</h3>
                         <p class="text-sm text-ln-muted font-normal leading-relaxed mb-5">
-                            Soyez prévenus avant le pic : niveaux de vigilance, bons réflexes et numéros d'urgence (190, 198, 0800 06 66 66).
+                            Soyez prévenus avant le pic : niveaux de vigilance, bons réflexes et numéros d'urgence (190, 198).
                         </p>
                     </div>
                     <ul class="space-y-2.5 text-xs text-ln-body font-mono pt-5 border-t border-ln-border">
@@ -483,9 +487,7 @@
             <div class="mt-6 flex items-center justify-center gap-6 text-xs font-mono text-ln-faint">
                 <span>SAMU : 190</span>
                 <span>•</span>
-                <span>Urgences : 198</span>
-                <span>•</span>
-                <span>Canicule : 0800 06 66 66</span>
+                <span>Protection civile : 198</span>
             </div>
         </div>
     </section>

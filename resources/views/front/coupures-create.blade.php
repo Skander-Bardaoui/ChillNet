@@ -14,7 +14,7 @@
 <header class="rounded-2xl bg-surface-container-low p-space-md md:p-space-lg shadow-sm flex items-start gap-space-sm">
 <div class="p-3 rounded-xl bg-red-100 text-red-800 shrink-0"><span class="material-symbols-outlined text-[28px]">report</span></div>
 <div class="flex-1">
-<p class="font-label-sm text-label-sm uppercase tracking-widest text-red-800 font-semibold">Module 2 · Espace habitant</p>
+<p class="font-label-sm text-label-sm uppercase tracking-widest text-red-800 font-semibold">Réseau électrique · Espace habitant</p>
 <h1 class="font-headline-md text-headline-md md:text-headline-lg text-on-surface font-bold">Signaler une coupure en cours</h1>
 <p class="font-body-md text-body-md text-on-surface-variant mt-1 max-w-2xl">Décrivez ce que vous constatez <strong>maintenant</strong> : votre signalement crée une coupure <span class="px-2 py-0.5 rounded-full bg-red-100 text-red-800 font-label-sm text-label-sm uppercase font-semibold">en cours</span>, visible aussitôt sur la carte après contrôle anti-doublon.</p>
 </div>
@@ -176,7 +176,7 @@
 <p class="font-body-sm text-body-sm text-red-100 mt-1">Personne bloquée, danger électrique, matériel médical : n'attendez pas le site.</p>
 <div class="mt-3 flex flex-wrap gap-2">
 <a href="tel:190" class="px-4 py-2 rounded-xl bg-white text-red-800 font-label-md text-label-md font-bold inline-flex items-center gap-1"><span class="material-symbols-outlined text-[18px]">call</span>190</a>
-<a href="tel:0800066666" class="px-4 py-2 rounded-xl bg-red-800 border border-red-500 text-white font-label-md text-label-md inline-flex items-center gap-1"><span class="material-symbols-outlined text-[18px]">bolt</span>0800 06 66 66</a>
+<a href="tel:198" class="px-4 py-2 rounded-xl bg-red-800 border border-red-500 text-white font-label-md text-label-md inline-flex items-center gap-1"><span class="material-symbols-outlined text-[18px]">bolt</span>198</a>
 </div>
 </div>
 <a href="{{ route('coupures.index') }}" class="rounded-2xl bg-surface-container-low border border-outline-variant/20 p-space-md flex items-center gap-3 hover:border-primary">

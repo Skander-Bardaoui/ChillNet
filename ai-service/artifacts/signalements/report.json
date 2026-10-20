@@ -1,6 +1,6 @@
 {
-  "version": "1.0.1",
-  "trained_at": "2026-10-19",
+  "version": "1.0.2",
+  "trained_at": "2026-10-20",
   "features": [
     "description"
   ],
@@ -11,7 +11,7 @@
     "personne_vulnerable"
   ],
   "n_samples": 197,
-  "data_hash": "1fadc3c84712300d",
+  "data_hash": "8ed4e873f1bbdd78",
   "metrics": {
     "folds": 5,
     "accuracy_mean": 0.9388,

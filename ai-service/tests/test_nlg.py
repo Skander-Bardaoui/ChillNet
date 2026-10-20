@@ -51,14 +51,15 @@ def test_numeros_urgence_presents_des_orange() -> None:
             message = generer_message(_contexte(niveau, "travail"), profils, seed="x")
 
             assert "190" in message
-            assert "0800 06 66 66" in message
+            assert "198" in message
 
 
 def test_numeros_urgence_absents_sous_orange() -> None:
     for niveau in ("normal", "jaune"):
         message = generer_message(_contexte(niveau, "autre"), ["enfant"], seed="x")
 
-        assert "0800" not in message
+        assert "190" not in message
+        assert "198" not in message
 
 
 def test_message_sans_markdown() -> None:
@@ -88,8 +89,8 @@ def test_clause_lieu_presente_quand_reconnue() -> None:
     assert any(s in message for s in LIEU_CLAUSE["travail"])
 
 
-def test_numeros_contient_les_trois_contacts() -> None:
-    for contact in ("190", "198", "0800 06 66 66"):
+def test_numeros_contient_les_deux_contacts() -> None:
+    for contact in ("190", "198"):
         assert contact in NUMEROS
 
 

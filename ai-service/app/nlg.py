@@ -5,8 +5,8 @@ Assemble des blocs rédigés (niveau × profil × type de lieu × pic horaire) e
 DÉTERMINISTE à partir d'une graine (identifiant d'alerte + profil), pour que le
 même contexte produise toujours le même texte.
 
-Les numéros d'urgence (190 / 198 / 0800 06 66 66) sont inclus dès le niveau
-orange. Au plus deux phrases spécifiques au profil, dans l'ordre de priorité :
+Les numéros d'urgence (190 / 198) sont inclus dès le niveau orange.
+Au plus deux phrases spécifiques au profil, dans l'ordre de priorité :
 équipement médical > personne âgée > enfant.
 """
 
@@ -15,7 +15,7 @@ from __future__ import annotations
 import zlib
 from typing import Any
 
-NUMEROS = "190, 198 ou 0800 06 66 66"
+NUMEROS = "190 (SAMU) ou 198 (Protection Civile)"
 
 PROFILE_PRIORITY: list[str] = ["equipement_medical", "personne_agee", "enfant"]
 
@@ -70,7 +70,7 @@ LIEU_CLAUSE: dict[str, list[str]] = {
 }
 
 PIC_SENTENCE = "Le pic de chaleur est attendu vers {heure}h, sois particulièrement prudent à ce moment-là."
-SECOURS_SENTENCE = "En cas de malaise, appelle le {numeros} ; la plateforme canicule répond aussi au 0800 06 66 66."
+SECOURS_SENTENCE = "En cas de malaise, appelle le {numeros}."
 
 
 def _seed_int(seed: Any) -> int:

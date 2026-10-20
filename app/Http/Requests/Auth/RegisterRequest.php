@@ -107,7 +107,12 @@ class RegisterRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique(User::class)],
-            'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'password' => [
+                'required',
+                'string',
+                'confirmed',
+                Rules\Password::min(8)->letters()->numbers(),
+            ],
 
             // Inscription publique : habitant ou gestionnaire uniquement.
             // L'admin est créé via seeder / back-office, jamais ici.
@@ -168,6 +173,9 @@ class RegisterRequest extends FormRequest
             'password.required' => 'Le mot de passe est obligatoire.',
             'password.confirmed' => 'Les deux mots de passe ne correspondent pas.',
             'password.min' => 'Le mot de passe doit contenir au moins :min caractères.',
+            'password.letters' => 'Le mot de passe doit contenir au moins une lettre.',
+            'password.numbers' => 'Le mot de passe doit contenir au moins un chiffre.',
+            'password_confirmation.required' => 'Veuillez confirmer votre mot de passe.',
 
             'role.required' => 'Veuillez choisir votre profil (habitant ou gestionnaire).',
             'role.in' => 'Le profil choisi est invalide. L\'administrateur est créé par l\'équipe ChillNet.',

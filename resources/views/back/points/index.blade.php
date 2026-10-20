@@ -7,7 +7,7 @@
 <div class="flex items-start gap-3 flex-1">
 <div class="p-3 rounded-xl bg-sky-100 text-sky-800 shrink-0"><span class="material-symbols-outlined text-[28px]">ac_unit</span></div>
 <div>
-<p class="font-label-sm text-label-sm uppercase tracking-widest text-on-surface-variant font-semibold">Module 3 · @if(auth()->user()->isGestionnaire()) Votre zone uniquement @else Référentiel global @endif</p>
+<p class="font-label-sm text-label-sm uppercase tracking-widest text-on-surface-variant font-semibold">Points de fraîcheur · @if(auth()->user()->isGestionnaire()) Votre zone uniquement @else Référentiel global @endif</p>
 <p class="font-body-md text-body-md text-on-surface-variant mt-1">Référencez les <strong>parcs, salles climatisées et fontaines</strong>, modérez les points proposés par les habitants et surveillez les avis grâce à l'analyse de sentiment IA.</p>
 </div>
 </div>

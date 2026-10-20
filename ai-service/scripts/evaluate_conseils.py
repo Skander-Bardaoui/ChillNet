@@ -40,7 +40,8 @@ def _ligne(nom: str, m: dict) -> None:
 
 
 def _confusion(m: dict) -> None:
-    print(f"  {'vrai \\ prédit':>14s}" + "".join(f"{c:>10s}" for c in CLASSES))
+    entete = "vrai \\ prédit"
+    print(f"  {entete:>14s}" + "".join(f"{c:>10s}" for c in CLASSES))
     for classe, ligne in zip(CLASSES, m["confusion"]):
         print(f"  {classe:>14s}" + "".join(f"{v:>10d}" for v in ligne))
 

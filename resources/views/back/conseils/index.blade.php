@@ -7,7 +7,7 @@
             <span class="material-symbols-outlined text-[28px]">tips_and_updates</span>
         </div>
         <div>
-            <p class="font-label-sm text-label-sm uppercase tracking-widest text-on-surface-variant font-semibold">Module 4 · Base de conseils</p>
+            <p class="font-label-sm text-label-sm uppercase tracking-widest text-on-surface-variant font-semibold">Conseils personnalisés · Base de conseils</p>
             <p class="font-body-md text-body-md text-on-surface-variant mt-1">Gérez les conseils de prévention canicule et coupures. Liez chaque conseil aux types d'équipements concernés pour personnaliser les recommandations des habitants.</p>
         </div>
     </div>

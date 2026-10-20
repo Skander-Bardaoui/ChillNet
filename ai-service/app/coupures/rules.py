@@ -85,11 +85,12 @@ def niveau_risque(score: int) -> str:
 
 
 def score_depuis_probabilite(p24: float) -> int:
-    """Mapping documenté ``score = round(100 * p24)`` borné 0..100.
+    """Repli linéaire ``score = round(100 * p24)`` borné 0..100.
 
-    Le score du modèle est exprimé sur la même échelle que les règles, ce qui
-    permet le plancher de sécurité ``score_final = max(score_modele, score_regles)``
-    et l'application des paliers ``NiveauRisque`` inchangés.
+    N'est utilisé que si l'artefact ne porte pas la calibration isotone
+    ``p24 → score des règles`` (anciens modèles). Le chemin nominal passe par
+    ``CoupureRiskModel.score_modele``, qui ramène la probabilité sur l'échelle
+    opérationnelle 0–100 des règles pour rendre les deux niveaux comparables.
     """
 
     borne = max(0.0, min(1.0, float(p24)))

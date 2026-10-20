@@ -94,7 +94,7 @@ class VigilanceAiServiceTest extends TestCase
             [ProfilVulnerabilite::PersonneAgee],
         );
 
-        $this->assertStringContainsString('0800 06 66 66', $message);
+        $this->assertStringContainsString('198', $message);
         $this->assertStringContainsString('Personne âgée', $message);
     }
 
@@ -120,7 +120,7 @@ class VigilanceAiServiceTest extends TestCase
 
         $message = $this->service()->messagePourContexte(['niveau_label' => 'Vigilance rouge'], []);
 
-        $this->assertStringContainsString('0800 06 66 66', $message);
+        $this->assertStringContainsString('198', $message);
     }
 
     public function test_historique_counts_distinct_overheating_days_for_a_quartier(): void

@@ -52,6 +52,17 @@ DUREES = {
 
 SEUIL_JOUR_CHAUD = 35.0
 
+# Vagues de chaleur estivales : (jour de l'année, amplitude °C, largeur jours).
+# Le cycle saisonnier seul plafonne vers 41 °C : aucune ligne « canicule
+# niveau 3 » n'atteignait l'entraînement, alors que la production en envoie
+# (alerte rouge) et que les règles lui accordent 35 points.
+VAGUES_CHALEUR: tuple[tuple[float, float, float], ...] = (
+    (188.0, 5.5, 3.0),
+    (212.0, 6.0, 3.5),
+    (553.0, 5.5, 3.0),
+    (578.0, 6.0, 3.5),
+)
+
 
 def _temperature(zone: dict, rng: np.random.Generator) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     t_idx = np.arange(N_HEURES)
@@ -61,7 +72,16 @@ def _temperature(zone: dict, rng: np.random.Generator) -> tuple[np.ndarray, np.n
     seasonal = 12.0 * np.sin(2 * np.pi * (day_of_year - 100) / 365.0)
     daily = 6.0 * np.sin(2 * np.pi * (hour_of_day - 9) / 24.0)
 
-    temp = 18.0 + seasonal + daily + zone["base_temp"] + rng.normal(0, 1.5, N_HEURES)
+    vague = np.zeros(N_HEURES)
+    for jour, amplitude, largeur in VAGUES_CHALEUR:
+        centre = jour * 24.0
+        sigma = max(1.0, largeur) * 24.0 / 2.5
+        vague = np.maximum(vague, amplitude * np.exp(-0.5 * ((t_idx - centre) / sigma) ** 2))
+
+    temp = (
+        18.0 + seasonal + daily + zone["base_temp"] + vague
+        + rng.normal(0, 1.5, N_HEURES)
+    )
     humidity = np.clip(75 - 0.8 * (temp - 25) + rng.normal(0, 5, N_HEURES), 20, 95)
 
     heat_index = np.array(

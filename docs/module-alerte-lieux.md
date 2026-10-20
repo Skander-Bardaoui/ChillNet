@@ -158,8 +158,8 @@ Distance : `App\Support\Geo::distanceKm()` (Haversine, rayon terrestre 6371 km) 
 
 **Rédaction LLM (Groq)** :
 - `messagePersonnalise(Alerte, User)` → `messagePourContexte(contextePourAlerte(alerte), profils)`.
-- `messagePourContexte(contexte, profils)` : `POST {base_url}/chat/completions`, model `openai/gpt-oss-120b`, `temperature 0.4`, `reasoning_effort low`, `max_tokens 700`. Prompt système : 3–4 phrases max, tutoiement, gestes adaptés au profil, numéros `190, 198, 0800 06 66 66`, sans titre/liste/formatage. **Fallback systématique** vers `messageDeSecours()` si clé absente, exception, HTTP fail ou contenu vide (log warning).
-- `messageDeSecours()` : `Niveau sur quartiers — température mesurée X°C. Conseils profil. En cas de malaise, appelez le 190 ou le 198 ; plateforme canicule : 0800 06 66 66.` Catalogue profils : personne âgée / enfant / équipement médical, sinon message standard.
+- `messagePourContexte(contexte, profils)` : `POST {base_url}/chat/completions`, model `openai/gpt-oss-120b`, `temperature 0.4`, `reasoning_effort low`, `max_tokens 700`. Prompt système : 3–4 phrases max, tutoiement, gestes adaptés au profil, numéros `190, 198`, sans titre/liste/formatage. **Fallback systématique** vers `messageDeSecours()` si clé absente, exception, HTTP fail ou contenu vide (log warning).
+- `messageDeSecours()` : `Niveau sur quartiers — température mesurée X°C. Conseils profil. En cas de malaise, appelez le 190 (SAMU) ou le 198 (Protection Civile).` Catalogue profils : personne âgée / enfant / équipement médical, sinon message standard.
 
 ### 5.2. `WeatherService` (utilisé, non détaillé ici)
 

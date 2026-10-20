@@ -1,7 +1,7 @@
 {
-  "version": "1.0.2",
-  "date": "2026-10-19",
-  "trained_at": "2026-10-19",
+  "version": "1.0.3",
+  "date": "2026-10-20",
+  "trained_at": "2026-10-20",
   "features": [
     "temp",
     "ressentie",
@@ -23,7 +23,7 @@
   ],
   "n_samples": 20456,
   "n_corrections": 0,
-  "data_hash": "e1ec66054a2cec1a",
+  "data_hash": "3c073418b55d92a8",
   "medians": {
     "temp": 24.0,
     "ressentie": 23.2,
@@ -38,38 +38,38 @@
     "heure_pic": 15.0
   },
   "metrics": {
-    "accuracy": 0.9615,
-    "macro_f1": 0.9046,
+    "accuracy": 0.964,
+    "macro_f1": 0.9092,
     "recall_par_classe": {
-      "normal": 0.9782,
-      "jaune": 0.9203,
-      "orange": 0.8649,
-      "rouge": 0.9438
+      "normal": 0.9816,
+      "jaune": 0.9146,
+      "orange": 0.8494,
+      "rouge": 0.9545
     },
     "confusion": [
       [
-        3504,
-        78,
+        3516,
+        66,
         0,
         0
       ],
       [
-        3,
-        485,
-        39,
+        10,
+        482,
+        35,
         0
       ],
       [
         0,
-        17,
-        224,
-        18
+        20,
+        220,
+        19
       ],
       [
         0,
         0,
-        42,
-        705
+        34,
+        713
       ]
     ],
     "n_test": 5115

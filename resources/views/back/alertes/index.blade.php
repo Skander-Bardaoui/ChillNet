@@ -6,7 +6,7 @@
 <div class="flex items-start gap-3 flex-1">
 <div class="p-3 rounded-xl bg-red-100 text-red-800 shrink-0"><span class="material-symbols-outlined text-[28px]">warning</span></div>
 <div>
-<p class="font-label-sm text-label-sm uppercase tracking-widest text-on-surface-variant font-semibold">Module 1 · @if(auth()->user()->isGestionnaire()) Votre zone uniquement @else Référentiel global @endif</p>
+<p class="font-label-sm text-label-sm uppercase tracking-widest text-on-surface-variant font-semibold">Alertes canicule · @if(auth()->user()->isGestionnaire()) Votre zone uniquement @else Référentiel global @endif</p>
 <p class="font-body-md text-body-md text-on-surface-variant mt-1">Créez une alerte canicule (une ou plusieurs zones), laissez l'IA <strong>classer le niveau</strong> et <strong>rédiger le message</strong>, puis <strong>validez-la</strong> pour la publier aux habitants.</p>
 </div>
 </div>

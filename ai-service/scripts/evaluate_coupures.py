@@ -153,7 +153,13 @@ def main() -> int:
 
     p24 = model24.predict_proba(X_test)[:, 1]
     p48 = model48.predict_proba(X_test)[:, 1]
-    score_modele = (p24 * 100).round().clip(0, 100)
+
+    # Même mapping que l'inférence : calibration isotone p24 → score des règles.
+    score24 = bundle.get("score24")
+    if score24 is not None:
+        score_modele = np.clip(score24.predict(p24), 0, 100)
+    else:
+        score_modele = (p24 * 100).round().clip(0, 100)
 
     regles_score = np.asarray(
         [coupure_rules.score_regles(_regles_contexte(r))["score"] for r in df.iloc[cut:].to_dict("records")],

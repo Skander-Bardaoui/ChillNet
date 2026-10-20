@@ -6,7 +6,7 @@
 <div class="flex items-start gap-3 flex-1">
 <div class="p-3 rounded-xl shrink-0" @style(['background: '.$alerte->niveau?->couleurHex().'22', 'color: '.$alerte->niveau?->couleurHex()])><span class="material-symbols-outlined text-[28px]">{{ $alerte->niveau?->icone() }}</span></div>
 <div class="flex flex-col gap-2">
-<p class="font-label-sm text-label-sm uppercase tracking-widest text-on-surface-variant font-semibold">Module 1 · Alerte canicule</p>
+<p class="font-label-sm text-label-sm uppercase tracking-widest text-on-surface-variant font-semibold">Alerte canicule · Détail</p>
 <h1 class="font-headline-md text-headline-md text-on-surface font-bold">{{ $alerte->titre }}</h1>
 <div class="flex items-center gap-2 flex-wrap">
 <span class="px-2.5 py-0.5 rounded-full {{ $alerte->niveau?->badgeClasses() }} font-label-sm text-label-sm font-semibold">{{ $alerte->niveau?->label() }}</span>

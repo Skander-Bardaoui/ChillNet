@@ -93,7 +93,7 @@ return new class extends Migration
             [
                 'titre' => 'Préparez un kit d\'urgence chaleur',
                 'categorie' => 'general',
-                'contenu' => "Gardez à portée : brumisateur manuel, linge humide, eau fraîche, radio à piles, lampe torche, liste des numéros d'urgence (190 SAMU, 198 Protection Civile, 0800 06 66 66 Canicule Info).",
+                'contenu' => "Gardez à portée : brumisateur manuel, linge humide, eau fraîche, radio à piles, lampe torche, liste des numéros d'urgence (190 SAMU, 198 Protection Civile).",
                 'icone' => 'emergency_home',
                 'ordre' => 7,
                 'types' => [],

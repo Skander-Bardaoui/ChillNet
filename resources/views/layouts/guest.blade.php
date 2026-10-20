@@ -27,7 +27,7 @@
 <span class="rounded-full bg-black/45 px-3 py-1 font-label-sm text-label-sm text-slate-200 backdrop-blur">Refuges climatisés</span>
 <span class="rounded-full bg-black/45 px-3 py-1 font-label-sm text-label-sm text-slate-200 backdrop-blur">Entraide</span>
 </div>
-<p class="font-body-sm text-body-sm text-slate-300">Urgence : <a class="text-primary hover:underline" href="tel:190">190</a> · <a class="text-primary hover:underline" href="tel:0800066666">0800 06 66 66</a></p>
+<p class="font-body-sm text-body-sm text-slate-300">Urgence : <a class="text-primary hover:underline" href="tel:190">190</a> · <a class="text-primary hover:underline" href="tel:198">198</a></p>
 </div>
 </aside>
 

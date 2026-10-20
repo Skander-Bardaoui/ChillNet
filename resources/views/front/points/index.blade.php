@@ -12,7 +12,7 @@
 <div class="flex items-start gap-space-sm flex-1">
 <div class="p-3 rounded-xl bg-sky-100 text-sky-800 shrink-0"><span class="material-symbols-outlined text-[28px]">ac_unit</span></div>
 <div>
-<p class="font-label-sm text-label-sm uppercase tracking-widest text-sky-800 font-semibold">Module 3 · Se rafraîchir</p>
+<p class="font-label-sm text-label-sm uppercase tracking-widest text-sky-800 font-semibold">Se rafraîchir · Points de fraîcheur</p>
 <h1 class="font-headline-md text-headline-md md:font-headline-lg md:text-headline-lg text-on-surface font-bold">Refuges et points de fraîcheur</h1>
 <p class="font-body-md text-body-md text-on-surface-variant mt-1 max-w-2xl">Parcs ombragés, salles climatisées et fontaines autour de vous, classés par notre IA selon la distance, l'affluence estimée, vos besoins et l'état prévu d'après les avis récents.</p>
 </div>

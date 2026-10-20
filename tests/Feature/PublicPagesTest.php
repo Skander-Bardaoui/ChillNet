@@ -26,6 +26,8 @@ class PublicPagesTest extends TestCase
             'nombre_logements' => 48,
             'salle_climatisee' => true,
             'point_fraicheur' => true,
+            'latitude' => 36.8008,
+            'longitude' => 10.1800,
             'quartier_id' => $quartier->id,
         ]);
 

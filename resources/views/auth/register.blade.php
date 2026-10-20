@@ -26,7 +26,9 @@
     </div>
 
     {{-- Carte formulaire glassmorphism — maquette adaptée au POST Laravel --}}
-    <form method="POST" action="{{ route('register') }}" class="rounded-xl bg-surface-container-low/90 backdrop-blur-2xl p-5 shadow-2xl flex flex-col gap-4" x-data="{ role: '{{ $roleParDefaut }}', mode: '{{ $modeParDefaut }}' }">
+    <form id="form-inscription" method="POST" action="{{ route('register') }}" novalidate class="rounded-xl bg-surface-container-low/90 backdrop-blur-2xl p-5 shadow-2xl flex flex-col gap-4"
+        x-data="inscriptionFoyer({ role: '{{ $roleParDefaut }}', mode: '{{ $modeParDefaut }}' })"
+        @submit="soumettre($event)">
         @csrf
 
         @if ($errors->any())
@@ -35,6 +37,11 @@
                 <span>Veuillez corriger les champs indiqués ci-dessous pour activer la protection de votre foyer.</span>
             </div>
         @endif
+
+        <div x-show="Object.keys(erreurs).length" x-cloak role="alert" class="rounded-lg bg-error-container/20 border border-error/30 text-error px-3 py-2.5 flex items-start gap-2 font-body-sm text-body-sm">
+            <span class="material-symbols-outlined text-[18px] shrink-0 mt-0.5">warning</span>
+            <span>Veuillez corriger les champs indiqués en rouge avant de continuer.</span>
+        </div>
 
         {{-- Choix du profil : habitant ou gestionnaire de résidence.
              L'admin est créé par l'équipe ChillNet (seeder / back-office), jamais ici. --}}
@@ -74,19 +81,25 @@
                 <label for="name" class="font-label-md text-label-md text-on-surface">Nom du foyer</label>
                 <div class="relative">
                     <span class="material-symbols-outlined absolute left-3 top-3 text-on-surface-variant text-[20px]">group</span>
-                    <input id="name" type="text" name="name" value="{{ old('name') }}" required autofocus autocomplete="name" placeholder="Ex : Famille Dupont"
+                    <input id="name" type="text" name="name" value="{{ old('name') }}" x-model="nom" required autofocus autocomplete="name" placeholder="Ex : Famille Dupont"
+                        :aria-invalid="erreurs.name ? 'true' : 'false'"
+                        :class="erreurs.name ? 'border border-error ring-2 ring-error' : ''"
                         class="w-full bg-surface-container rounded-lg pl-10 pr-4 py-2.5 text-on-surface font-body-md text-body-md placeholder:text-outline-variant focus:outline-none focus:ring-2 focus:ring-primary-container transition-colors" />
                 </div>
                 <x-input-error :messages="$errors->get('name')" class="mt-1" />
+                <x-client-error champ="name" class="mt-1" />
             </div>
             <div class="flex flex-col gap-1.5">
                 <label for="email" class="font-label-md text-label-md text-on-surface">Email</label>
                 <div class="relative">
                     <span class="material-symbols-outlined absolute left-3 top-3 text-on-surface-variant text-[20px]">mail</span>
-                    <input id="email" type="email" name="email" value="{{ old('email') }}" required autocomplete="username" placeholder="vous@exemple.fr"
+                    <input id="email" type="email" name="email" value="{{ old('email') }}" x-model="email" required autocomplete="username" placeholder="vous@exemple.fr"
+                        :aria-invalid="erreurs.email ? 'true' : 'false'"
+                        :class="erreurs.email ? 'border border-error ring-2 ring-error' : ''"
                         class="w-full bg-surface-container rounded-lg pl-10 pr-4 py-2.5 text-on-surface font-body-md text-body-md placeholder:text-outline-variant focus:outline-none focus:ring-2 focus:ring-primary-container transition-colors" />
                 </div>
                 <x-input-error :messages="$errors->get('email')" class="mt-1" />
+                <x-client-error champ="email" class="mt-1" />
             </div>
         </div>
 
@@ -129,6 +142,7 @@
                 <input type="hidden" name="longitude" id="longitude" value="{{ old('longitude') }}" />
                 <x-input-error :messages="$errors->get('latitude')" class="mt-1" />
                 <x-input-error :messages="$errors->get('longitude')" class="mt-1" />
+                <x-client-error champ="localisation" class="mt-1" />
             </div>
 
             {{-- Gestionnaire : résidence obligatoire (liste ou nouvelle déclaration). --}}
@@ -157,6 +171,8 @@
                         <div class="relative">
                             <span class="material-symbols-outlined absolute left-3 top-3 text-on-surface-variant text-[20px]">home</span>
                             <select id="residence_id" name="residence_id" :disabled="mode !== 'existante'"
+                                :aria-invalid="erreurs.residence_id ? 'true' : 'false'"
+                                :class="erreurs.residence_id ? 'border border-error ring-2 ring-error' : ''"
                                 class="w-full appearance-none bg-surface-container rounded-lg pl-10 pr-10 py-2.5 text-on-surface font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary-container transition-colors disabled:opacity-50">
                                 <option value="">— Choisir ma résidence —</option>
                                 @foreach ($quartiersAvecResidences as $quartier)
@@ -170,6 +186,7 @@
                             <span class="material-symbols-outlined pointer-events-none absolute right-3 top-2.5 text-on-surface-variant">expand_more</span>
                         </div>
                         <x-input-error :messages="$errors->get('residence_id')" class="mt-1" />
+                        <x-client-error champ="residence_id" class="mt-1" />
                     @else
                         <p class="rounded-lg bg-surface-container px-3 py-2.5 font-body-sm text-body-sm text-on-surface-variant">Aucune résidence listée pour le moment : choisissez « Nouvelle ».</p>
                     @endif
@@ -181,9 +198,12 @@
                         <div class="relative">
                             <span class="material-symbols-outlined absolute left-3 top-3 text-on-surface-variant text-[20px]">home</span>
                             <input id="nouvelle_residence_nom" type="text" name="nouvelle_residence_nom" value="{{ old('nouvelle_residence_nom') }}" placeholder="Ex : Résidence Les Platanes, Bâtiment C" :disabled="mode !== 'nouvelle'"
+                                :aria-invalid="erreurs.nouvelle_residence ? 'true' : 'false'"
+                                :class="erreurs.nouvelle_residence ? 'border border-error ring-2 ring-error' : ''"
                                 class="w-full bg-surface-container-low rounded-lg pl-10 pr-4 py-2.5 text-on-surface font-body-md text-body-md placeholder:text-outline-variant focus:outline-none focus:ring-2 focus:ring-primary-container transition-colors disabled:opacity-50" />
                         </div>
                         <x-input-error :messages="$errors->get('nouvelle_residence_nom')" class="mt-1" />
+                        <x-client-error champ="nouvelle_residence" class="mt-1" />
                     </div>
                     <input type="text" name="nouvelle_residence_adresse" aria-label="Adresse de la nouvelle résidence (optionnel)" value="{{ old('nouvelle_residence_adresse') }}" placeholder="Adresse (optionnel)" :disabled="mode !== 'nouvelle'"
                         class="w-full rounded-lg bg-surface-container-low border border-outline-variant/40 px-3 py-2.5 text-on-surface font-body-md text-body-md placeholder:text-outline-variant focus:outline-none focus:ring-2 focus:ring-primary-container transition-colors disabled:opacity-50" />
@@ -205,6 +225,8 @@
                         <div class="relative">
                             <span class="material-symbols-outlined absolute left-3 top-3 text-on-surface-variant text-[20px]">map</span>
                             <select id="quartier_id" name="quartier_id" :disabled="mode !== 'nouvelle' || source !== 'existante'"
+                                :aria-invalid="erreurs.quartier ? 'true' : 'false'"
+                                :class="erreurs.quartier ? 'border border-error ring-2 ring-error' : ''"
                                 class="w-full appearance-none bg-surface-container-low rounded-lg pl-10 pr-10 py-2.5 text-on-surface font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary-container transition-colors disabled:opacity-50">
                                 <option value="">— Choisir mon quartier —</option>
                                 @foreach (($quartiers ?? collect()) as $quartier)
@@ -219,11 +241,15 @@
                     <div x-show="source === 'nouvelle_entree'" x-cloak class="grid grid-cols-2 gap-2">
                         <div class="flex flex-col gap-1.5">
                             <input type="text" name="nouveau_quartier_nom" aria-label="Nom du nouveau quartier" value="{{ old('nouveau_quartier_nom') }}" placeholder="Quartier" :disabled="mode !== 'nouvelle' || source !== 'nouvelle_entree'"
+                                :aria-invalid="erreurs.quartier ? 'true' : 'false'"
+                                :class="erreurs.quartier ? '!border-error ring-2 ring-error' : ''"
                                 class="rounded-lg bg-surface-container-low border border-outline-variant/40 px-3 py-2.5 text-on-surface font-body-md text-body-md placeholder:text-outline-variant focus:outline-none focus:ring-2 focus:ring-primary-container transition-colors disabled:opacity-50" />
                             <x-input-error :messages="$errors->get('nouveau_quartier_nom')" class="mt-1" />
                         </div>
                         <div class="flex flex-col gap-1.5">
                             <input type="text" name="nouveau_quartier_ville" aria-label="Ville du nouveau quartier" value="{{ old('nouveau_quartier_ville') }}" placeholder="Ville" :disabled="mode !== 'nouvelle' || source !== 'nouvelle_entree'"
+                                :aria-invalid="erreurs.quartier ? 'true' : 'false'"
+                                :class="erreurs.quartier ? '!border-error ring-2 ring-error' : ''"
                                 class="rounded-lg bg-surface-container-low border border-outline-variant/40 px-3 py-2.5 text-on-surface font-body-md text-body-md placeholder:text-outline-variant focus:outline-none focus:ring-2 focus:ring-primary-container transition-colors disabled:opacity-50" />
                             <x-input-error :messages="$errors->get('nouveau_quartier_ville')" class="mt-1" />
                         </div>
@@ -233,6 +259,7 @@
                             <x-input-error :messages="$errors->get('nouveau_quartier_code_postal')" class="mt-1" />
                         </div>
                     </div>
+                    <x-client-error champ="quartier" class="mt-1" />
                 </div>
             </div>
         </section>
@@ -270,16 +297,36 @@
                 <label for="password" class="font-label-md text-label-md text-on-surface">Mot de passe</label>
                 <div class="relative">
                     <span class="material-symbols-outlined absolute left-3 top-3 text-on-surface-variant text-[20px]">key</span>
-                    <input id="password" type="password" name="password" required autocomplete="new-password" placeholder="••••••••"
+                    <input id="password" type="password" name="password" x-model="mdp" required minlength="8" autocomplete="new-password" placeholder="8 caractères minimum"
+                        :aria-invalid="erreurs.password ? 'true' : 'false'"
+                        :class="erreurs.password ? 'border border-error ring-2 ring-error' : ''"
                         class="w-full bg-surface-container rounded-lg pl-10 pr-4 py-2.5 text-on-surface font-body-md text-body-md placeholder:text-outline-variant focus:outline-none focus:ring-2 focus:ring-primary-container transition-colors" />
                 </div>
                 <x-input-error :messages="$errors->get('password')" class="mt-1" />
+                <x-client-error champ="password" class="mt-1" />
+                <ul aria-live="polite" class="mt-1 flex flex-col gap-1 font-body-sm text-body-sm">
+                    <li class="flex items-center gap-1.5" :class="reglesMdp.longueur ? 'text-green-700' : 'text-on-surface-variant'">
+                        <span class="material-symbols-outlined text-[16px]" x-text="reglesMdp.longueur ? 'check_circle' : 'radio_button_unchecked'"></span>
+                        <span>Au moins 8 caractères</span>
+                    </li>
+                    <li class="flex items-center gap-1.5" :class="reglesMdp.lettre ? 'text-green-700' : 'text-on-surface-variant'">
+                        <span class="material-symbols-outlined text-[16px]" x-text="reglesMdp.lettre ? 'check_circle' : 'radio_button_unchecked'"></span>
+                        <span>Au moins une lettre</span>
+                    </li>
+                    <li class="flex items-center gap-1.5" :class="reglesMdp.chiffre ? 'text-green-700' : 'text-on-surface-variant'">
+                        <span class="material-symbols-outlined text-[16px]" x-text="reglesMdp.chiffre ? 'check_circle' : 'radio_button_unchecked'"></span>
+                        <span>Au moins un chiffre</span>
+                    </li>
+                </ul>
             </div>
             <div class="flex flex-col gap-1.5">
                 <label for="password_confirmation" class="font-label-md text-label-md text-on-surface">Confirmation</label>
-                <input id="password_confirmation" type="password" name="password_confirmation" required autocomplete="new-password" placeholder="••••••••"
+                <input id="password_confirmation" type="password" name="password_confirmation" x-model="mdpConfirmation" required autocomplete="new-password" placeholder="Retapez le mot de passe"
+                    :aria-invalid="erreurs.password_confirmation ? 'true' : 'false'"
+                    :class="erreurs.password_confirmation ? 'border border-error ring-2 ring-error' : ''"
                     class="w-full bg-surface-container rounded-lg px-3 py-2.5 text-on-surface font-body-md text-body-md placeholder:text-outline-variant focus:outline-none focus:ring-2 focus:ring-primary-container transition-colors" />
                 <x-input-error :messages="$errors->get('password_confirmation')" class="mt-1" />
+                <x-client-error champ="password_confirmation" class="mt-1" />
             </div>
         </div>
 
@@ -312,6 +359,89 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
     const CENTRE_DEFAUT_INSCRIPTION = [36.8065, 10.1815];
+
+    function inscriptionFoyer(config) {
+        return {
+            role: config.role,
+            mode: config.mode,
+            nom: '',
+            email: '',
+            mdp: '',
+            mdpConfirmation: '',
+            erreurs: {},
+            init() {
+                // x-model écraserait les valeurs renvoyées par old() : on les
+                // récupère depuis le DOM au montage.
+                this.nom = document.getElementById('name')?.value ?? '';
+                this.email = document.getElementById('email')?.value ?? '';
+            },
+            get reglesMdp() {
+                return {
+                    longueur: this.mdp.length >= 8,
+                    lettre: /[A-Za-zÀ-ÖØ-öø-ÿ]/.test(this.mdp),
+                    chiffre: /\d/.test(this.mdp),
+                };
+            },
+            soumettre(evenement) {
+                const valeur = (champ) => {
+                    const el = document.querySelector(`#form-inscription [name="${champ}"]`);
+                    return el ? el.value.trim() : '';
+                };
+                const erreurs = {};
+
+                if (! valeur('name')) {
+                    erreurs.name = 'Indiquez le nom du foyer.';
+                }
+
+                const email = valeur('email');
+                if (! email) {
+                    erreurs.email = 'L\'adresse e-mail est obligatoire.';
+                } else if (! /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                    erreurs.email = 'L\'adresse e-mail saisie n\'est pas valide.';
+                }
+
+                if (! this.mdp) {
+                    erreurs.password = 'Le mot de passe est obligatoire.';
+                } else if (! this.reglesMdp.longueur || ! this.reglesMdp.lettre || ! this.reglesMdp.chiffre) {
+                    erreurs.password = 'Le mot de passe doit contenir au moins 8 caractères, une lettre et un chiffre.';
+                }
+
+                if (! this.mdpConfirmation) {
+                    erreurs.password_confirmation = 'Veuillez confirmer votre mot de passe.';
+                } else if (this.mdp !== this.mdpConfirmation) {
+                    erreurs.password_confirmation = 'Les deux mots de passe ne correspondent pas.';
+                }
+
+                if (this.role === 'habitant') {
+                    if (! valeur('latitude') || ! valeur('longitude')) {
+                        erreurs.localisation = 'Posez votre point sur la carte (ou utilisez « Me localiser »).';
+                    }
+                } else if (this.mode === 'existante') {
+                    if (! valeur('residence_id')) {
+                        erreurs.residence_id = 'Veuillez sélectionner votre résidence dans la liste.';
+                    }
+                } else if (this.mode === 'nouvelle') {
+                    if (! valeur('nouvelle_residence_nom')) {
+                        erreurs.nouvelle_residence = 'Le nom de votre résidence est obligatoire.';
+                    }
+                    if (! valeur('quartier_id') && (! valeur('nouveau_quartier_nom') || ! valeur('nouveau_quartier_ville'))) {
+                        erreurs.quartier = 'Choisissez un quartier existant ou indiquez le nom et la ville du nouveau quartier.';
+                    }
+                }
+
+                this.erreurs = erreurs;
+
+                if (Object.keys(erreurs).length > 0) {
+                    evenement.preventDefault();
+                    const premier = document.querySelector('#form-inscription [aria-invalid="true"]');
+                    if (premier) {
+                        premier.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        premier.focus({ preventScroll: true });
+                    }
+                }
+            },
+        };
+    }
 
     function carteInscription() {
         return {

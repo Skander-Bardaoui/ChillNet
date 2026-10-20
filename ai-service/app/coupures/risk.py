@@ -74,7 +74,8 @@ def evaluate_zone(zone: ZoneContexte, model: Any = None) -> dict[str, Any]:
     prediction = model.predict_zone(zone)
     p24 = float(prediction["p24"])
     p48 = float(prediction["p48"])
-    score_modele = rules.score_depuis_probabilite(p24)
+    # Score déjà ramené à l'échelle 0–100 des règles (calibration apprise).
+    score_modele = model.score_modele(p24)
     niveau_modele = rules.niveau_risque(score_modele)
 
     score_final = max(score_modele, score_regles)

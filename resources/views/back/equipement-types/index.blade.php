@@ -7,7 +7,7 @@
             <span class="material-symbols-outlined text-[28px]">devices</span>
         </div>
         <div>
-            <p class="font-label-sm text-label-sm uppercase tracking-widest text-on-surface-variant font-semibold">Module 4 · Catalogue des équipements</p>
+            <p class="font-label-sm text-label-sm uppercase tracking-widest text-on-surface-variant font-semibold">Équipements sensibles · Catalogue</p>
             <p class="font-body-md text-body-md text-on-surface-variant mt-1">Définissez les types d'équipements sensibles que les habitants peuvent déclarer. Les types <strong>médicaux</strong> imposent un contact d'urgence.</p>
         </div>
     </div>

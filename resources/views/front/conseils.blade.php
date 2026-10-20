@@ -329,12 +329,12 @@
                     </div>
                     <span class="font-title-md text-title-md text-orange-700 font-bold">198</span>
                 </a>
-                <a href="tel:0800066666" class="flex items-center justify-between p-2.5 rounded-lg bg-blue-50 hover:bg-blue-100 transition-colors">
+                <a href="tel:190" class="flex items-center justify-between p-2.5 rounded-lg bg-blue-50 hover:bg-blue-100 transition-colors">
                     <div class="flex items-center gap-2">
                         <span class="material-symbols-outlined text-blue-700 text-[18px]">support_agent</span>
-                        <span class="font-label-md text-label-md text-blue-900">Canicule Info</span>
+                        <span class="font-label-md text-label-md text-blue-900">Assistance Santé</span>
                     </div>
-                    <span class="font-body-sm text-body-sm text-blue-700 font-semibold">0800 06 66 66</span>
+                    <span class="font-title-md text-title-md text-blue-700 font-bold">190</span>
                 </a>
             </div>
         </section>

@@ -49,7 +49,7 @@ def test_analyze_avec_message(client) -> None:
     assert corps["niveau_final"] in ("orange", "rouge")
     assert isinstance(corps["message"], str)
     assert corps["message"].strip() != ""
-    assert "0800 06 66 66" in corps["message"]
+    assert "198" in corps["message"]
 
 
 def test_analyze_temperature_hors_bornes_422(client) -> None:
@@ -96,7 +96,7 @@ def test_message_endpoint(client) -> None:
     message = reponse.json()["message"]
 
     assert message.strip() != ""
-    assert "0800 06 66 66" in message
+    assert "198" in message
 
 
 def test_model_info(client) -> None:

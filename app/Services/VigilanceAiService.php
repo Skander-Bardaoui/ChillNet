@@ -271,7 +271,7 @@ class VigilanceAiService
         $entete .= '.';
 
         return trim(sprintf(
-            '%s %s En cas de malaise, appelez le 190 ou le 198 ; plateforme canicule : 0800 06 66 66.',
+            '%s %s En cas de malaise, appelez le 190 (SAMU) ou le 198 (Protection Civile).',
             $entete,
             $this->conseilsParProfil($profils),
         ));
@@ -584,7 +584,7 @@ class VigilanceAiService
         Rappelle les gestes essentiels adaptés au profil fourni (rester au frais, s'hydrater,
         éviter les sorties entre 11h et 17h, prendre des nouvelles des voisins isolés).
         Ne donne aucun diagnostic ni conseil médical.
-        Termine par les numéros utiles : 190, 198, 0800 06 66 66.
+        Termine par les numéros utiles : 190 (SAMU), 198 (Protection Civile).
         Réponds uniquement par le message, sans titre, sans liste et sans mise en forme.
         PROMPT;
     }

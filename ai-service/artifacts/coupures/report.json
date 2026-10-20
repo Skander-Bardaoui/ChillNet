@@ -1,5 +1,5 @@
 {
-  "version": "1.0.8",
+  "version": "1.0.10",
   "n_train": 52416,
   "n_test": 52416,
   "n_reel": 0,
@@ -9,24 +9,32 @@
   },
   "metrics": {
     "model24": {
-      "log_loss": 0.21712,
-      "brier": 0.05588,
-      "roc_auc": 0.69487
+      "log_loss": 0.22951,
+      "brier": 0.06108,
+      "roc_auc": 0.73975
     },
     "model48": {
-      "log_loss": 0.32425,
-      "brier": 0.09043,
-      "roc_auc": 0.68882
+      "log_loss": 0.33113,
+      "brier": 0.09627,
+      "roc_auc": 0.73943
     }
   },
   "comparaison_regles": {
     "modele": {
-      "roc_auc": 0.6949,
-      "brier": 0.05588
+      "roc_auc": 0.7398,
+      "brier": 0.06108
     },
     "regles": {
-      "roc_auc": 0.6871,
-      "brier": 0.06185
+      "roc_auc": 0.7388,
+      "brier": 0.06909
     }
+  },
+  "score_calibration": {
+    "method": "isotonic",
+    "fit": "holdout",
+    "n": 52416,
+    "desaccord_avant": 0.1493,
+    "desaccord_apres": 0.145,
+    "ecart_moyen": 8.54
   }
 }

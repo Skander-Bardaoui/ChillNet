@@ -1,5 +1,5 @@
 {
-  "version": "2.0.0",
+  "version": "2.0.1",
   "n_train": 115200,
   "n_test": 28800,
   "classes": [
@@ -10,76 +10,76 @@
   ],
   "modele_selectionne": "Gradient Boosting",
   "metrics": {
-    "accuracy": 0.7458,
-    "macro_f1": 0.7577,
+    "accuracy": 0.7474,
+    "macro_f1": 0.7593,
     "precision_par_classe": {
-      "faible": 0.8023,
-      "modere": 0.6637,
-      "eleve": 0.7786,
-      "critique": 0.8237
+      "faible": 0.8019,
+      "modere": 0.6662,
+      "eleve": 0.7794,
+      "critique": 0.8256
     },
     "recall_par_classe": {
-      "faible": 0.74,
-      "modere": 0.754,
-      "eleve": 0.7258,
-      "critique": 0.7845
+      "faible": 0.7448,
+      "modere": 0.7521,
+      "eleve": 0.7281,
+      "critique": 0.786
     },
-    "ecart_moyen_niveaux": 0.2555,
-    "a_un_niveau_pres": 0.9987,
-    "sous_estimation": 0.1305,
-    "sur_estimation": 0.1237,
+    "ecart_moyen_niveaux": 0.2539,
+    "a_un_niveau_pres": 0.9988,
+    "sous_estimation": 0.1303,
+    "sur_estimation": 0.1223,
     "confusion": [
       [
-        6052,
-        2111,
-        15,
+        6091,
+        2073,
+        14,
         0
       ],
       [
-        1476,
-        7282,
-        898,
+        1490,
+        7264,
+        902,
         2
       ],
       [
         15,
-        1574,
-        5627,
-        537
+        1562,
+        5645,
+        531
       ],
       [
         0,
         5,
-        687,
-        2519
+        682,
+        2524
       ]
     ],
     "n_test": 28800,
-    "log_loss": 0.5599,
-    "brier": 0.3457,
+    "log_loss": 0.5596,
+    "brier": 0.3454,
     "macro_f1_cv": {
-      "moyenne": 0.7695,
-      "ecart_type": 0.008
+      "moyenne": 0.7704,
+      "ecart_type": 0.0084
     },
     "systeme_final": {
-      "accuracy": 0.5264,
-      "macro_f1": 0.5548,
+      "accuracy": 0.5271,
+      "macro_f1": 0.5556,
       "precision_par_classe": {
-        "faible": 0.9082,
-        "modere": 0.4651,
-        "eleve": 0.3914,
-        "critique": 0.7446
+        "faible": 0.909,
+        "modere": 0.4662,
+        "eleve": 0.3919,
+        "critique": 0.7469
       },
       "recall_par_classe": {
         "faible": 0.5191,
-        "modere": 0.1718,
-        "eleve": 0.8648,
-        "critique": 0.7945
+        "modere": 0.172,
+        "eleve": 0.8668,
+        "critique": 0.7957
       },
-      "ecart_moyen_niveaux": 0.5585,
+      "ecart_moyen_niveaux": 0.5578,
       "a_un_niveau_pres": 0.9153,
-      "sous_estimation": 0.0481,
-      "sur_estimation": 0.4256,
+      "sous_estimation": 0.0476,
+      "sur_estimation": 0.4253,
       "confusion": [
         [
           4245,
@@ -88,22 +88,22 @@
           7
         ],
         [
-          427,
-          1659,
-          7455,
+          423,
+          1661,
+          7457,
           117
         ],
         [
           2,
-          295,
-          6705,
-          751
+          289,
+          6720,
+          742
         ],
         [
           0,
           0,
-          660,
-          2551
+          656,
+          2555
         ]
       ],
       "n_test": 28800
@@ -407,76 +407,76 @@
       }
     },
     "Gradient Boosting": {
-      "accuracy": 0.7458,
-      "macro_f1": 0.7577,
+      "accuracy": 0.7474,
+      "macro_f1": 0.7593,
       "precision_par_classe": {
-        "faible": 0.8023,
-        "modere": 0.6637,
-        "eleve": 0.7786,
-        "critique": 0.8237
+        "faible": 0.8019,
+        "modere": 0.6662,
+        "eleve": 0.7794,
+        "critique": 0.8256
       },
       "recall_par_classe": {
-        "faible": 0.74,
-        "modere": 0.754,
-        "eleve": 0.7258,
-        "critique": 0.7845
+        "faible": 0.7448,
+        "modere": 0.7521,
+        "eleve": 0.7281,
+        "critique": 0.786
       },
-      "ecart_moyen_niveaux": 0.2555,
-      "a_un_niveau_pres": 0.9987,
-      "sous_estimation": 0.1305,
-      "sur_estimation": 0.1237,
+      "ecart_moyen_niveaux": 0.2539,
+      "a_un_niveau_pres": 0.9988,
+      "sous_estimation": 0.1303,
+      "sur_estimation": 0.1223,
       "confusion": [
         [
-          6052,
-          2111,
-          15,
+          6091,
+          2073,
+          14,
           0
         ],
         [
-          1476,
-          7282,
-          898,
+          1490,
+          7264,
+          902,
           2
         ],
         [
           15,
-          1574,
-          5627,
-          537
+          1562,
+          5645,
+          531
         ],
         [
           0,
           5,
-          687,
-          2519
+          682,
+          2524
         ]
       ],
       "n_test": 28800,
-      "log_loss": 0.5599,
-      "brier": 0.3457,
+      "log_loss": 0.5596,
+      "brier": 0.3454,
       "macro_f1_cv": {
-        "moyenne": 0.7695,
-        "ecart_type": 0.008
+        "moyenne": 0.7704,
+        "ecart_type": 0.0084
       },
       "systeme_final": {
-        "accuracy": 0.5264,
-        "macro_f1": 0.5548,
+        "accuracy": 0.5271,
+        "macro_f1": 0.5556,
         "precision_par_classe": {
-          "faible": 0.9082,
-          "modere": 0.4651,
-          "eleve": 0.3914,
-          "critique": 0.7446
+          "faible": 0.909,
+          "modere": 0.4662,
+          "eleve": 0.3919,
+          "critique": 0.7469
         },
         "recall_par_classe": {
           "faible": 0.5191,
-          "modere": 0.1718,
-          "eleve": 0.8648,
-          "critique": 0.7945
+          "modere": 0.172,
+          "eleve": 0.8668,
+          "critique": 0.7957
         },
-        "ecart_moyen_niveaux": 0.5585,
+        "ecart_moyen_niveaux": 0.5578,
         "a_un_niveau_pres": 0.9153,
-        "sous_estimation": 0.0481,
-        "sur_estimation": 0.4256,
+        "sous_estimation": 0.0476,
+        "sur_estimation": 0.4253,
         "confusion": [
           [
             4245,
@@ -485,22 +485,22 @@
             7
           ],
           [
-            427,
-            1659,
-            7455,
+            423,
+            1661,
+            7457,
             117
           ],
           [
             2,
-            295,
-            6705,
-            751
+            289,
+            6720,
+            742
           ],
           [
             0,
             0,
-            660,
-            2551
+            656,
+            2555
           ]
         ],
         "n_test": 28800

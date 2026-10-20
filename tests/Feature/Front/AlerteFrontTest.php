@@ -67,7 +67,7 @@ class AlerteFrontTest extends TestCase
             ->get(route('alertes.index'))
             ->assertOk()
             ->assertSee('Alerte Rouge Centre')
-            ->assertSee('0800 06 66 66'); // message personnalisé (secours) rendu
+            ->assertSee('198'); // message personnalisé (secours) rendu
     }
 
     public function test_a_habitant_does_not_see_alerts_from_other_quartiers_or_unvalidated_ones(): void

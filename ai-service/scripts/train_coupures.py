@@ -9,6 +9,9 @@
   jamais faire baisser la probabilité ;
 - calibration isotonic/sigmoid choisie par log-loss sur un jeu de validation ;
 - lignes réelles sur-pondérées (poids ``REEL_WEIGHT``) ;
+- RECALIBRATION du score : ``p24`` est une probabilité, pas une sévérité. On
+  apprend (isotonic, hold-out) la correspondance ``p24 → score des règles`` pour
+  que ``score_modele`` et ``score_regles`` vivent sur la même échelle 0–100 ;
 - artefacts : ``artifacts/coupures/{model.joblib,metadata.json,report.json}``.
 
 Usage : ``python scripts/train_coupures.py`` (depuis ai-service/).
@@ -33,6 +36,7 @@ from sklearn.ensemble import (  # noqa: E402
     HistGradientBoostingClassifier,
     HistGradientBoostingRegressor,
 )
+from sklearn.isotonic import IsotonicRegression  # noqa: E402
 from sklearn.metrics import brier_score_loss, log_loss, roc_auc_score  # noqa: E402
 
 from app.config import settings  # noqa: E402
@@ -362,7 +366,28 @@ def main() -> int:
         [coupure_rules.score_regles(_regles_contexte(r))["score"] for r in df.iloc[cut:].to_dict("records")],
         dtype=float,
     )
-    comparaison = _rapport_moyenne(model24.predict_proba(X_test)[:, 1], regles_ctx, y24_test)
+    p24_test = model24.predict_proba(X_test)[:, 1]
+    comparaison = _rapport_moyenne(p24_test, regles_ctx, y24_test)
+
+    # Recalibration p24 → échelle des règles. Sans elle, score_modele = 100 × p24
+    # (10 % → 10/100 « faible ») face à un index de sévérité qui monte à 80 : les
+    # niveaux sont systématiquement « en désaccord ». L'isotonic apprend
+    # E[score_règles | p24] sur le hold-out, ce qui rend les deux scores
+    # comparables tout en gardant p24 comme probabilité calibrée.
+    score24 = IsotonicRegression(increasing=True, out_of_bounds="clip")
+    score24.fit(p24_test, regles_ctx)
+    score_calibre = np.clip(score24.predict(p24_test), 0, 100)
+
+    def _taux_desaccord(scores: np.ndarray) -> float:
+        niveaux_modele = [coupure_rules.niveau_risque(int(round(s))) for s in scores]
+        niveaux_regles = [coupure_rules.niveau_risque(int(round(s))) for s in regles_ctx]
+        return round(
+            float(np.mean([a != b for a, b in zip(niveaux_modele, niveaux_regles)])), 4
+        )
+
+    desaccord_avant = _taux_desaccord(np.clip(p24_test * 100.0, 0, 100))
+    desaccord_apres = _taux_desaccord(score_calibre)
+    ecart_moyen = round(float(np.mean(np.abs(score_calibre - regles_ctx))), 2)
 
     pd_temp = _partial_dependence_temp(model24, model48, X_test)
     importances = _importances(model24, X_test)
@@ -379,7 +404,10 @@ def main() -> int:
     aujourd_hui = date.today().isoformat()
 
     settings.coupures_model_path.parent.mkdir(parents=True, exist_ok=True)
-    joblib.dump({"model24": model24, "model48": model48}, settings.coupures_model_path)
+    joblib.dump(
+        {"model24": model24, "model48": model48, "score24": score24},
+        settings.coupures_model_path,
+    )
 
     etr_info = _entraine_etr(version)
 
@@ -400,6 +428,14 @@ def main() -> int:
         "classes": [0, 1],
         "calibration": {"model24": meth24, "model48": meth48},
         "metrics": {"model24": met24, "model48": met48},
+        "score_calibration": {
+            "method": "isotonic",
+            "fit": "holdout",
+            "n": int(len(p24_test)),
+            "desaccord_avant": desaccord_avant,
+            "desaccord_apres": desaccord_apres,
+            "ecart_moyen": ecart_moyen,
+        },
         "partial_dependence": pd_temp,
         "importances": importances,
         "comparaison_regles": comparaison,
@@ -417,6 +453,7 @@ def main() -> int:
         "calibration": metadata["calibration"],
         "metrics": metadata["metrics"],
         "comparaison_regles": comparaison,
+        "score_calibration": metadata["score_calibration"],
     }
 
     with open(settings.coupures_report_path, "w", encoding="utf-8") as fh:
@@ -426,6 +463,11 @@ def main() -> int:
     print(f"  p24 : AUC {met24['roc_auc']} Brier {met24['brier']} (calibration {meth24})")
     print(f"  p48 : AUC {met48['roc_auc']} Brier {met48['brier']} (calibration {meth48})")
     print(f"  AUC regles (p24) : {comparaison['regles']['roc_auc']}")
+    print(
+        "  Desaccord modele/regles : "
+        f"{desaccord_avant:.1%} -> {desaccord_apres:.1%} "
+        f"(ecart moyen {ecart_moyen:.1f} pts)"
+    )
     print(f"  Artefacts : {settings.coupures_model_path.parent}")
 
     return 0

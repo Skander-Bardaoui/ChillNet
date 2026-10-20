@@ -50,6 +50,58 @@ class RegistrationTest extends TestCase
             ->assertSee('Résidence Les Oliviers');
     }
 
+    public function test_password_must_contain_letters_and_numbers(): void
+    {
+        $this->post('/register', $this->payload([
+            'password' => 'motdepasse',
+            'password_confirmation' => 'motdepasse',
+            'latitude' => 36.8008,
+            'longitude' => 10.1800,
+        ]))->assertSessionHasErrors('password');
+
+        $this->assertGuest();
+        $this->assertNull(User::firstWhere('email', 'test@example.com'));
+    }
+
+    public function test_password_must_contain_letters(): void
+    {
+        $this->post('/register', $this->payload([
+            'password' => '12345678',
+            'password_confirmation' => '12345678',
+            'latitude' => 36.8008,
+            'longitude' => 10.1800,
+        ]))->assertSessionHasErrors('password');
+
+        $this->assertGuest();
+    }
+
+    public function test_password_errors_are_displayed_in_red_on_the_form(): void
+    {
+        $this->from('/register')->post('/register', $this->payload([
+            'password' => 'motdepasse',
+            'password_confirmation' => 'motdepasse',
+            'latitude' => 36.8008,
+            'longitude' => 10.1800,
+        ]));
+
+        $this->get('/register')
+            ->assertOk()
+            ->assertSee('Le mot de passe doit contenir au moins un chiffre.')
+            ->assertSee('bg-error-container/20', false);
+    }
+
+    public function test_password_must_be_long_enough(): void
+    {
+        $this->post('/register', $this->payload([
+            'password' => 'Ab3',
+            'password_confirmation' => 'Ab3',
+            'latitude' => 36.8008,
+            'longitude' => 10.1800,
+        ]))->assertSessionHasErrors('password');
+
+        $this->assertGuest();
+    }
+
     public function test_habitant_must_provide_a_location_point(): void
     {
         $this->post('/register', $this->payload())->assertSessionHasErrors(['latitude', 'longitude']);
@@ -199,8 +251,8 @@ class RegistrationTest extends TestCase
         return array_merge([
             'name' => 'Famille Dupont',
             'email' => 'test@example.com',
-            'password' => 'password',
-            'password_confirmation' => 'password',
+            'password' => 'ChillNet2026',
+            'password_confirmation' => 'ChillNet2026',
         ], $overrides);
     }
 }

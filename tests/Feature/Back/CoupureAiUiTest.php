@@ -66,12 +66,12 @@ class CoupureAiUiTest extends TestCase
                     'quartier_id' => 1,
                     'p24' => 0.4,
                     'p48' => 0.55,
-                    'score_modele' => 40,
+                    'score_modele' => 55,
                     'score_regles' => 30,
-                    'score_final' => 40,
-                    'niveau_modele' => 'modere',
+                    'score_final' => 55,
+                    'niveau_modele' => 'eleve',
                     'niveau_regles' => 'modere',
-                    'niveau_final' => 'modere',
+                    'niveau_final' => 'eleve',
                     'desaccord' => true,
                     'facteurs' => ['Pic de température 39,5°C'],
                     'raison' => 'Règles : modere — Modèle : modere',
@@ -107,6 +107,59 @@ class CoupureAiUiTest extends TestCase
             ->assertSee('Coupure sous 24 h')
             ->assertSee('IA et règles en désaccord')
             ->assertSee('Corrélation chaleur ↔ coupures');
+    }
+
+    public function test_badge_masque_quand_le_plancher_des_regles_domine(): void
+    {
+        $this->serviceIaActive();
+        $quartier = $this->quartier();
+
+        // 3 coupures chaudes en cours confirmées → score des règles 51 (élevé).
+        \App\Models\Coupure::factory()
+            ->count(3)
+            ->dansQuartier($quartier)
+            ->surcharge()
+            ->enCours()
+            ->confirmee(3)
+            ->create();
+
+        Http::fake([
+            'ai.test/coupures/risk' => Http::response([
+                'results' => [[
+                    'quartier_id' => 1,
+                    'p24' => 0.3,
+                    'p48' => 0.45,
+                    'score_modele' => 30,
+                    'score_regles' => 51,
+                    'score_final' => 51,
+                    'niveau_modele' => 'modere',
+                    'niveau_regles' => 'eleve',
+                    'niveau_final' => 'eleve',
+                    'desaccord' => true,
+                    'facteurs' => [],
+                    'raison' => 'Règles : eleve — Modèle : modere',
+                    'source' => 'modele',
+                    'model_version' => '1.0.10',
+                ]],
+            ]),
+            'ai.test/coupures/anomalies' => Http::response(['incidents' => []]),
+            'ai.test/coupures/insights' => Http::response([
+                'available' => true,
+                'model_available' => true,
+                'version' => '1.0.10',
+                'trained_at' => '2026-10-20',
+                'partial_dependence' => [],
+                'importances' => [],
+                'metrics' => [],
+                'evaluation' => [],
+                'n_snapshots_labelises' => 0,
+            ]),
+        ]);
+
+        $this->actingAs($this->admin())
+            ->get(route('back.coupures.index'))
+            ->assertOk()
+            ->assertDontSee('IA et règles en désaccord');
     }
 
     public function test_carte_performance_ia_coupures_sur_le_tableau_de_bord(): void

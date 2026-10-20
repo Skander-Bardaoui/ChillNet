@@ -197,6 +197,51 @@ class ConseilRiskTest extends TestCase
         $response->assertOk();
     }
 
+    public function test_le_repli_n_est_pas_cache_et_le_modele_revient_au_chargement_suivant(): void
+    {
+        $user = $this->habitantAvecEquipement('refrigerateur', 'elevee');
+        $disponible = false;
+
+        Http::fake(function ($request) use (&$disponible) {
+            if (str_contains($request->url(), 'ai.test/conseils/risk')) {
+                if (! $disponible) {
+                    return Http::response('Service indisponible', 500);
+                }
+
+                return Http::response([
+                    'results' => [[
+                        'foyer_id'      => 1,
+                        'niveau_final'  => 'eleve',
+                        'niveau_modele' => 'eleve',
+                        'niveau_regles' => 'eleve',
+                        'desaccord'     => false,
+                        'confiance'     => 0.82,
+                        'probabilites'  => ['faible' => 0.05, 'modere' => 0.13, 'eleve' => 0.82],
+                        'facteurs'      => ['Coupure en cours : oui'],
+                        'alerte_vitale' => false,
+                        'raison'        => 'Modèle et règles alignés : élevé.',
+                        'source'        => 'modele',
+                        'model_version' => '1.0.0',
+                    ]],
+                ]);
+            }
+
+            return Http::response(['status' => 'ok'], 200);
+        });
+
+        $this->actingAs($user)->get(route('conseils'))
+            ->assertOk()
+            ->assertDontSee('Distribution des probabilités');
+
+        // Le service ML revient : le repli ne doit pas avoir figé la page.
+        $disponible = true;
+
+        $this->actingAs($user)->get(route('conseils'))
+            ->assertOk()
+            ->assertSee('Distribution des probabilités')
+            ->assertSee('Modèle IA');
+    }
+
     public function test_page_conseils_affiche_niveau_risque_ml(): void
     {
         $this->fakeMlSucces('critique', true);

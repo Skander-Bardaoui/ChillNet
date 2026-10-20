@@ -53,10 +53,17 @@
 @if ($sansLiens)
 {{-- Indicateur de vigilance, centré dans la barre (decoratif : aucun clic). --}}
 <div class="pointer-events-none absolute left-1/2 top-1/2 hidden lg:flex -translate-x-1/2 -translate-y-1/2 items-center gap-space-sm px-space-sm py-1 rounded-full bg-surface-container/70">
-<span class="relative flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-tertiary-container opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-tertiary-fixed-dim"></span></span>
-<span class="font-label-sm text-label-sm text-tertiary-fixed tracking-wide uppercase whitespace-nowrap">Vigilance Canicule</span>
+@if ($alerteLogin)
+<span class="relative flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-error opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-error"></span></span>
+<span class="font-label-sm text-label-sm tracking-wide uppercase whitespace-nowrap {{ $alerteLogin->niveau?->badgeClasses() }} px-2 py-0.5 rounded-full">{{ $alerteLogin->niveau?->label() ?? 'Alerte canicule' }}</span>
 <span class="text-outline-variant font-body-sm text-body-sm">|</span>
-<span class="font-body-sm text-body-sm text-on-surface-variant whitespace-nowrap">Réseau sous surveillance</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant whitespace-nowrap">{{ $alerteLogin->titre }}</span>
+@else
+<span class="relative flex h-2 w-2"><span class="relative inline-flex rounded-full h-2 w-2 bg-green-600"></span></span>
+<span class="font-label-sm text-label-sm tracking-wide uppercase whitespace-nowrap text-green-700">Veille canicule</span>
+<span class="text-outline-variant font-body-sm text-body-sm">|</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant whitespace-nowrap">Aucune alerte active</span>
+@endif
 </div>
 @endif
 <nav class="hidden lg:flex items-center gap-space-xs" aria-label="Navigation principale">

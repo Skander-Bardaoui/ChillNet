@@ -5,10 +5,12 @@ namespace App\Http\Controllers\Front;
 use App\Enums\StatutCoupure;
 use App\Http\Controllers\Controller;
 use App\Models\Alerte;
+use App\Models\Conseil;
 use App\Models\Coupure;
 use App\Models\Lieu;
 use App\Models\Quartier;
 use App\Models\Residence;
+use App\Models\Signalement;
 use App\Services\VigilanceAiService;
 use App\Services\WeatherService;
 use App\Support\Geo;
@@ -93,10 +95,52 @@ class DashboardController extends Controller
         $refuges = $this->refugesProches($origine);
         $refugesOuverts = $alerteActive !== null;
 
+        // Coupures réelles de la zone (en cours + programmées).
+        $coupuresZone = $quartierId !== null
+            ? Coupure::query()
+                ->where('quartier_id', $quartierId)
+                ->whereIn('statut', [StatutCoupure::EnCours->value, StatutCoupure::Prevue->value])
+                ->orderBy('debut')
+                ->get()
+            : new Collection;
+
+        $coupuresEnCours = $coupuresZone->filter(
+            fn (Coupure $coupure): bool => $coupure->statut === StatutCoupure::EnCours
+        );
+        $prochaineCoupure = $coupuresZone
+            ->filter(fn (Coupure $coupure): bool => $coupure->statut === StatutCoupure::Prevue)
+            ->sortBy('debut')
+            ->first();
+
+        // Fil local : derniers signalements et coupures de la zone.
+        $filSignalements = $quartierId !== null
+            ? Signalement::query()
+                ->with(['habitant', 'residence'])
+                ->whereHas('residence', fn ($q) => $q->where('quartier_id', $quartierId))
+                ->latest('date_signalement')
+                ->limit(3)
+                ->get()
+            : new Collection;
+
+        $filCoupures = $quartierId !== null
+            ? Coupure::query()
+                ->with('quartier')
+                ->where('quartier_id', $quartierId)
+                ->latest('debut')
+                ->limit(3)
+                ->get()
+            : new Collection;
+
+        // Conseils publiés et équipements déclarés par le foyer.
+        $conseils = Conseil::query()->actifs()->orderBy('ordre')->limit(4)->get();
+        $equipements = $user->equipements()->with('type')->get();
+
         return view('front.dashboard', compact(
             'lieu', 'alerteActive', 'messagePersonnalise', 'meteo',
             'origine', 'heures', 'fenetreOptimale', 'plageCritique',
-            'refuges', 'refugesOuverts',
+            'refuges', 'refugesOuverts', 'coupuresZone', 'coupuresEnCours',
+            'prochaineCoupure', 'filSignalements', 'filCoupures',
+            'conseils', 'equipements',
         ));
     }
 

@@ -473,7 +473,7 @@ class AlerteManagementTest extends TestCase
             ])
             ->assertOk()
             ->assertJsonPath('ok', true)
-            ->assertJsonPath('message', fn ($message) => is_string($message) && str_contains($message, '0800 06 66 66'));
+            ->assertJsonPath('message', fn ($message) => is_string($message) && str_contains($message, '198'));
     }
 
     public function test_a_gestionnaire_is_forced_to_his_own_quartier(): void

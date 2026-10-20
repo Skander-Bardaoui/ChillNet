@@ -50,11 +50,19 @@ class ConseilController extends Controller
         $eqCacheKey = $equipements->max('updated_at')?->timestamp ?? 0;
         $riskKey    = "risk:user:{$user->id}:zone:{$quartierId}:eq:{$eqCacheKey}";
 
-        $risque = Cache::remember(
-            $riskKey,
-            now()->addMinutes(10),
-            fn () => $this->risk->evaluerFoyer($user, $quartierId),
-        );
+        $risque = Cache::get($riskKey);
+
+        if (! is_array($risque)) {
+            $risque = $this->risk->evaluerFoyer($user, $quartierId);
+
+            // Un repli « règles » (service ML momentanément arrêté) n'est
+            // jamais mis en cache : dès que le service revient, le prochain
+            // chargement récupère le modèle et sa distribution de
+            // probabilités. Seul un résultat réel du modèle est mémorisé.
+            if (($risque['source'] ?? null) === 'modele') {
+                Cache::put($riskKey, $risque, now()->addMinutes(10));
+            }
+        }
 
         // ------------------------------------------------------------------ //
         // 2. Message Groq / fallback déterministe (cache 15 min)

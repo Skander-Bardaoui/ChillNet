@@ -60,7 +60,7 @@ $details = array_values(array_filter([
 <div class="flex items-start gap-space-sm flex-1">
 <div class="p-3 rounded-xl bg-red-100 text-red-800 shrink-0"><span class="material-symbols-outlined text-[28px]">power_off</span></div>
 <div>
-<p class="font-label-sm text-label-sm uppercase tracking-widest text-red-800 font-semibold">Module 2 · Réseau électrique</p>
+<p class="font-label-sm text-label-sm uppercase tracking-widest text-red-800 font-semibold">Réseau électrique · Signalements citoyens</p>
 <h1 class="font-headline-md text-headline-md md:font-headline-lg md:text-headline-lg text-on-surface font-bold">Carte des coupures en direct</h1>
 <p class="font-body-md text-body-md text-on-surface-variant mt-1 max-w-2xl">Les points <strong>rouges</strong> sont les coupures <strong>en cours</strong> signalées par les habitants. Les points <strong>orange</strong> sont les coupures <strong>prévues</strong> publiées par les gestionnaires (maintenance, délestage programmé). Cliquez un point pour le détail.</p>
 </div>
@@ -137,7 +137,15 @@ $details = array_values(array_filter([
 </div>
 </div>
 @endif
-@if (! empty($risque['desaccord']))
+@php
+    $rangNiveau = ['faible' => 0, 'modere' => 1, 'eleve' => 2, 'critique' => 3];
+    // Le badge ne signale que l'ESCALADE du modèle : un modèle moins sévère que
+    // les règles est le comportement attendu du plancher de sécurité.
+    $escaladeIa = ! empty($risque['desaccord'])
+        && ($rangNiveau[$risque['niveau_modele']?->value ?? 'faible'] ?? 0)
+            > ($rangNiveau[$risque['niveau_regles']?->value ?? 'faible'] ?? 0);
+@endphp
+@if ($escaladeIa)
 <span class="self-start px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 font-label-sm text-label-sm font-semibold inline-flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">compare_arrows</span>IA et règles en désaccord</span>
 @endif
 <p class="font-body-sm text-body-sm text-on-surface-variant">Score {{ $risque['score'] }}/100 · {{ $risque['raison'] }}</p>
@@ -222,7 +230,7 @@ $details = array_values(array_filter([
 <p class="font-body-sm text-body-sm text-on-surface-variant mt-2 inline-flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">groups</span>{{ $coupure->confirmations }} voisin(s) confirment aussi cette coupure</p>
 </div>
 <div class="shrink-0 flex flex-col gap-2">
-<a href="tel:0800066666" class="inline-flex items-center gap-2 px-space-md py-2.5 rounded-xl bg-surface-container-high text-on-surface font-label-md text-label-md hover:bg-surface-variant"><span class="material-symbols-outlined text-[18px] text-primary">call</span>0800 06 66 66</a>
+<a href="tel:198" class="inline-flex items-center gap-2 px-space-md py-2.5 rounded-xl bg-surface-container-high text-on-surface font-label-md text-label-md hover:bg-surface-variant"><span class="material-symbols-outlined text-[18px] text-primary">call</span>198</a>
 @auth
 @if (auth()->user()->isHabitant())
 @if (session()->get('coupure_confirmee_'.$coupure->id))

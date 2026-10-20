@@ -199,7 +199,7 @@ class ConseilAiService
             $parties[] = "Équipements vitaux détectés : {$noms}. Assurez-vous que la batterie de secours est chargée et contactez votre relais santé en cas de coupure.";
         }
 
-        $parties[] = 'En urgence vitale, appelez le 190 (SAMU) ou le 198 (Protection Civile). Canicule Info : 0800 06 66 66.';
+        $parties[] = 'En urgence vitale, appelez le 190 (SAMU) ou le 198 (Protection Civile).';
 
         return implode(' ', $parties);
     }
@@ -228,7 +228,7 @@ Tu aides les habitants à protéger leurs équipements sensibles et leur santé.
 Réponds toujours en français, de manière concise (4-6 phrases maximum).
 Commence par la recommandation la plus urgente.
 Si un équipement médical est présent et qu'une coupure est prévue, indique-le en priorité absolue.
-Termine toujours par les numéros d'urgence tunisiens : 190 (SAMU), 198 (Protection Civile), 0800 06 66 66 (Canicule Info).
+Termine toujours par les numéros d'urgence tunisiens : 190 (SAMU), 198 (Protection Civile).
 Ne mentionne jamais de données fictives.
 PROMPT;
     }

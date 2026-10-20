@@ -46,6 +46,26 @@ class CoupureRiskModel(JoblibBundle):
 
         return float(probas[-1])
 
+    def score_modele(self, p24: float) -> int:
+        """Score 0–100 sur l'échelle OPÉRATIONNELLE des règles.
+
+        ``p24`` est une probabilité ; ``100 × p24`` n'est pas une sévérité (10 %
+        donnerait « faible » face à des règles à 80). L'artefact embarque une
+        régression isotone ``p24 → score des règles`` apprise à l'entraînement.
+        Sans elle (ancien artefact), repli linéaire documenté.
+        """
+
+        calibration = self._bundle.get("score24") if self._bundle is not None else None
+
+        if calibration is not None:
+            try:
+                valeur = float(calibration.predict(np.asarray([float(p24)]))[0])
+                return max(0, min(100, int(valeur + 0.5)))
+            except Exception:  # noqa: BLE001 — jamais bloquant
+                pass
+
+        return max(0, min(100, int(float(p24) * 100.0 + 0.5)))
+
     def predict_zone(self, zone: Any) -> dict[str, Any]:
         """Prédiction d'une zone (objet pydantic ``ZoneContexte``)."""
 
