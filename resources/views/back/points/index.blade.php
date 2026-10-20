@@ -64,7 +64,8 @@
 @php($erreurRefus = (int) old('refus_point') === $proposition->id)
 <form method="POST" action="{{ route('back.points.refuser', $proposition) }}" x-show="refus" x-cloak class="flex flex-col sm:flex-row sm:flex-wrap gap-2 w-full lg:w-auto">@csrf @method('PATCH')
 <input type="hidden" name="refus_point" value="{{ $proposition->id }}" />
-<input type="text" name="motif_refus" value="{{ $erreurRefus ? old('motif_refus') : '' }}" required minlength="10" maxlength="500" placeholder="Motif du refus (visible par l'habitant)" class="flex-1 lg:w-72 rounded-lg bg-surface-container border border-outline-variant/40 px-3 py-2 text-on-surface focus:border-primary-container focus:outline-none {{ $erreurRefus && $errors->has('motif_refus') ? 'border-error' : '' }}" />
+<label for="motif_refus_{{ $proposition->id }}" class="sr-only">Motif du refus (visible par l'habitant)</label>
+<input id="motif_refus_{{ $proposition->id }}" type="text" name="motif_refus" value="{{ $erreurRefus ? old('motif_refus') : '' }}" required minlength="10" maxlength="500" placeholder="Motif du refus (visible par l'habitant)" class="flex-1 lg:w-72 rounded-lg bg-surface-container border border-outline-variant/40 px-3 py-2 text-on-surface focus:border-primary-container focus:outline-none {{ $erreurRefus && $errors->has('motif_refus') ? 'border-error' : '' }}" />
 <button type="submit" class="px-4 py-2 rounded-lg bg-error text-on-error font-label-md text-label-md font-semibold">Confirmer le refus</button>
 <button type="button" @click="refus = false" class="px-3 py-2 rounded-lg text-on-surface-variant font-label-md text-label-md">Annuler</button>
 @if ($erreurRefus) @error('motif_refus') <p class="w-full font-body-sm text-body-sm text-error flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">error</span>{{ $message }}</p> @enderror @endif

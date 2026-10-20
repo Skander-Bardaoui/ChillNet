@@ -20,7 +20,7 @@
     </div>
 </div>
 
-<canvas x-ref="canvas" class="hidden" aria-hidden="true"></canvas>
+<canvas x-ref="canvas" class="hidden"></canvas>
 <input type="hidden" name="image" :value="captured" />
 
 <p x-show="cameraError" x-text="cameraError" class="font-body-sm text-body-sm text-error"></p>

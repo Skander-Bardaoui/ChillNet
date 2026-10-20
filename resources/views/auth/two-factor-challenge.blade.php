@@ -22,7 +22,7 @@
                 <label class="font-label-md text-label-md text-on-surface" for="two_factor_challenge_code">Code à 6 chiffres</label>
                 <div class="relative">
                     <span class="material-symbols-outlined absolute left-3 top-3 text-on-surface-variant text-[20px]">pin</span>
-                    <input id="two_factor_challenge_code" name="code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" autofocus
+                    <input id="two_factor_challenge_code" name="code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6"
                            :disabled="mode !== 'code'" placeholder="123456"
                            class="w-full bg-surface-container rounded-lg pl-10 pr-4 py-2.5 text-on-surface font-body-md text-body-md tracking-[0.35em] placeholder:tracking-normal placeholder:text-outline-variant focus:outline-none focus:ring-2 focus:ring-primary-container transition-colors" />
                 </div>

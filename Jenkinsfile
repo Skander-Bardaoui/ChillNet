@@ -159,12 +159,23 @@ pipeline {
           withSonarQubeEnv('sonarqube') {
             sh '''
               curl -s -u "$SONAR_AUTH_TOKEN:" \
-                "$SONAR_HOST_URL/api/issues/search?componentKeys=chillnet&resolved=false&sinceLeakPeriod=true&ps=100" \
+                "$SONAR_HOST_URL/api/qualitygates/project_status?projectKey=chillnet" \
+                -o /tmp/sonar-gate.json || true
+              curl -s -u "$SONAR_AUTH_TOKEN:" \
+                "$SONAR_HOST_URL/api/issues/search?componentKeys=chillnet&resolved=false&inNewCodePeriod=true&ps=100" \
                 -o /tmp/sonar-issues.json || true
               php -r '
+                $g = json_decode(@file_get_contents("/tmp/sonar-gate.json"), true);
+                printf("SONAR GATE %s\\n", $g["projectStatus"]["status"] ?? "INCONNU");
+                foreach ($g["projectStatus"]["conditions"] ?? [] as $c) {
+                    printf("SONAR COND %s %s = %s (seuil %s)\\n",
+                        $c["status"], $c["metricKey"], $c["actualValue"] ?? "?", $c["errorThreshold"] ?? "-");
+                }
                 $d = json_decode(@file_get_contents("/tmp/sonar-issues.json"), true);
+                printf("SONAR NEW ISSUES %d\\n", $d["total"] ?? 0);
                 foreach ($d["issues"] ?? [] as $i) {
-                    printf("SONAR %s %s:%s %s\\n", $i["rule"], $i["component"], $i["line"] ?? 0, $i["message"]);
+                    printf("SONAR %s %s %s %s:%s %s\\n",
+                        $i["severity"], $i["type"], $i["rule"], $i["component"], $i["line"] ?? 0, $i["message"]);
                 }
               ' || true
             '''

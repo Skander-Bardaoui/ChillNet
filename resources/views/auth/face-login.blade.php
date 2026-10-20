@@ -36,7 +36,7 @@
                     <label class="font-label-md text-label-md text-on-surface" for="email">Email du compte</label>
                     <div class="relative">
                         <span class="material-symbols-outlined absolute left-3 top-3 text-on-surface-variant text-[20px]">badge</span>
-                        <input id="email" name="email" type="email" value="{{ old('email') }}" required autofocus autocomplete="username"
+                        <input id="email" name="email" type="email" value="{{ old('email') }}" required autocomplete="username"
                                placeholder="ex : nom@domaine.fr"
                                class="w-full bg-surface-container rounded-lg pl-10 pr-4 py-2.5 text-on-surface font-body-md text-body-md placeholder:text-outline-variant focus:outline-none focus:ring-2 focus:ring-primary-container transition-colors" />
                     </div>

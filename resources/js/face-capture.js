@@ -123,7 +123,7 @@ export default function faceCapture() {
         retake() {
             this.captured = '';
             this.cameraError = '';
-            this.start();
+            void this.start();
         },
 
         validate() {

@@ -27,7 +27,8 @@
             <form method="post" action="{{ route('profile.avatar.update') }}" enctype="multipart/form-data" class="flex flex-wrap items-center gap-3">
                 @csrf
                 @method('patch')
-                <input type="file" name="avatar" accept="image/png,image/jpeg,image/webp"
+                <label for="avatar" class="sr-only">Choisir une photo de profil</label>
+                <input id="avatar" type="file" name="avatar" accept="image/png,image/jpeg,image/webp"
                        @change="const f = $event.target.files[0]; if (f) { const r = new FileReader(); r.onload = e => apercu = e.target.result; r.readAsDataURL(f); }"
                        class="block text-body-sm text-on-surface-variant file:mr-3 file:rounded-lg file:border-0 file:bg-primary/10 file:px-3 file:py-2 file:font-label-md file:text-primary hover:file:bg-primary/20 cursor-pointer" />
                 <x-primary-button>Enregistrer la photo</x-primary-button>
