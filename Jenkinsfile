@@ -257,7 +257,36 @@ pipeline {
     stage('Build images') {
       steps {
         sh 'docker build -t "$APP_IMAGE:$IMAGE_TAG" -t "$APP_IMAGE:latest" .'
-        sh 'docker build -t "$AI_IMAGE:$IMAGE_TAG" -t "$AI_IMAGE:latest" ./ai-service'
+        sh '''
+          set -eu
+
+          # MIROIR DE WHEELS : le réseau de la VM plafonne à ~20 Ko/s ; un
+          # `pip install` dans `docker build` retéléchargeait ~80 Mo à chaque
+          # changement de requirements.txt. On matérialise les wheels une fois
+          # depuis le cache pip chaud, puis on les réutilise tant que
+          # requirements.txt ne change pas.
+          WHEELS="$HOME/.cache/wheels-chillnet"
+          HASH_FILE="$HOME/.cache/wheels-chillnet.sha256"
+          HASH=$(sha256sum ai-service/requirements.txt | cut -d' ' -f1)
+          if [ ! -f "$HASH_FILE" ] || [ "$(cat "$HASH_FILE")" != "$HASH" ] \
+             || [ -z "$(ls -A "$WHEELS" 2>/dev/null)" ]; then
+            rm -rf "$WHEELS"
+            mkdir -p "$WHEELS"
+            docker run --rm -u "$(id -u):$(id -g)" \
+              -e HOME=/tmp -e PIP_CACHE_DIR=/pip-cache \
+              -v "$HOME/.cache/pip-chillnet:/pip-cache" \
+              -v "$WHEELS:/wheels" -v "$WORKSPACE/ai-service:/src:ro" -w /src \
+              python:3.11-slim \
+              sh -c 'pip download --retries 10 --timeout 120 -r requirements.txt -d /wheels'
+            echo "$HASH" > "$HASH_FILE"
+          fi
+
+          rm -f ai-service/.wheels/*.whl
+          cp -a "$WHEELS"/. ai-service/.wheels/
+          docker build --build-arg PIP_OFFLINE=1 \
+            -t "$AI_IMAGE:$IMAGE_TAG" -t "$AI_IMAGE:latest" ./ai-service
+          rm -f ai-service/.wheels/*.whl
+        '''
       }
     }
 
