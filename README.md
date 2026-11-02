@@ -1,59 +1,87 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
-
 <p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
+  <img src="docs/banner.svg" width="100%" alt="ChillNet banner" />
 </p>
 
-## About Laravel
+<p align="center">
+  <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=600&size=22&pause=1200&color=0EA5E9&center=true&vCenter=true&width=760&lines=Citizen+heatwave+vigilance;Laravel+%2B+FastAPI+%2B+scikit-learn;Alerts%2C+refuges%2C+mutual+aid" alt="Typing tagline" />
+</p>
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+<p align="center">
+  <img src="https://img.shields.io/github/languages/top/Skander-Bardaoui/ChillNet?style=flat-square&color=0EA5E9" alt="" />
+  <img src="https://img.shields.io/github/stars/Skander-Bardaoui/ChillNet?style=flat-square&color=0EA5E9" alt="" />
+  <img src="https://img.shields.io/github/last-commit/Skander-Bardaoui/ChillNet?style=flat-square&color=38BDF8" alt="" />
+  <img src="https://img.shields.io/badge/status-Active-0EA5E9?style=flat-square" alt="" />
+</p>
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Overview
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+ChillNet is a citizen platform for heatwave vigilance and neighbourhood solidarity. Residents receive clear alerts, find air-conditioned refuges and fresh points nearby, and coordinate mutual aid during heat peaks. A dedicated machine-learning microservice predicts heat risk and explains its decisions to managers.
 
-## Learning Laravel
+## Highlights
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+- Heatwave alerts with severity levels, geographic targeting and personalised messages
+- Map of climate refuges, fresh points and community resources around the household
+- Power-outage reporting and confirmation by residents
+- Reports with PDF export and geolocation of every signalment
+- Resident, manager and administrator roles with scoped dashboards
+- Heat-risk prediction and explainability from a FastAPI + scikit-learn service
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## Tech stack
 
-## Laravel Sponsors
+<p align="center">
+  <img src="https://skillicons.dev/icons?i=laravel,php,python,postgres,docker,kubernetes,jenkins,tailwind&theme=dark&perline=8" alt="Tech stack" />
+</p>
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+## Screenshots
 
-### Premium Partners
+<p align="center">
+  <a href="docs/screenshots/landing.webp"><img src="docs/screenshots/landing.webp" width="49%" alt="Landing page" /></a>
+  <a href="docs/screenshots/login.webp"><img src="docs/screenshots/login.webp" width="49%" alt="Sign in" /></a>
+  <a href="docs/screenshots/admin.webp"><img src="docs/screenshots/admin.webp" width="49%" alt="Admin dashboard" /></a>
+  <a href="docs/screenshots/habitant.webp"><img src="docs/screenshots/habitant.webp" width="49%" alt="Resident space" /></a>
+</p>
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+## Getting started
 
-## Contributing
+**Prerequisites:** PHP 8.2+, Composer, Node.js 20+, PostgreSQL (or SQLite for a quick local run), Python 3.11+ for the AI service.
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+```bash
+composer install
+npm install
+cp .env.example .env
+php artisan key:generate
+# configure DB_* in .env, then:
+php artisan migrate --seed
+npm run build
+php artisan serve
 
-## Code of Conduct
+# AI microservice
+cd ai-service
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+uvicorn app.main:app --reload --port 8001
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+## Project structure
 
-## Security Vulnerabilities
+```text
+app/            Laravel domain (controllers, models, services, policies)
+ai-service/     FastAPI + scikit-learn heat-risk service
+database/       migrations and demo seeders
+docs/           product and architecture notes
+docker/         container definitions
+jenkins/        CI/CD pipeline
+k8s/            Kubernetes manifests
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+---
 
-## License
+<p align="center">
+  <img src="https://capsule-render.vercel.app/api?type=waving&color=0:0EA5E9,100:0A0A0C&height=110&section=footer" alt="footer" width="100%" />
+</p>
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+<p align="center">
+  Built by <a href="https://github.com/Skander-Bardaoui"><b>Skander Bardaoui</b></a> ·
+  <a href="https://skander-bardaoui.netlify.app/">Portfolio</a> ·
+  <a href="https://github.com/Skander-Bardaoui?tab=repositories">All repositories</a>
+</p>
